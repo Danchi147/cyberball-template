@@ -1,205 +1,197 @@
-{\rtf1\ansi\ansicpg1252\cocoartf2709
-\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
-{\colortbl;\red255\green255\blue255;}
-{\*\expandedcolortbl;;}
-\paperw11900\paperh16840\margl1440\margr1440\vieww11520\viewh8400\viewkind0
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberSociety Game</title>
+    <style>
+        body {
+            text-align: center;
+            font-family: Arial, sans-serif;
+        }
+        .screen {
+            display: none;
+        }
+        #screen1 {
+            display: block;
+        }
+        .avatar-option {
+            width: 70px;
+            height: 70px;
+            margin: 10px;
+            cursor: pointer;
+        }
+        .disabled-avatar {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+        #game-container {
+            position: relative;
+            width: 550px;
+            height: 550px;
+            margin: auto;
+            border: 3px solid black;
+            background-color: #f0f0f0;
+        }
+        .player {
+            position: absolute;
+            width: 70px;
+            height: 70px;
+        }
+        .player-name {
+            position: absolute;
+            width: 100px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 14px;
+            margin-left: -20px;
+            margin-top: -5px;
+        }
+        #ball {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background: orange;
+            border-radius: 50%;
+            transition: top 0.5s linear, left 0.5s linear;
+        }
+    </style>
+</head>
+<body>
 
-\f0\fs24 \cf0 <!DOCTYPE html>\
-<html lang="en">\
-<head>\
-    <meta charset="UTF-8">\
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">\
-    <title>CyberSociety Game</title>\
-    <style>\
-        body \{\
-            text-align: center;\
-            font-family: Arial, sans-serif;\
-        \}\
-        .screen \{\
-            display: none;\
-        \}\
-        #screen1 \{\
-            display: block;\
-        \}\
-        .avatar-option \{\
-            width: 70px;\
-            height: 70px;\
-            margin: 10px;\
-            cursor: pointer;\
-        \}\
-        .disabled-avatar \{\
-            opacity: 0.5;\
-            pointer-events: none;\
-        \}\
-        #game-container \{\
-            position: relative;\
-            width: 550px;\
-            height: 550px;\
-            margin: auto;\
-            border: 3px solid black;\
-            background-color: #f0f0f0;\
-        \}\
-        .player \{\
-            position: absolute;\
-            width: 70px;\
-            height: 70px;\
-        \}\
-        .player-name \{\
-            position: absolute;\
-            width: 100px;\
-            text-align: center;\
-            font-weight: bold;\
-            font-size: 14px;\
-            margin-left: -20px;\
-            margin-top: -5px;\
-        \}\
-        #ball \{\
-            position: absolute;\
-            width: 30px;\
-            height: 30px;\
-            background: orange;\
-            border-radius: 50%;\
-            transition: top 0.5s linear, left 0.5s linear;\
-        \}\
-    </style>\
-</head>\
-<body>\
-\
-    <!-- SCREEN 1: Introduction -->\
-    <div id="screen1" class="screen">\
-        <h2>Welcome to CyberSociety</h2>\
-        <p>You will play an online ball-tossing game with three other players.</p>\
-        <p>When you receive the ball, click on any player to pass it to them.</p>\
-        <button onclick="nextScreen(2)">Continue</button>\
-    </div>\
-\
-    <!-- SCREEN 2: Avatar & Name Selection -->\
-    <div id="screen2" class="screen">\
-        <h2>Choose Your Avatar</h2>\
-        <p>Enter your name:</p>\
-        <input type="text" id="player-name-input" placeholder="Your Name">\
-        <p>Select your avatar:</p>\
-        <div id="avatar-selection"></div>\
-    </div>\
-\
-    <!-- SCREEN 3: Waiting Screen (15 Seconds) -->\
-    <div id="screen3" class="screen">\
-        <h2>Waiting for Other Players...</h2>\
-        <p>The game will start soon.</p>\
-        <img src="https://icons8.com/preloaders/preloaders/1486/Hourglass.gif" alt="Loading">\
-    </div>\
-\
-    <!-- SCREEN 4: Reminder Before Starting -->\
-    <div id="screen4" class="screen">\
-        <h2>Get Ready for CyberSociety</h2>\
-        <p>Reminder: You will be playing an online ball-tossing game.</p>\
-        <button onclick="startGame()">Start Game</button>\
-    </div>\
-\
-    <!-- SCREEN 5: Cyberball Game -->\
-    <div id="screen5" class="screen">\
-        <h2>Cyberball Game</h2>\
-        <p>Click on a player to pass the ball.</p>\
-        <div id="game-container">\
-            <div class="player-name" id="player1-name" style="left: 250px; top: 470px;">You</div>\
-            <img id="player1" class="player" src="" style="left: 250px; top: 490px;">\
-\
-            <div class="player-name" style="left: 250px; top: 30px;">Liam</div>\
-            <img id="player2" class="player" src="https://openmoji.org/data/color/svg/1F9D8.svg" style="left: 250px; top: 50px;" onclick="playerThrows(2)">\
-\
-            <div class="player-name" style="left: 50px; top: 250px;">Jamie</div>\
-            <img id="player3" class="player" src="https://openmoji.org/data/color/svg/1F9C1.svg" style="left: 50px; top: 270px;" onclick="playerThrows(3)">\
-\
-            <div class="player-name" style="left: 450px; top: 250px;">Riley</div>\
-            <img id="player4" class="player" src="https://openmoji.org/data/color/svg/1F33A.svg" style="left: 450px; top: 270px;" onclick="playerThrows(4)">\
-\
-            <div id="ball" style="left: 50px; top: 270px;"></div>\
-        </div>\
-    </div>\
-\
-    <script>\
-        let throwCount = 0;\
-        const maxThrows = 30;\
-        let participantThrows = 0;\
-        const requiredParticipantThrows = 10;\
-        let participantHasBall = false;\
-\
-        function nextScreen(screen) \{\
-            document.querySelectorAll(".screen").forEach(s => s.style.display = "none");\
-            document.getElementById(`screen$\{screen\}`).style.display = "block";\
-        \}\
-\
-        function selectAvatar(avatar) \{\
-            let playerName = document.getElementById("player-name-input").value.trim();\
-            if (playerName === "") \{\
-                alert("Please enter your name.");\
-                return;\
-            \}\
-\
-            document.getElementById("player1").src = `https://openmoji.org/data/color/svg/$\{avatar\}.svg`;\
-            document.getElementById("player1-name").innerText = playerName;\
-\
-            nextScreen(3);\
-            setTimeout(() => nextScreen(4), 15000);\
-        \}\
-\
-        function startGame() \{\
-            nextScreen(5);\
-            passBall(2, randomPlayer());\
-        \}\
-\
-        function passBall(from, to) \{\
-            if (throwCount >= maxThrows) \{\
-                alert("Game Ended!");\
-                return;\
-            \}\
-\
-            throwCount++;\
-            let ball = document.getElementById("ball");\
-            let toPlayer = document.getElementById(`player$\{to\}`);\
-\
-            ball.style.left = toPlayer.offsetLeft + "px";\
-            ball.style.top = toPlayer.offsetTop + "px";\
-\
-            if (to === 1) \{\
-                participantHasBall = true;\
-                participantThrows++;\
-                return;\
-            \}\
-\
-            let delay = (Math.random() * 1.3 + 1.2) * 1000;\
-            setTimeout(() => \{\
-                let nextThrow = randomPlayer();\
-                if (participantThrows < requiredParticipantThrows && Math.random() < 0.5) \{\
-                    nextThrow = 1;\
-                \}\
-                passBall(to, nextThrow);\
-            \}, delay);\
-        \}\
-\
-        function randomPlayer() \{\
-            return [2, 3, 4][Math.floor(Math.random() * 3)];\
-        \}\
-\
-        function playerThrows(to) \{\
-            if (participantHasBall && to !== 1) \{\
-                participantHasBall = false;\
-                passBall(1, to);\
-            \}\
-        \}\
-\
-        window.onload = function () \{\
-            let avatars = ["1F97B","1F458","1F9DC","26EA","2721","1FAB7","1F3B8","1F9B8","1F3B9","1F9B9","2695","1F6D0",\
-                           "1F9D1-200D-1FAA9", "E183", "1F469", "1F468", "26F9-FE0F-200D-2640-FE0F",\
-                           "26F9-FE0F-200D-2642-FE0F", "1F937", "1F483", "1F3BC", "1F3F3-FE0F-200D-1F308",\
-                           "1F3C8", "1F3C0", "E184", "1F6B2", "1F9D1-200D-1F4BB", "1F408", "1F415", "1FA96", "1F47E"];\
-            document.getElementById("avatar-selection").innerHTML = avatars.map(avatar => \
-                `<img src="https://openmoji.org/data/color/svg/$\{avatar\}.svg" class="avatar-option" onclick="selectAvatar('$\{avatar\}')">`\
-            ).join("");\
-        \};\
-    </script>\
-\
-</body>\
-</html>\
-}
+    <!-- SCREEN 1: Introduction -->
+    <div id="screen1" class="screen">
+        <h2>Welcome to CyberSociety</h2>
+        <p>You will play an online ball-tossing game with three other players.</p>
+        <p>When you receive the ball, click on any player to pass it to them.</p>
+        <button onclick="nextScreen(2)">Continue</button>
+    </div>
+
+    <!-- SCREEN 2: Avatar & Name Selection -->
+    <div id="screen2" class="screen">
+        <h2>Choose Your Avatar</h2>
+        <p>Enter your name:</p>
+        <input type="text" id="player-name-input" placeholder="Your Name">
+        <p>Select your avatar:</p>
+        <div id="avatar-selection"></div>
+    </div>
+
+    <!-- SCREEN 3: Waiting Screen (15 Seconds) -->
+    <div id="screen3" class="screen">
+        <h2>Waiting for Other Players...</h2>
+        <p>The game will start soon.</p>
+        <img src="https://icons8.com/preloaders/preloaders/1486/Hourglass.gif" alt="Loading">
+    </div>
+
+    <!-- SCREEN 4: Reminder Before Starting -->
+    <div id="screen4" class="screen">
+        <h2>Get Ready for CyberSociety</h2>
+        <p>Reminder: You will be playing an online ball-tossing game.</p>
+        <button onclick="startGame()">Start Game</button>
+    </div>
+
+    <!-- SCREEN 5: Cyberball Game -->
+    <div id="screen5" class="screen">
+        <h2>Cyberball Game</h2>
+        <p>Click on a player to pass the ball.</p>
+        <div id="game-container">
+            <div class="player-name" id="player1-name" style="left: 250px; top: 470px;">You</div>
+            <img id="player1" class="player" src="" style="left: 250px; top: 490px;">
+
+            <div class="player-name" style="left: 250px; top: 30px;">Liam</div>
+            <img id="player2" class="player" src="https://openmoji.org/data/color/svg/1F9D8.svg" style="left: 250px; top: 50px;" onclick="playerThrows(2)">
+
+            <div class="player-name" style="left: 50px; top: 250px;">Jamie</div>
+            <img id="player3" class="player" src="https://openmoji.org/data/color/svg/1F9C1.svg" style="left: 50px; top: 270px;" onclick="playerThrows(3)">
+
+            <div class="player-name" style="left: 450px; top: 250px;">Riley</div>
+            <img id="player4" class="player" src="https://openmoji.org/data/color/svg/1F33A.svg" style="left: 450px; top: 270px;" onclick="playerThrows(4)">
+
+            <div id="ball" style="left: 50px; top: 270px;"></div>
+        </div>
+    </div>
+
+    <script>
+        let throwCount = 0;
+        const maxThrows = 30;
+        let participantThrows = 0;
+        const requiredParticipantThrows = 10;
+        let participantHasBall = false;
+
+        function nextScreen(screen) {
+            document.querySelectorAll(".screen").forEach(s => s.style.display = "none");
+            document.getElementById(`screen${screen}`).style.display = "block";
+        }
+
+        function selectAvatar(avatar) {
+            let playerName = document.getElementById("player-name-input").value.trim();
+            if (playerName === "") {
+                alert("Please enter your name.");
+                return;
+            }
+
+            document.getElementById("player1").src = `https://openmoji.org/data/color/svg/${avatar}.svg`;
+            document.getElementById("player1-name").innerText = playerName;
+
+            nextScreen(3);
+            setTimeout(() => nextScreen(4), 15000);
+        }
+
+        function startGame() {
+            nextScreen(5);
+            passBall(2, randomPlayer());
+        }
+
+        function passBall(from, to) {
+            if (throwCount >= maxThrows) {
+                alert("Game Ended!");
+                return;
+            }
+
+            throwCount++;
+            let ball = document.getElementById("ball");
+            let toPlayer = document.getElementById(`player${to}`);
+
+            ball.style.left = toPlayer.offsetLeft + "px";
+            ball.style.top = toPlayer.offsetTop + "px";
+
+            if (to === 1) {
+                participantHasBall = true;
+                participantThrows++;
+                return;
+            }
+
+            let delay = (Math.random() * 1.3 + 1.2) * 1000;
+            setTimeout(() => {
+                let nextThrow = randomPlayer();
+                if (participantThrows < requiredParticipantThrows && Math.random() < 0.5) {
+                    nextThrow = 1;
+                }
+                passBall(to, nextThrow);
+            }, delay);
+        }
+
+        function randomPlayer() {
+            return [2, 3, 4][Math.floor(Math.random() * 3)];
+        }
+
+        function playerThrows(to) {
+            if (participantHasBall && to !== 1) {
+                participantHasBall = false;
+                passBall(1, to);
+            }
+        }
+
+        window.onload = function () {
+            let avatars = ["1F97B","1F458","1F9DC","26EA","2721","1FAB7","1F3B8","1F9B8","1F3B9","1F9B9","2695","1F6D0",
+                           "1F9D1-200D-1FAA9", "E183", "1F469", "1F468", "26F9-FE0F-200D-2640-FE0F",
+                           "26F9-FE0F-200D-2642-FE0F", "1F937", "1F483", "1F3BC", "1F3F3-FE0F-200D-1F308",
+                           "1F3C8", "1F3C0", "E184", "1F6B2", "1F9D1-200D-1F4BB", "1F408", "1F415", "1FA96", "1F47E"];
+            document.getElementById("avatar-selection").innerHTML = avatars.map(avatar => 
+                `<img src="https://openmoji.org/data/color/svg/${avatar}.svg" class="avatar-option" onclick="selectAvatar('${avatar}')">`
+            ).join("");
+        };
+    </script>
+
+</body>
+</html>
