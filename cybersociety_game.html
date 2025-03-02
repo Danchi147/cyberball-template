@@ -120,7 +120,7 @@
 
         function nextScreen(screen) {
             document.querySelectorAll(".screen").forEach(s => s.style.display = "none");
-            document.getElementById("screen" + screen).style.display = "block";
+            document.getElementById(`screen${screen}`).style.display = "block";
         }
 
         function selectAvatar(avatar) {
@@ -130,7 +130,7 @@
                 return;
             }
 
-            document.getElementById("player1").src = "https://openmoji.org/data/color/svg/" + avatar + ".svg";
+            document.getElementById("player1").src = `https://openmoji.org/data/color/svg/${avatar}.svg`;
             document.getElementById("player1-name").innerText = playerName;
 
             nextScreen(3);
@@ -150,7 +150,7 @@
 
             throwCount++;
             let ball = document.getElementById("ball");
-            let toPlayer = document.getElementById("player" + to);
+            let toPlayer = document.getElementById(`player${to}`);
 
             ball.style.left = toPlayer.offsetLeft + "px";
             ball.style.top = toPlayer.offsetTop + "px";
@@ -181,6 +181,16 @@
                 passBall(1, to);
             }
         }
+
+        window.onload = function () {
+            let avatars = ["1F97B","1F458","1F9DC","26EA","2721","1FAB7","1F3B8","1F9B8","1F3B9","1F9B9","2695","1F6D0",
+                           "1F9D1-200D-1FAA9", "E183", "1F469", "1F468", "26F9-FE0F-200D-2640-FE0F",
+                           "26F9-FE0F-200D-2642-FE0F", "1F937", "1F483", "1F3BC", "1F3F3-FE0F-200D-1F308",
+                           "1F3C8", "1F3C0", "E184", "1F6B2", "1F9D1-200D-1F4BB", "1F408", "1F415", "1FA96", "1F47E"];
+            document.getElementById("avatar-selection").innerHTML = avatars.map(avatar => 
+                `<img src="https://openmoji.org/data/color/svg/${avatar}.svg" class="avatar-option" onclick="selectAvatar('${avatar}')">`
+            ).join("");
+        };
     </script>
 
 </body>
