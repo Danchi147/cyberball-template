@@ -85,23 +85,26 @@
             4: "Riley"
         };
 
-        // ✅ Function to Save the Game Log to Qualtrics
+        // ✅ Function to Save the Game Log to Qualtrics (Fixed Version)
         function saveGameLogToQualtrics() {
             let logString = JSON.stringify(gameLog);
 
-            function trySavingLog(attempts) {
+            function attemptSave() {
                 if (typeof Qualtrics !== "undefined" && typeof Qualtrics.SurveyEngine !== "undefined") {
                     Qualtrics.SurveyEngine.setEmbeddedData("CyberballLog", logString);
-                    console.log("Game log sent successfully to Qualtrics:", logString);
-                } else if (attempts > 0) {
-                    console.warn("Qualtrics not ready. Retrying...");
-                    setTimeout(() => trySavingLog(attempts - 1), 500); // Retry every 500ms
+                    console.log("Game log sent to Qualtrics:", logString);
                 } else {
-                    console.error("Failed to save game log. Qualtrics is not available.");
+                    console.error("Qualtrics is not available. Data not saved.");
                 }
             }
 
-            trySavingLog(10); // Retry up to 10 times (5 seconds max)
+            // Wait until Qualtrics is fully loaded before saving
+            let checkQualtrics = setInterval(() => {
+                if (typeof Qualtrics !== "undefined" && typeof Qualtrics.SurveyEngine !== "undefined") {
+                    clearInterval(checkQualtrics); // Stop checking
+                    attemptSave();
+                }
+            }, 500);
         }
 
         // ✅ Log each throw and save to Qualtrics
@@ -113,8 +116,7 @@
                 timestamp: new Date().toISOString()
             });
 
-            // Save the log immediately
-            saveGameLogToQualtrics();
+            saveGameLogToQualtrics(); // Save log immediately
         }
 
         function passBall(from, to) {
