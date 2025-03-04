@@ -69,14 +69,14 @@
     </div>
 
     <script>
+        window.gameLog = []; // ✅ Global variable so Qualtrics can access it
+
         let throwCount = 0;
         const maxThrows = 30;
         let participantThrows = 0;
         const requiredParticipantThrows = 10;
         let currentBallHolder = 2;
-        let userTurn = false; 
-
-        let gameLog = []; // Store game logs
+        let userTurn = false;
 
         const playerNames = {
             1: "You",
@@ -85,20 +85,20 @@
             4: "Riley"
         };
 
-        // ✅ Function to Save the Game Log to Qualtrics (Fixed Version)
+        // ✅ Function to Save Game Log to Qualtrics
         function saveGameLogToQualtrics() {
-            let logString = JSON.stringify(gameLog);
+            let logString = JSON.stringify(window.gameLog);
 
             function attemptSave() {
                 if (typeof Qualtrics !== "undefined" && typeof Qualtrics.SurveyEngine !== "undefined") {
                     Qualtrics.SurveyEngine.setEmbeddedData("CyberballLog", logString);
-                    console.log("Game log sent to Qualtrics:", logString);
+                    console.log("✅ Game log sent to Qualtrics:", logString);
                 } else {
-                    console.error("Qualtrics is not available. Data not saved.");
+                    console.error("❌ Qualtrics is not available. Data not saved.");
                 }
             }
 
-            // Wait until Qualtrics is fully loaded before saving
+            // ✅ Wait until Qualtrics is fully loaded before saving
             let checkQualtrics = setInterval(() => {
                 if (typeof Qualtrics !== "undefined" && typeof Qualtrics.SurveyEngine !== "undefined") {
                     clearInterval(checkQualtrics); // Stop checking
@@ -109,7 +109,7 @@
 
         // ✅ Log each throw and save to Qualtrics
         function logThrow(from, to) {
-            gameLog.push({
+            window.gameLog.push({
                 throwNumber: throwCount,
                 from: playerNames[from],
                 to: playerNames[to],
