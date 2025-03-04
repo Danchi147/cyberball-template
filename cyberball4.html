@@ -85,29 +85,17 @@
             4: "Riley"
         };
 
-        // ✅ Function to Save Game Log to Qualtrics
-        function saveGameLogToQualtrics() {
-            let logString = JSON.stringify(window.gameLog);
-
-            function attemptSave() {
-                if (typeof Qualtrics !== "undefined" && typeof Qualtrics.SurveyEngine !== "undefined") {
-                    Qualtrics.SurveyEngine.setEmbeddedData("CyberballLog", logString);
-                    console.log("✅ Game log sent to Qualtrics:", logString);
-                } else {
-                    console.error("❌ Qualtrics is not available. Data not saved.");
-                }
+        // ✅ Function to Send Game Log to Qualtrics (Fixes iframe issue)
+        function sendToQualtrics() {
+            if (typeof parent.Qualtrics !== "undefined" && typeof parent.Qualtrics.SurveyEngine !== "undefined") {
+                parent.Qualtrics.SurveyEngine.setEmbeddedData("CyberballLog", JSON.stringify(window.gameLog));
+                console.log("✅ Cyberball log sent to Qualtrics:", window.gameLog);
+            } else {
+                console.error("❌ Qualtrics not found. Data not saved.");
             }
-
-            // ✅ Wait until Qualtrics is fully loaded before saving
-            let checkQualtrics = setInterval(() => {
-                if (typeof Qualtrics !== "undefined" && typeof Qualtrics.SurveyEngine !== "undefined") {
-                    clearInterval(checkQualtrics); // Stop checking
-                    attemptSave();
-                }
-            }, 500);
         }
 
-        // ✅ Log each throw and save to Qualtrics
+        // ✅ Log each throw and send it to Qualtrics
         function logThrow(from, to) {
             window.gameLog.push({
                 throwNumber: throwCount,
@@ -116,13 +104,13 @@
                 timestamp: new Date().toISOString()
             });
 
-            saveGameLogToQualtrics(); // Save log immediately
+            sendToQualtrics(); // Save log immediately
         }
 
         function passBall(from, to) {
             if (throwCount >= maxThrows) {
                 console.log("Game Over! Log saved.");
-                saveGameLogToQualtrics();
+                sendToQualtrics();
                 return;
             }
 
