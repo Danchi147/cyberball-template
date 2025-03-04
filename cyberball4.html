@@ -85,13 +85,6 @@
             4: "Riley"
         };
 
-        const playerPositions = {
-            1: document.getElementById("player1-container"),
-            2: document.getElementById("player2-container"),
-            3: document.getElementById("player3-container"),
-            4: document.getElementById("player4-container")
-        };
-
         function logThrow(from, to) {
             gameLog.push({
                 throwNumber: throwCount,
@@ -104,6 +97,7 @@
         function passBall(from, to) {
             if (throwCount >= maxThrows) {
                 console.log("Game Over! Log saved.");
+                saveGameLogToQualtrics();  // 🚀 Save log to Qualtrics when the game ends
                 return;
             }
 
@@ -112,12 +106,7 @@
             logThrow(from, to);
 
             let ball = document.getElementById("ball");
-            let targetPlayer = playerPositions[to];
-
-            if (!targetPlayer) {
-                console.error("⚠️ ERROR: Target player position not found!", to);
-                return;
-            }
+            let targetPlayer = document.getElementById(`player${to}-container`);
 
             let playerRect = targetPlayer.getBoundingClientRect();
             let gameContainerRect = document.getElementById("game-container").getBoundingClientRect();
@@ -155,7 +144,7 @@
 
         function startGame() {
             let ball = document.getElementById("ball");
-            let leftPlayer = playerPositions[2];
+            let leftPlayer = document.getElementById("player2-container");
 
             let playerRect = leftPlayer.getBoundingClientRect();
             let gameContainerRect = document.getElementById("game-container").getBoundingClientRect();
@@ -168,9 +157,15 @@
 
         window.onload = startGame;
 
-        // Function to extract the log (Call this manually from the console)
-        function getGameLog() {
-            return gameLog;
+        function saveGameLogToQualtrics() {
+            let logString = JSON.stringify(gameLog);
+
+            if (typeof Qualtrics !== "undefined") {
+                Qualtrics.SurveyEngine.setEmbeddedData("CyberballLog", logString);
+                console.log("Game log sent to Qualtrics:", logString);
+            } else {
+                console.error("Qualtrics object not found. Data not saved.");
+            }
         }
     </script>
 
