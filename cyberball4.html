@@ -1,173 +1,171 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cyberball Game</title>
-    <style>
-        body {
-            text-align: center;
-            font-family: Arial, sans-serif;
-            background-color: white;
-        }
-        #game-container {
-            position: relative;
-            width: 600px;
-            height: 400px;
-            margin: auto;
-            border: 3px solid black;
-            background-color: white;
-            padding: 10px;
-        }
-        .player-container {
-            position: absolute;
-            text-align: center;
-            cursor: pointer;
-        }
-        .player-animation {
-            width: 80px;
-            height: 80px;
-        }
-        #ball {
-            position: absolute;
-            width: 20px;
-            height: 20px;
-            background: orange;
-            border-radius: 50%;
-            transition: top 0.5s linear, left 0.5s linear;
-            z-index: 1;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CyberSociety Game</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background-color: #d3d3d3;
+      color: black;
+      overflow: hidden;
+    }
+    .game-container {
+      position: relative;
+      width: 400px;
+      height: 400px;
+      margin: 50px auto;
+    }
+    .player {
+      width: 80px;
+      height: 80px;
+      background-color: #808080;
+      border-radius: 50%;
+      position: absolute;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      border: 3px solid transparent;
+      color: white;
+      transition: border 0.3s ease;
+    }
+    .player.has-ball {
+      border: 3px solid green;
+    }
+    .ball {
+      width: 20px;
+      height: 20px;
+      background-color: green;
+      border-radius: 50%;
+      position: absolute;
+      transition: transform 0.8s ease-in-out;
+    }
+    .info {
+      margin-top: 20px;
+      font-size: 18px;
+    }
+  </style>
 </head>
 <body>
+  <h1>CyberSociety Game</h1>
+  <p>Click on a player to pass the ball when you have it.</p>
+  <div class="game-container" id="game-container">
+    <div class="player has-ball" id="player3" style="left: 70px; top: 50px;">Ryan</div>
+    <div class="player" id="player2" style="left: 250px; top: 50px;">Emma</div>
+    <div class="player" id="player1" style="left: 300px; top: 200px;">Jake</div>
+    <div class="player" id="player4" style="left: 20px; top: 200px;">Sophia</div>
+    <div class="player" id="player0" style="left: 160px; top: 300px;">You</div>
+    <div class="ball" id="ball"></div>
+  </div>
+  <div class="info" id="info">Game is starting...</div>
 
-    <h2>Cyberball Game</h2>
-    <p>Click on a player to pass the ball.</p>
+  <script>
+    const players = ["player0", "player1", "player2", "player3", "player4"];
+    let currentPlayer = "player3";
+    let totalThrows = 0;
+    const maxThrows = 10;
+    let playerReceivesLeft = 2;
+    let gameEnded = false;
 
-    <div id="game-container">
-        <div id="ball"></div>
+    function updateBallHolder(newHolder) {
+      document.querySelectorAll(".player").forEach(player => player.classList.remove("has-ball"));
+      const targetElement = document.getElementById(newHolder);
+      if (!targetElement) return;
+      targetElement.classList.add("has-ball");
+      moveBall(newHolder);
+      currentPlayer = newHolder;
+    }
 
-        <div class="player-container" id="player1-container" style="left: 250px; top: 320px;" onclick="playerThrows(1)">
-            <div>You</div>
-            <img class="player-animation" src="https://raw.githubusercontent.com/CuddleBunny/osu-cyberball/master/assets/player/idle/1.png">
-        </div>
+    function getRandomAI() {
+      const aiPlayers = players.filter(p => p !== "player0" && p !== currentPlayer);
+      return aiPlayers[Math.floor(Math.random() * aiPlayers.length)];
+    }
 
-        <div class="player-container" id="player2-container" style="left: 50px; top: 150px;" onclick="playerThrows(2)">
-            <div>Liam</div>
-            <img class="player-animation" src="https://raw.githubusercontent.com/CuddleBunny/osu-cyberball/master/assets/player/idle/1.png">
-        </div>
+    function getSlowerReactionTime() {
+      return Math.floor(Math.random() * 501) + 1500; // 1500ms (1.5s) to 2000ms (2.0s)
+    }
 
-        <div class="player-container" id="player3-container" style="left: 250px; top: 50px;" onclick="playerThrows(3)">
-            <div>Jamie</div>
-            <img class="player-animation" src="https://raw.githubusercontent.com/CuddleBunny/osu-cyberball/master/assets/player/idle/1.png">
-        </div>
+    function moveBall(targetPlayer) {
+      const ball = document.getElementById("ball");
+      const target = document.getElementById(targetPlayer);
+      if (!ball || !target) return;
+      const rect = target.getBoundingClientRect();
+      const container = document.getElementById("game-container").getBoundingClientRect();
+      const x = rect.left - container.left + rect.width / 2 - 10;
+      const y = rect.top - container.top + rect.height / 2 - 10;
+      ball.style.transform = `translate(${x}px, ${y}px)`;
+    }
 
-        <div class="player-container" id="player4-container" style="left: 450px; top: 150px;" onclick="playerThrows(4)">
-            <div>Riley</div>
-            <img class="player-animation" src="https://raw.githubusercontent.com/CuddleBunny/osu-cyberball/master/assets/player/idle/1.png">
-        </div>
-    </div>
+    function aiTurn() {
+      if (totalThrows >= maxThrows || gameEnded) {
+        endRound();
+        return;
+      }
 
-    <script>
-        window.gameLog = []; // ✅ Ensure game log is defined globally
+      setTimeout(() => {
+        if (gameEnded) return;
 
-        let throwCount = 0;
-        const maxThrows = 30;
-        let participantThrows = 0;
-        const requiredParticipantThrows = 10;
-        let userTurn = false;
-
-        const playerNames = {
-            1: "You",
-            2: "Liam",
-            3: "Jamie",
-            4: "Riley"
-        };
-
-        // ✅ Send data to Qualtrics
-        function sendToQualtrics() {
-            if (typeof parent.Qualtrics !== "undefined" && typeof parent.Qualtrics.SurveyEngine !== "undefined") {
-                parent.Qualtrics.SurveyEngine.setEmbeddedData("CyberballLog", JSON.stringify(window.gameLog));
-                console.log("✅ Cyberball log sent to Qualtrics:", window.gameLog);
-            } else {
-                console.error("❌ Qualtrics not found. Data not saved.");
-            }
+        let nextPlayer;
+        if (playerReceivesLeft > 0 && Math.random() < 0.5) {
+          nextPlayer = "player0";
+          playerReceivesLeft--;
+        } else {
+          nextPlayer = getRandomAI();
         }
 
-        // ✅ Log each throw and send data to Qualtrics
-        function logThrow(from, to) {
-            window.gameLog.push({
-                throwNumber: throwCount,
-                from: playerNames[from],
-                to: playerNames[to],
-                timestamp: new Date().toISOString()
-            });
+        const throwerElement = document.getElementById(currentPlayer);
+        const receiverElement = document.getElementById(nextPlayer);
+        if (!throwerElement || !receiverElement) return;
 
-            sendToQualtrics();
-        }
+        const throwerName = throwerElement.innerText;
+        const receiverName = receiverElement.innerText;
 
-        function passBall(from, to) {
-            if (throwCount >= maxThrows) {
-                console.log("Game Over! Log saved.");
-                sendToQualtrics();
-                return;
-            }
+        updateBallHolder(nextPlayer);
+        totalThrows++;
 
-            throwCount++;
-            logThrow(from, to);
+        const message = (nextPlayer === "player0")
+          ? `${throwerName} threw the ball to You - Your Turn!`
+          : `${throwerName} threw the ball to ${receiverName}`;
 
-            let ball = document.getElementById("ball");
-            let targetPlayer = document.getElementById(`player${to}-container`);
+        const infoElement = document.getElementById("info");
+        if (infoElement) infoElement.innerText = message;
 
-            let playerRect = targetPlayer.getBoundingClientRect();
-            let gameContainerRect = document.getElementById("game-container").getBoundingClientRect();
+        if (nextPlayer !== "player0") aiTurn();
+      }, getSlowerReactionTime());
+    }
 
-            ball.style.left = (playerRect.left - gameContainerRect.left + 30) + "px";
-            ball.style.top = (playerRect.top - gameContainerRect.top + 50) + "px";
+    function endRound() {
+      gameEnded = true;
+      document.body.innerHTML = "<h1 style='margin-top: 200px;'>Round has ended!</h1>";
+    }
 
-            setTimeout(() => {
-                if (to === 1) {
-                    participantThrows++;
-                    userTurn = true; 
-                } else {
-                    userTurn = false;
-                    let delay = Math.random() * 1500 + 1000;
-                    setTimeout(() => passBall(to, getNextThrow(to)), delay);
-                }
-            }, 700);
-        }
+    document.querySelectorAll(".player").forEach(player => {
+      player.addEventListener("click", function () {
+        if (gameEnded || currentPlayer !== "player0" || totalThrows >= maxThrows) return;
 
-        function getNextThrow(exclude) {
-            if (participantThrows < requiredParticipantThrows && Math.random() < 0.5) {
-                return 1;
-            }
+        const selectedPlayer = this.id;
+        if (selectedPlayer === "player0") return;
 
-            let available = [2, 3, 4].filter(p => p !== exclude);
-            return available[Math.floor(Math.random() * available.length)];
-        }
+        const receiverElement = document.getElementById(selectedPlayer);
+        if (!receiverElement) return;
 
-        function playerThrows(to) {
-            if (userTurn && to !== 1) { 
-                userTurn = false;
-                passBall(1, to);
-            }
-        }
+        updateBallHolder(selectedPlayer);
+        totalThrows++;
 
-        function startGame() {
-            let ball = document.getElementById("ball");
-            let leftPlayer = document.getElementById("player2-container");
+        const infoElement = document.getElementById("info");
+        if (infoElement) infoElement.innerText = `You threw the ball to ${receiverElement.innerText}`;
 
-            let playerRect = leftPlayer.getBoundingClientRect();
-            let gameContainerRect = document.getElementById("game-container").getBoundingClientRect();
+        aiTurn();
+      });
+    });
 
-            ball.style.left = (playerRect.left - gameContainerRect.left + 30) + "px";
-            ball.style.top = (playerRect.top - gameContainerRect.top + 50) + "px";
-
-            setTimeout(() => passBall(2, 3), 1000); 
-        }
-
-        window.onload = startGame;
-    </script>
-
+    moveBall("player3");
+    aiTurn();
+  </script>
 </body>
 </html>
