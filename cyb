@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CyberSociety Game</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background-color: #d3d3d3;
+      color: black;
+      overflow: hidden;
+    }
+    .game-container {
+      position: relative;
+      width: 400px;
+      height: 400px;
+      margin: 50px auto;
+    }
+    .player {
+      width: 80px;
+      height: 80px;
+      background-color: #808080;
+      border-radius: 50%;
+      position: absolute;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      border: 3px solid transparent;
+      color: white;
+      transition: border 0.3s ease;
+    }
+    .player.has-ball {
+      border: 3px solid green;
+    }
+    .ball {
+      width: 20px;
+      height: 20px;
+      background-color: green;
+      border-radius: 50%;
+      position: absolute;
+      transition: transform 0.8s ease-in-out;
+    }
+    .info {
+      margin-top: 20px;
+      font-size: 18px;
+    }
+  </style>
+</head>
+<body>
+  <h1>CyberSociety Game</h1>
+  <p>Click on a player to pass the ball when you have it.</p>
+  <div class="game-container" id="game-container">
+    <div class="player has-ball" id="player3" style="left: 70px; top: 50px;">Ryan</div>
+    <div class="player" id="player2" style="left: 250px; top: 50px;">Emma</div>
+    <div class="player" id="player1" style="left: 300px; top: 200px;">Jake</div>
+    <div class="player" id="player4" style="left: 20px; top: 200px;">Sophia</div>
+    <div class="player" id="player0" style="left: 160px; top: 300px;">You</div>
+    <div class="ball" id="ball"></div>
+  </div>
+  <div class="info" id="info">Game is starting...</div>
+
+  <script>
+    const players = ["player0", "player1", "player2", "player3", "player4"];
+    let currentPlayer = "player3";
+    let totalThrows = 0;
+    const maxThrows = 10;
+    let playerReceivesLeft = 2;
+    let gameEnded = false;
+
+    function updateBallHolder(newHolder) {
+      document.querySelectorAll(".player").forEach(player => player.classList.remove("has-ball"));
+      const targetElement = document.getElementById(newHolder);
+      if (!targetElement) return;
+      targetElement.classList.add("has-ball");
+      moveBall(newHolder);
+      currentPlayer = newHolder;
+    }
+
+    function getRandomAI() {
+      const aiPlayers = players.filter(p => p !== "player0" && p !== currentPlayer);
+      return aiPlayers[Math.floor(Math.random() * aiPlayers.length)];
+    }
+
+    function getSlowerReactionTime() {
+      return Math.floor(Math.random() * 501) + 1500; // 1500ms (1.5s) to 2000ms (2.0s)
+    }
+
+    function moveBall(targetPlayer) {
+      const ball = document.getElementById("ball");
+      const target = document.getElementById(targetPlayer);
+      if (!ball || !target) return;
+      const rect = target.getBoundingClientRect();
+      const container = document.getElementById("game-container").getBoundingClientRect();
+      const x = rect.left - container.left + rect.width / 2 - 10;
+      const y = rect.top - container.top + rect.height / 2 - 10;
+      ball.style.transform = `translate(${x}px, ${y}px)`;
+    }
+
+    function aiTurn() {
+      if (totalThrows >= maxThrows || gameEnded) {
+        endRound();
+        return;
+      }
+
+      setTimeout(() => {
+        if (gameEnded) return;
+
+        let nextPlayer;
+        if (playerReceivesLeft > 0 && Math.random() < 0.5) {
+          nextPlayer = "player0";
+          playerReceivesLeft--;
+        } else {
+          nextPlayer = getRandomAI();
+        }
+
+        const throwerElement = document.getElementById(currentPlayer);
+        const receiverElement = document.getElementById(nextPlayer);
+        if (!throwerElement || !receiverElement) return;
+
+        const throwerName = throwerElement.innerText;
+        const receiverName = receiverElement.innerText;
+
+        updateBallHolder(nextPlayer);
+        totalThrows++;
+
+        const message = (nextPlayer === "player0")
+          ? `${throwerName} threw the ball to You - Your Turn!`
+          : `${throwerName} threw the ball to ${receiverName}`;
+
+        const infoElement = document.getElementById("info");
+        if (infoElement) infoElement.innerText = message;
+
+        if (nextPlayer !== "player0") aiTurn();
+      }, getSlowerReactionTime());
+    }
+
+    function endRound() {
+      gameEnded = true;
+      document.body.innerHTML = "<h1 style='margin-top: 200px;'>Round has ended!</h1>";
+    }
+
+    document.querySelectorAll(".player").forEach(player => {
+      player.addEventListener("click", function () {
+        if (gameEnded || currentPlayer !== "player0" || totalThrows >= maxThrows) return;
+
+        const selectedPlayer = this.id;
+        if (selectedPlayer === "player0") return;
+
+        const receiverElement = document.getElementById(selectedPlayer);
+        if (!receiverElement) return;
+
+        updateBallHolder(selectedPlayer);
+        totalThrows++;
+
+        const infoElement = document.getElementById("info");
+        if (infoElement) infoElement.innerText = `You threw the ball to ${receiverElement.innerText}`;
+
+        aiTurn();
+      });
+    });
+
+    moveBall("player3");
+    aiTurn();
+  </script>
+</body>
+</html>
