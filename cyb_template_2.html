@@ -52,25 +52,61 @@
   </style>
 </head>
 <body>
-  <h1>CyberSociety Game</h1>
-  <p>Click on a player to pass the ball when you have it.</p>
-  <div class="game-container" id="game-container">
-    <div class="player has-ball" id="player3" style="left: 70px; top: 50px;">Ryan</div>
-    <div class="player" id="player2" style="left: 250px; top: 50px;">Emma</div>
-    <div class="player" id="player1" style="left: 300px; top: 200px;">Jake</div>
-    <div class="player" id="player4" style="left: 20px; top: 200px;">Sophia</div>
-    <div class="player" id="player0" style="left: 160px; top: 300px;">You</div>
-    <div class="ball" id="ball"></div>
+  <div id="game-screen">
+    <h1>CyberSociety Game</h1>
+    <p>Click on a player to pass the ball when you have it.</p>
+    <div class="game-container" id="game-container">
+      <div class="player has-ball" id="player3" style="left: 70px; top: 50px;">Ryan</div>
+      <div class="player" id="player2" style="left: 250px; top: 50px;">Emma</div>
+      <div class="player" id="player1" style="left: 300px; top: 200px;">Jake</div>
+      <div class="player" id="player4" style="left: 20px; top: 200px;">Sophia</div>
+      <div class="player" id="player0" style="left: 160px; top: 300px;">You</div>
+      <div class="ball" id="ball"></div>
+    </div>
+    <div class="info" id="info">Game is starting...</div>
   </div>
-  <div class="info" id="info">Game is starting...</div>
 
   <script>
+    let nickname = "You";
     const players = ["player0", "player1", "player2", "player3", "player4"];
     let currentPlayer = "player3";
     let totalThrows = 0;
-    const maxThrows = 10;
-    let playerReceivesLeft = 2;
+    const maxThrows = 15;
+    let participantReceivesLeft = 2; // AI will pass to participant 3 times
+    let participantThrowsLeft = 2; // Participant can make 3 throws
     let gameEnded = false;
+    let gameLog = [];
+
+    startGame();
+
+    function startGame() {
+      document.getElementById("game-screen").style.display = "block";
+      moveBall("player3");
+      aiTurn();
+
+      document.querySelectorAll(".player").forEach(player => {
+        player.addEventListener("click", function () {
+          if (gameEnded || currentPlayer !== "player0" || totalThrows >= maxThrows || participantThrowsLeft <= 0) return;
+
+          const selectedPlayer = this.id;
+          if (selectedPlayer === "player0") return;
+
+          const receiverElement = document.getElementById(selectedPlayer);
+          if (!receiverElement) return;
+
+          updateBallHolder(selectedPlayer);
+          totalThrows++;
+          participantThrowsLeft--;
+
+          gameLog.push({ from: "player0", to: selectedPlayer, type: "Player", timestamp: Date.now() });
+
+          const infoElement = document.getElementById("info");
+          if (infoElement) infoElement.innerText = `${nickname} threw the ball to ${receiverElement.innerText}`;
+
+          aiTurn();
+        });
+      });
+    }
 
     function updateBallHolder(newHolder) {
       document.querySelectorAll(".player").forEach(player => player.classList.remove("has-ball"));
@@ -87,7 +123,7 @@
     }
 
     function getSlowerReactionTime() {
-      return Math.floor(Math.random() * 501) + 1500; // 1500ms (1.5s) to 2000ms (2.0s)
+      return Math.floor(Math.random() * 501) + 1500;
     }
 
     function moveBall(targetPlayer) {
@@ -111,9 +147,9 @@
         if (gameEnded) return;
 
         let nextPlayer;
-        if (playerReceivesLeft > 0 && Math.random() < 0.5) {
+        if (participantReceivesLeft > 0 && Math.random() < 0.5) {
           nextPlayer = "player0";
-          playerReceivesLeft--;
+          participantReceivesLeft--;
         } else {
           nextPlayer = getRandomAI();
         }
@@ -128,8 +164,10 @@
         updateBallHolder(nextPlayer);
         totalThrows++;
 
+        gameLog.push({ from: currentPlayer, to: nextPlayer, type: "AI", timestamp: Date.now() });
+
         const message = (nextPlayer === "player0")
-          ? `${throwerName} threw the ball to You - Your Turn!`
+          ? `${throwerName} threw the ball to ${nickname} - Your Turn!`
           : `${throwerName} threw the ball to ${receiverName}`;
 
         const infoElement = document.getElementById("info");
@@ -141,31 +179,15 @@
 
     function endRound() {
       gameEnded = true;
-      document.body.innerHTML = "<h1 style='margin-top: 200px;'>Round has ended!</h1>";
+      const gameLogString = JSON.stringify(gameLog);
+      if (typeof Qualtrics !== "undefined") {
+        Qualtrics.SurveyEngine.setEmbeddedData("CyberSociety_GameLog", gameLogString);
+      }
+      document.body.innerHTML = `
+        <div style="background-color: #d3d3d3; width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center;">
+          <div style="font-size: 24px; font-weight: bold; color: #2c3e50;">Round has ended!</div>
+        </div>`;
     }
-
-    document.querySelectorAll(".player").forEach(player => {
-      player.addEventListener("click", function () {
-        if (gameEnded || currentPlayer !== "player0" || totalThrows >= maxThrows) return;
-
-        const selectedPlayer = this.id;
-        if (selectedPlayer === "player0") return;
-
-        const receiverElement = document.getElementById(selectedPlayer);
-        if (!receiverElement) return;
-
-        updateBallHolder(selectedPlayer);
-        totalThrows++;
-
-        const infoElement = document.getElementById("info");
-        if (infoElement) infoElement.innerText = `You threw the ball to ${receiverElement.innerText}`;
-
-        aiTurn();
-      });
-    });
-
-    moveBall("player3");
-    aiTurn();
   </script>
 </body>
 </html>
