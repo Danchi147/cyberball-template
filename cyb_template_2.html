@@ -72,8 +72,8 @@
     let currentPlayer = "player3";
     let totalThrows = 0;
     const maxThrows = 15;
-    let participantReceivesLeft = 2; // AI will pass to participant 3 times
-    let participantThrowsLeft = 2; // Participant can make 3 throws
+    let participantReceivesLeft = 3;
+    let participantThrowsLeft = 3;
     let gameEnded = false;
     let gameLog = [];
 
@@ -180,9 +180,10 @@
     function endRound() {
       gameEnded = true;
       const gameLogString = JSON.stringify(gameLog);
-      if (typeof Qualtrics !== "undefined") {
-        Qualtrics.SurveyEngine.setEmbeddedData("CyberSociety_GameLog", gameLogString);
-      }
+
+      // Send the log to parent Qualtrics page via postMessage
+      window.parent.postMessage({ gameLog: gameLogString }, "*");
+
       document.body.innerHTML = `
         <div style="background-color: #d3d3d3; width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center;">
           <div style="font-size: 24px; font-weight: bold; color: #2c3e50;">Round has ended!</div>
