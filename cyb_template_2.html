@@ -67,6 +67,8 @@
   </div>
 
   <script>
+    console.log("✅ CyberSociety Game Loaded");
+
     let nickname = "You";
     const players = ["player0", "player1", "player2", "player3", "player4"];
     let currentPlayer = "player3";
@@ -80,6 +82,7 @@
     startGame();
 
     function startGame() {
+      console.log("▶️ Game started");
       document.getElementById("game-screen").style.display = "block";
       moveBall("player3");
       aiTurn();
@@ -97,6 +100,8 @@
           updateBallHolder(selectedPlayer);
           totalThrows++;
           participantThrowsLeft--;
+
+          console.log("🧍 Participant threw to:", selectedPlayer, "Total throws:", totalThrows);
 
           gameLog.push({ from: "player0", to: selectedPlayer, type: "Player", timestamp: Date.now() });
 
@@ -158,20 +163,19 @@
         const receiverElement = document.getElementById(nextPlayer);
         if (!throwerElement || !receiverElement) return;
 
-        const throwerName = throwerElement.innerText;
-        const receiverName = receiverElement.innerText;
-
         updateBallHolder(nextPlayer);
         totalThrows++;
 
+        console.log("🤖 AI threw to:", nextPlayer, "Total throws:", totalThrows);
+
         gameLog.push({ from: currentPlayer, to: nextPlayer, type: "AI", timestamp: Date.now() });
 
-        const message = (nextPlayer === "player0")
-          ? `${throwerName} threw the ball to ${nickname} - Your Turn!`
-          : `${throwerName} threw the ball to ${receiverName}`;
-
         const infoElement = document.getElementById("info");
-        if (infoElement) infoElement.innerText = message;
+        if (infoElement) {
+          infoElement.innerText = (nextPlayer === "player0")
+            ? `${throwerElement.innerText} threw the ball to ${nickname} - Your Turn!`
+            : `${throwerElement.innerText} threw the ball to ${receiverElement.innerText}`;
+        }
 
         if (nextPlayer !== "player0") aiTurn();
       }, getSlowerReactionTime());
@@ -180,8 +184,7 @@
     function endRound() {
       gameEnded = true;
       const gameLogString = JSON.stringify(gameLog);
-
-      // Send the log to parent Qualtrics page via postMessage
+      console.log("📤 Posting game log to parent:", gameLogString);
       window.parent.postMessage({ gameLog: gameLogString }, "*");
 
       document.body.innerHTML = `
