@@ -185,7 +185,9 @@
       gameEnded = true;
       const gameLogString = JSON.stringify(gameLog);
       console.log("📤 Posting game log to parent:", gameLogString);
-      window.parent.postMessage({ gameLog: gameLogString }, "*");
+
+      // UPDATED: Add type for message recognition
+      window.parent.postMessage({ type: "CyberSocietyEnd", gameLog: gameLogString }, "*");
 
       document.body.innerHTML = `
         <div style="background-color: #d3d3d3; width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center;">
