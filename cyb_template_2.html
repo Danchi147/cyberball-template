@@ -186,13 +186,16 @@
       const gameLogString = JSON.stringify(gameLog);
       console.log("📤 Posting game log to parent:", gameLogString);
 
-      // UPDATED: Add type for message recognition
+      // Send to parent first
       window.parent.postMessage({ type: "CyberSocietyEnd", gameLog: gameLogString }, "*");
 
-      document.body.innerHTML = `
-        <div style="background-color: #d3d3d3; width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center;">
-          <div style="font-size: 24px; font-weight: bold; color: #2c3e50;">Round has ended!</div>
-        </div>`;
+      // Delay DOM change to ensure message is sent before iframe is wiped
+      setTimeout(() => {
+        document.body.innerHTML = `
+          <div style="background-color: #d3d3d3; width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center;">
+            <div style="font-size: 24px; font-weight: bold; color: #2c3e50;">Round has ended!</div>
+          </div>`;
+      }, 500);
     }
   </script>
 </body>
