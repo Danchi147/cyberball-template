@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>משחק סייברסוסייטי</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background-color: #d3d3d3;
+      color: black;
+      overflow: hidden;
+    }
+
+    .game-container {
+      position: relative;
+      width: 400px;
+      height: 400px;
+      margin: 50px auto;
+    }
+
+    .player {
+      width: 80px;
+      height: 80px;
+      background-color: #808080;
+      border-radius: 50%;
+      position: absolute;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      border: 3px solid transparent;
+      color: white;
+      transition: border 0.3s ease;
+    }
+
+    .player.has-ball {
+      border: 3px solid green;
+    }
+
+    .ball {
+      width: 20px;
+      height: 20px;
+      background-color: green;
+      border-radius: 50%;
+      position: absolute;
+      transition: left 0.8s ease-in-out, top 0.8s ease-in-out;
+    }
+
+    .info {
+      margin-top: 20px;
+      font-size: 18px;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="game-screen">
+    <h1>GroupThink</h1>
+    <p>לחץ/י על שחקן/ית כדי למסור את הכדור כשהוא ברשותך.</p>
+    <div class="game-container" id="game-container">
+      <div class="player has-ball" id="player3" style="left: 70px; top: 50px;">יובל</div>
+      <div class="player" id="player2" style="left: 250px; top: 50px;">שחר</div>
+      <div class="player" id="player1" style="left: 300px; top: 200px;">טל</div>
+      <div class="player" id="player4" style="left: 20px; top: 200px;">דניאל</div>
+      <div class="player" id="player0" style="left: 160px; top: 300px;">אני</div>
+      <div class="ball" id="ball"></div>
+    </div>
+    <div class="info" id="info">המשחק מתחיל...</div>
+  </div>
+
+  <script>
+    console.log("✅ המשחק נטען");
+
+    let nickname = "";
+    const players = ["player0", "player1", "player2", "player3", "player4"];
+    let currentPlayer = "player3";
+    let totalThrows = 0;
+    const maxThrows = 15;
+    let participantReceivesLeft = 6;
+    let participantThrowsLeft = 3;
+    let gameEnded = false;
+    let gameLog = [];
+
+    startGame();
+
+    function startGame() {
+      document.getElementById("game-screen").style.display = "block";
+      moveBall("player3");
+      aiTurn();
+
+      document.querySelectorAll(".player").forEach(player => {
+        player.addEventListener("click", function () {
+          if (gameEnded || currentPlayer !== "player0" || totalThrows >= maxThrows || participantThrowsLeft <= 0) return;
+
+          const selectedPlayer = this.id;
+          if (selectedPlayer === "player0") return;
+
+          const receiverElement = document.getElementById(selectedPlayer);
+          if (!receiverElement) return;
+
+          updateBallHolder(selectedPlayer);
+          totalThrows++;
+          participantThrowsLeft--;
+
+          gameLog.push({ from: "player0", to: selectedPlayer, type: "Player", timestamp: Date.now() });
+
+          const infoElement = document.getElementById("info");
+          if (infoElement) infoElement.innerText = `${nickname} מסר/ה את הכדור ל־${receiverElement.innerText}`;
+
+          aiTurn();
+        });
+      });
+    }
+
+    function updateBallHolder(newHolder) {
+      document.querySelectorAll(".player").forEach(player => player.classList.remove("has-ball"));
+      const targetElement = document.getElementById(newHolder);
+      if (!targetElement) return;
+      targetElement.classList.add("has-ball");
+      moveBall(newHolder);
+      currentPlayer = newHolder;
+    }
+
+    function getRandomAI() {
+      const aiPlayers = players.filter(p => p !== "player0" && p !== currentPlayer);
+      return aiPlayers[Math.floor(Math.random() * aiPlayers.length)];
+    }
+
+    function getSlowerReactionTime() {
+      return Math.floor(Math.random() * 501) + 1500;
+    }
+
+    function moveBall(targetPlayer) {
+      const ball = document.getElementById("ball");
+      const target = document.getElementById(targetPlayer);
+      const container = document.getElementById("game-container");
+
+      if (!ball || !target || !container) return;
+
+      const targetRect = target.getBoundingClientRect();
+      const containerRect = container.getBoundingClientRect();
+
+      const centerX = targetRect.left - containerRect.left + target.offsetWidth / 2 - ball.offsetWidth / 2;
+      const centerY = targetRect.top - containerRect.top + target.offsetHeight / 2 - ball.offsetHeight / 2;
+
+      ball.style.left = `${centerX}px`;
+      ball.style.top = `${centerY}px`;
+    }
+
+    function aiTurn() {
+      if (totalThrows >= maxThrows || gameEnded) {
+        endRound();
+        return;
+      }
+
+      setTimeout(() => {
+        if (gameEnded) return;
+
+        let nextPlayer;
+        if (participantReceivesLeft > 0 && Math.random() < 0.5) {
+          nextPlayer = "player0";
+          participantReceivesLeft--;
+        } else {
+          nextPlayer = getRandomAI();
+        }
+
+        const throwerElement = document.getElementById(currentPlayer);
+        const receiverElement = document.getElementById(nextPlayer);
+        if (!throwerElement || !receiverElement) return;
+
+        updateBallHolder(nextPlayer);
+        totalThrows++;
+
+        gameLog.push({ from: currentPlayer, to: nextPlayer, type: "AI", timestamp: Date.now() });
+
+        const infoElement = document.getElementById("info");
+        if (infoElement) {
+          infoElement.innerText = (nextPlayer === "player0")
+  ? `${throwerElement.innerText} מסר/ה את הכדור אליך - תורך!`
+  : `${throwerElement.innerText} מסר/ה את הכדור ל־${receiverElement.innerText}`;
+        }
+
+        if (nextPlayer !== "player0") aiTurn();
+      }, getSlowerReactionTime());
+    }
+
+    function endRound() {
+      gameEnded = true;
+      const gameLogString = JSON.stringify(gameLog);
+
+      console.log("📤 שולח ל-Qualtrics:", gameLogString);
+      window.parent.postMessage({ type: "CyberSocietyEnd", gameLog: gameLogString }, "*");
+
+      setTimeout(() => {
+        window.parent.postMessage({ type: "CyberSocietyEnd", gameLog: gameLogString }, "*");
+      }, 500);
+
+      setTimeout(() => {
+        document.body.innerHTML = `
+          <div style="background-color: #d3d3d3; width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center;">
+            <div style="font-size: 24px; font-weight: bold; color: #2c3e50;">הסיבוב הסתיים!</div>
+          </div>`;
+      }, 700);
+    }
+  </script>
+</body>
+</html>
