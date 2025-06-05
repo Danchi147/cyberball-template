@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>CyberSociety Game1</title>
+  <title>CyberSociety Game</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -53,7 +53,7 @@
 </head>
 <body>
   <div id="game-screen">
-    <h1>CyberSociety Game1</h1>
+    <h1>CyberSociety Game3</h1>
     <p>Click on a player to pass the ball when you have it.</p>
     <div class="game-container" id="game-container">
       <div class="player has-ball" id="player3" style="left: 70px; top: 50px;">Ryan</div>
@@ -179,18 +179,23 @@
     function endRound() {
       gameEnded = true;
       const gameLogString = JSON.stringify(gameLog);
-      console.log("📤 Sending to parent:", gameLogString);
 
-      // Send to Qualtrics (parent frame)
+      console.log("📤 Sending game log to parent:", gameLogString);
       window.parent.postMessage({ type: "CyberSocietyEnd", gameLog: gameLogString }, "*");
 
-      // Delay visual replacement
+      // Retry once after 500ms in case listener wasn't ready
+      setTimeout(() => {
+        console.log("🔁 Retrying message send...");
+        window.parent.postMessage({ type: "CyberSocietyEnd", gameLog: gameLogString }, "*");
+      }, 500);
+
+      // Show "Round has ended" after 700ms
       setTimeout(() => {
         document.body.innerHTML = `
           <div style="background-color: #d3d3d3; width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center;">
             <div style="font-size: 24px; font-weight: bold; color: #2c3e50;">Round has ended!</div>
           </div>`;
-      }, 500);
+      }, 700);
     }
   </script>
 </body>
