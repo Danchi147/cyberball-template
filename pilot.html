@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>GroupThink</title>
+  <title>משחק סייברסוסייטי</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -61,7 +61,7 @@
 
 <body>
   <div id="game-screen">
-    <h1>GroupThink</h1>
+    <h1>משחק סייברסוסייטי</h1>
     <p>לחץ/י על שחקן/ית כדי למסור את הכדור כשהוא ברשותך.</p>
     <div class="game-container" id="game-container">
       <div class="player has-ball" id="player3" style="left: 70px; top: 50px;">יובל</div>
@@ -84,6 +84,7 @@
     let participantReceivesLeft = 6;
     let gameEnded = false;
     let gameLog = [];
+let lastPlayerReceiveTime = null;
 
     // תוכנית מסירות מוכנה מראש
     // בוטלה תוכנית מוכנה מראש
@@ -113,6 +114,11 @@
           updateBallHolder(selectedPlayer);
           totalThrows++;
 
+          const rt = lastPlayerReceiveTime ? Date.now() - lastPlayerReceiveTime : null;
+          lastPlayerReceiveTime = null;
+
+          gameLog.push({ from: "player0", to: selectedPlayer, type: "Player", rt });
+
           gameLog.push({ from: "player0", to: selectedPlayer, type: "Player", timestamp: Date.now() });
 
           const infoElement = document.getElementById("info");
@@ -134,6 +140,9 @@
       targetElement.classList.add("has-ball");
       moveBall(newHolder);
       currentPlayer = newHolder;
+      if (newHolder === "player0") {
+        lastPlayerReceiveTime = Date.now();
+      }
       console.log("🎯 currentPlayer עודכן ל:", currentPlayer);
     }
 
