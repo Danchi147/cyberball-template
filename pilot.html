@@ -59,7 +59,7 @@
 
 <body>
   <div id="game-screen">
-    <h1>GroupThink</h1>
+    <h1>משחק סייברסוסייטי</h1>
     <p>לחץ/י על שחקן/ית כדי למסור את הכדור כשהוא ברשותך.</p>
     <div class="game-container" id="game-container">
       <div class="player has-ball" id="player3" style="left: 70px; top: 50px;">יובל</div>
@@ -75,7 +75,6 @@
   <script>
     console.log("✅ המשחק נטען");
 
-    let nickname = "";
     const players = ["player0", "player1", "player2", "player3", "player4"];
     let currentPlayer = "player3";
     let totalThrows = 0;
@@ -90,7 +89,7 @@
     function startGame() {
       document.getElementById("game-screen").style.display = "block";
       moveBall("player3");
-      aiTurn();
+      setTimeout(aiTurn, getSlowerReactionTime());
 
       document.querySelectorAll(".player").forEach(player => {
         player.addEventListener("click", function () {
@@ -109,9 +108,9 @@
           gameLog.push({ from: "player0", to: selectedPlayer, type: "Player", timestamp: Date.now() });
 
           const infoElement = document.getElementById("info");
-          if (infoElement) infoElement.innerText = `${nickname} מסר/ה את הכדור ל־${receiverElement.innerText}`;
+          if (infoElement) infoElement.innerText = `אני מסר/ה את הכדור ל־${receiverElement.innerText}`;
 
-          aiTurn();
+          setTimeout(aiTurn, getSlowerReactionTime());
         });
       });
     }
@@ -157,41 +156,44 @@
         return;
       }
 
-      setTimeout(() => {
-        if (gameEnded) return;
+      let nextPlayer;
+      const remainingThrows = maxThrows - totalThrows;
+      const shouldGiveToPlayer =
+        participantReceivesLeft > 0 &&
+        Math.random() < participantReceivesLeft / remainingThrows;
 
-        let nextPlayer;
-        if (participantReceivesLeft > 0 && Math.random() < 0.5) {
-          nextPlayer = "player0";
-          participantReceivesLeft--;
-        } else {
-          nextPlayer = getRandomAI();
-        }
+      if (shouldGiveToPlayer) {
+        nextPlayer = "player0";
+        participantReceivesLeft--;
+      } else {
+        nextPlayer = getRandomAI();
+      }
 
-        const throwerElement = document.getElementById(currentPlayer);
-        const receiverElement = document.getElementById(nextPlayer);
-        if (!throwerElement || !receiverElement) return;
+      const throwerElement = document.getElementById(currentPlayer);
+      const receiverElement = document.getElementById(nextPlayer);
+      if (!throwerElement || !receiverElement) return;
 
-        updateBallHolder(nextPlayer);
-        totalThrows++;
+      updateBallHolder(nextPlayer);
+      totalThrows++;
 
-        gameLog.push({ from: currentPlayer, to: nextPlayer, type: "AI", timestamp: Date.now() });
+      gameLog.push({ from: currentPlayer, to: nextPlayer, type: "AI", timestamp: Date.now() });
 
-        const infoElement = document.getElementById("info");
-        if (infoElement) {
-          infoElement.innerText = (nextPlayer === "player0")
-  ? `${throwerElement.innerText} מסר/ה את הכדור אליך - תורך!`
-  : `${throwerElement.innerText} מסר/ה את הכדור ל־${receiverElement.innerText}`;
-        }
+      const infoElement = document.getElementById("info");
+      if (infoElement) {
+        infoElement.innerText =
+          nextPlayer === "player0"
+            ? `${throwerElement.innerText} מסר/ה את הכדור אליך - תורך!`
+            : `${throwerElement.innerText} מסר/ה את הכדור ל־${receiverElement.innerText}`;
+      }
 
-        if (nextPlayer !== "player0") aiTurn();
-      }, getSlowerReactionTime());
+      if (nextPlayer !== "player0") {
+        setTimeout(aiTurn, getSlowerReactionTime());
+      }
     }
 
     function endRound() {
       gameEnded = true;
       const gameLogString = JSON.stringify(gameLog);
-
       console.log("📤 שולח ל-Qualtrics:", gameLogString);
       window.parent.postMessage({ type: "CyberSocietyEnd", gameLog: gameLogString }, "*");
 
