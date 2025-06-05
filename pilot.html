@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>משחק סייברסוסייטי</title>
+  <title>GroupThink</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -57,7 +57,7 @@
 
 <body>
   <div id="game-screen">
-    <h1>משחק סייברסוסייטי</h1>
+    <h1>GroupThink</h1>
     <p>לחץ/י על שחקן/ית כדי למסור את הכדור כשהוא ברשותך.</p>
     <div class="game-container" id="game-container">
       <div class="player has-ball" id="player3" style="left: 70px; top: 50px;">יובל</div>
@@ -110,8 +110,8 @@
           lastPlayerReceiveTime = null;
 
           gameLog.push({
-            from: "player0",
-            to: selectedPlayer,
+            from: document.getElementById("player0").innerText,
+            to: receiverElement.innerText,
             type: "Player",
             rt
           });
@@ -188,8 +188,8 @@
       totalThrows++;
 
       gameLog.push({
-        from: currentPlayer,
-        to: nextPlayer,
+        from: throwerElement.innerText,
+        to: receiverElement.innerText,
         type: "AI",
         timestamp: Date.now()
       });
