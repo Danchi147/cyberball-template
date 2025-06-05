@@ -60,7 +60,7 @@
 <body>
   <div id="game-screen">
     <h1>GroupThink</h1>
-    <p>לחץ/י על שחקן/ית כדי למסור את הכדור כשהוא ברשותך.</p>
+    <p>לחצץ/י על שחקן/ית כדי למסור את הכדור כאשר הוא ברשותך/p>
     <div class="game-container" id="game-container">
       <div class="player has-ball" id="player3" style="left: 70px; top: 50px;">יובל</div>
       <div class="player" id="player2" style="left: 250px; top: 50px;">שחר</div>
@@ -80,7 +80,7 @@
     let totalThrows = 0;
     const maxThrows = 15;
     let participantReceivesLeft = 6;
-    let participantThrowsLeft = 6;
+    let participantThrowsLeft = 3;
     let gameEnded = false;
     let gameLog = [];
 
@@ -89,11 +89,10 @@
     function startGame() {
       document.getElementById("game-screen").style.display = "block";
       moveBall("player3");
-      setTimeout(aiTurn, getSlowerReactionTime());
-
-      document.querySelectorAll(".player").forEach(player => {
+      setTimeout(() => { aiTurn(); }, getSlowerReactionTime());
+document.querySelectorAll(".player").forEach(player => {
         player.addEventListener("click", function () {
-          if (gameEnded || currentPlayer !== "player0" || totalThrows >= maxThrows || participantThrowsLeft <= 0) return;
+          if (gameEnded || currentPlayer !== "player0" || totalThrows >= maxThrows) return;
 
           const selectedPlayer = this.id;
           if (selectedPlayer === "player0") return;
@@ -110,7 +109,7 @@
           const infoElement = document.getElementById("info");
           if (infoElement) infoElement.innerText = `אני מסר/ה את הכדור ל־${receiverElement.innerText}`;
 
-          setTimeout(aiTurn, getSlowerReactionTime());
+          setTimeout(() => { aiTurn(); }, getSlowerReactionTime());
         });
       });
     }
@@ -125,9 +124,9 @@
     }
 
     function getRandomAI() {
-      const aiPlayers = players.filter(p => p !== "player0" && p !== currentPlayer);
-      return aiPlayers[Math.floor(Math.random() * aiPlayers.length)];
-    }
+  const aiPlayers = players.filter(p => p !== "player0" && p !== currentPlayer);
+  return aiPlayers[Math.floor(Math.random() * aiPlayers.length)];
+}
 
     function getSlowerReactionTime() {
       return Math.floor(Math.random() * 501) + 1500;
@@ -151,49 +150,47 @@
     }
 
     function aiTurn() {
-      if (totalThrows >= maxThrows || gameEnded) {
-        endRound();
-        return;
-      }
+  if (totalThrows >= maxThrows || gameEnded) {
+    endRound();
+    return;
+  }
 
-      let nextPlayer;
-      const remainingThrows = maxThrows - totalThrows;
-      const shouldGiveToPlayer =
-        participantReceivesLeft > 0 &&
-        Math.random() < participantReceivesLeft / remainingThrows;
+  let nextPlayer;
+    const remainingThrows = maxThrows - totalThrows;
+    const shouldGiveToPlayer = participantReceivesLeft > 0 && Math.random() < participantReceivesLeft / remainingThrows;
 
-      if (shouldGiveToPlayer) {
-        nextPlayer = "player0";
-        participantReceivesLeft--;
-      } else {
-        nextPlayer = getRandomAI();
-      }
-
-      const throwerElement = document.getElementById(currentPlayer);
-      const receiverElement = document.getElementById(nextPlayer);
-      if (!throwerElement || !receiverElement) return;
-
-      updateBallHolder(nextPlayer);
-      totalThrows++;
-
-      gameLog.push({ from: currentPlayer, to: nextPlayer, type: "AI", timestamp: Date.now() });
-
-      const infoElement = document.getElementById("info");
-      if (infoElement) {
-        infoElement.innerText =
-          nextPlayer === "player0"
-            ? `${throwerElement.innerText} מסר/ה את הכדור אליך - תורך!`
-            : `${throwerElement.innerText} מסר/ה את הכדור ל־${receiverElement.innerText}`;
-      }
-
-      if (nextPlayer !== "player0") {
-        setTimeout(aiTurn, getSlowerReactionTime());
-      }
+    if (shouldGiveToPlayer) {
+      nextPlayer = "player0";
+      participantReceivesLeft--;
+    } else {
+      nextPlayer = getRandomAI();
     }
 
-    function endRound() {
+    const throwerElement = document.getElementById(currentPlayer);
+    const receiverElement = document.getElementById(nextPlayer);
+    if (!throwerElement || !receiverElement) return;
+
+    updateBallHolder(nextPlayer);
+    totalThrows++;
+
+    gameLog.push({ from: currentPlayer, to: nextPlayer, type: "AI", timestamp: Date.now() });
+
+    const infoElement = document.getElementById("info");
+    if (infoElement) {
+      infoElement.innerText = (nextPlayer === "player0")
+        ? `${throwerElement.innerText} מסר/ה את הכדור אליך - תורך!`
+        : `${throwerElement.innerText} מסר/ה את הכדור ל־${receiverElement.innerText}`;
+    }
+
+    if (nextPlayer !== "player0") {
+      setTimeout(() => { aiTurn(); }, getSlowerReactionTime());
+    }
+}
+
+function endRound() {
       gameEnded = true;
       const gameLogString = JSON.stringify(gameLog);
+
       console.log("📤 שולח ל-Qualtrics:", gameLogString);
       window.parent.postMessage({ type: "CyberSocietyEnd", gameLog: gameLogString }, "*");
 
