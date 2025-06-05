@@ -82,7 +82,6 @@
     startGame();
 
     function startGame() {
-      console.log("▶️ Game started");
       document.getElementById("game-screen").style.display = "block";
       moveBall("player3");
       aiTurn();
@@ -100,8 +99,6 @@
           updateBallHolder(selectedPlayer);
           totalThrows++;
           participantThrowsLeft--;
-
-          console.log("🧍 Participant threw to:", selectedPlayer, "Total throws:", totalThrows);
 
           gameLog.push({ from: "player0", to: selectedPlayer, type: "Player", timestamp: Date.now() });
 
@@ -166,8 +163,6 @@
         updateBallHolder(nextPlayer);
         totalThrows++;
 
-        console.log("🤖 AI threw to:", nextPlayer, "Total throws:", totalThrows);
-
         gameLog.push({ from: currentPlayer, to: nextPlayer, type: "AI", timestamp: Date.now() });
 
         const infoElement = document.getElementById("info");
@@ -184,12 +179,12 @@
     function endRound() {
       gameEnded = true;
       const gameLogString = JSON.stringify(gameLog);
-      console.log("📤 Posting game log to parent:", gameLogString);
+      console.log("📤 Sending to parent:", gameLogString);
 
-      // Send game log to Qualtrics
+      // Send to Qualtrics (parent frame)
       window.parent.postMessage({ type: "CyberSocietyEnd", gameLog: gameLogString }, "*");
 
-      // Delay the message before DOM wipe
+      // Delay visual replacement
       setTimeout(() => {
         document.body.innerHTML = `
           <div style="background-color: #d3d3d3; width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center;">
