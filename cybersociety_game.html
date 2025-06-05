@@ -1,197 +1,197 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CyberSociety Game</title>
-    <style>
-        body {
-            text-align: center;
-            font-family: Arial, sans-serif;
-        }
-        .screen {
-            display: none;
-        }
-        #screen1 {
-            display: block;
-        }
-        .avatar-option {
-            width: 70px;
-            height: 70px;
-            margin: 10px;
-            cursor: pointer;
-        }
-        .disabled-avatar {
-            opacity: 0.5;
-            pointer-events: none;
-        }
-        #game-container {
-            position: relative;
-            width: 550px;
-            height: 550px;
-            margin: auto;
-            border: 3px solid black;
-            background-color: #f0f0f0;
-        }
-        .player {
-            position: absolute;
-            width: 70px;
-            height: 70px;
-        }
-        .player-name {
-            position: absolute;
-            width: 100px;
-            text-align: center;
-            font-weight: bold;
-            font-size: 14px;
-            margin-left: -20px;
-            margin-top: -5px;
-        }
-        #ball {
-            position: absolute;
-            width: 30px;
-            height: 30px;
-            background: orange;
-            border-radius: 50%;
-            transition: top 0.5s linear, left 0.5s linear;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CyberSociety Game</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background-color: #d3d3d3;
+      color: black;
+      overflow: hidden;
+    }
+    .game-container {
+      position: relative;
+      width: 400px;
+      height: 400px;
+      margin: 50px auto;
+    }
+    .player {
+      width: 80px;
+      height: 80px;
+      background-color: #808080;
+      border-radius: 50%;
+      position: absolute;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      border: 3px solid transparent;
+      color: white;
+      transition: border 0.3s ease;
+    }
+    .player.has-ball {
+      border: 3px solid green;
+    }
+    .ball {
+      width: 20px;
+      height: 20px;
+      background-color: green;
+      border-radius: 50%;
+      position: absolute;
+      transition: transform 0.8s ease-in-out;
+    }
+    .info {
+      margin-top: 20px;
+      font-size: 18px;
+    }
+  </style>
 </head>
 <body>
-
-    <!-- SCREEN 1: Introduction -->
-    <div id="screen1" class="screen">
-        <h2>Welcome to CyberSociety</h2>
-        <p>You will play an online ball-tossing game with three other players.</p>
-        <p>When you receive the ball, click on any player to pass it to them.</p>
-        <button onclick="nextScreen(2)">Continue</button>
+  <div id="game-screen">
+    <h1>CyberSociety Game2</h1>
+    <p>Click on a player to pass the ball when you have it.</p>
+    <div class="game-container" id="game-container">
+      <div class="player has-ball" id="player3" style="left: 70px; top: 50px;">Ryan</div>
+      <div class="player" id="player2" style="left: 250px; top: 50px;">Emma</div>
+      <div class="player" id="player1" style="left: 300px; top: 200px;">Jake</div>
+      <div class="player" id="player4" style="left: 20px; top: 200px;">Sophia</div>
+      <div class="player" id="player0" style="left: 160px; top: 300px;">You</div>
+      <div class="ball" id="ball"></div>
     </div>
+    <div class="info" id="info">Game is starting...</div>
+  </div>
 
-    <!-- SCREEN 2: Avatar & Name Selection -->
-    <div id="screen2" class="screen">
-        <h2>Choose Your Avatar</h2>
-        <p>Enter your name:</p>
-        <input type="text" id="player-name-input" placeholder="Your Name">
-        <p>Select your avatar:</p>
-        <div id="avatar-selection"></div>
-    </div>
+  <script>
+    console.log("✅ CyberSociety Game Loaded");
 
-    <!-- SCREEN 3: Waiting Screen (15 Seconds) -->
-    <div id="screen3" class="screen">
-        <h2>Waiting for Other Players...</h2>
-        <p>The game will start soon.</p>
-        <img src="https://icons8.com/preloaders/preloaders/1486/Hourglass.gif" alt="Loading">
-    </div>
+    let nickname = "You";
+    const players = ["player0", "player1", "player2", "player3", "player4"];
+    let currentPlayer = "player3";
+    let totalThrows = 0;
+    const maxThrows = 15;
+    let participantReceivesLeft = 3;
+    let participantThrowsLeft = 3;
+    let gameEnded = false;
+    let gameLog = [];
 
-    <!-- SCREEN 4: Reminder Before Starting -->
-    <div id="screen4" class="screen">
-        <h2>Get Ready for CyberSociety</h2>
-        <p>Reminder: You will be playing an online ball-tossing game.</p>
-        <button onclick="startGame()">Start Game</button>
-    </div>
+    startGame();
 
-    <!-- SCREEN 5: Cyberball Game -->
-    <div id="screen5" class="screen">
-        <h2>Cyberball Game</h2>
-        <p>Click on a player to pass the ball.</p>
-        <div id="game-container">
-            <div class="player-name" id="player1-name" style="left: 250px; top: 470px;">You</div>
-            <img id="player1" class="player" src="" style="left: 250px; top: 490px;">
+    function startGame() {
+      document.getElementById("game-screen").style.display = "block";
+      moveBall("player3");
+      aiTurn();
 
-            <div class="player-name" style="left: 250px; top: 30px;">Liam</div>
-            <img id="player2" class="player" src="https://openmoji.org/data/color/svg/1F9D8.svg" style="left: 250px; top: 50px;" onclick="playerThrows(2)">
+      document.querySelectorAll(".player").forEach(player => {
+        player.addEventListener("click", function () {
+          if (gameEnded || currentPlayer !== "player0" || totalThrows >= maxThrows || participantThrowsLeft <= 0) return;
 
-            <div class="player-name" style="left: 50px; top: 250px;">Jamie</div>
-            <img id="player3" class="player" src="https://openmoji.org/data/color/svg/1F9C1.svg" style="left: 50px; top: 270px;" onclick="playerThrows(3)">
+          const selectedPlayer = this.id;
+          if (selectedPlayer === "player0") return;
 
-            <div class="player-name" style="left: 450px; top: 250px;">Riley</div>
-            <img id="player4" class="player" src="https://openmoji.org/data/color/svg/1F33A.svg" style="left: 450px; top: 270px;" onclick="playerThrows(4)">
+          const receiverElement = document.getElementById(selectedPlayer);
+          if (!receiverElement) return;
 
-            <div id="ball" style="left: 50px; top: 270px;"></div>
-        </div>
-    </div>
+          updateBallHolder(selectedPlayer);
+          totalThrows++;
+          participantThrowsLeft--;
 
-    <script>
-        let throwCount = 0;
-        const maxThrows = 30;
-        let participantThrows = 0;
-        const requiredParticipantThrows = 10;
-        let participantHasBall = false;
+          gameLog.push({ from: "player0", to: selectedPlayer, type: "Player", timestamp: Date.now() });
 
-        function nextScreen(screen) {
-            document.querySelectorAll(".screen").forEach(s => s.style.display = "none");
-            document.getElementById(`screen${screen}`).style.display = "block";
+          const infoElement = document.getElementById("info");
+          if (infoElement) infoElement.innerText = `${nickname} threw the ball to ${receiverElement.innerText}`;
+
+          aiTurn();
+        });
+      });
+    }
+
+    function updateBallHolder(newHolder) {
+      document.querySelectorAll(".player").forEach(player => player.classList.remove("has-ball"));
+      const targetElement = document.getElementById(newHolder);
+      if (!targetElement) return;
+      targetElement.classList.add("has-ball");
+      moveBall(newHolder);
+      currentPlayer = newHolder;
+    }
+
+    function getRandomAI() {
+      const aiPlayers = players.filter(p => p !== "player0" && p !== currentPlayer);
+      return aiPlayers[Math.floor(Math.random() * aiPlayers.length)];
+    }
+
+    function getSlowerReactionTime() {
+      return Math.floor(Math.random() * 501) + 1500;
+    }
+
+    function moveBall(targetPlayer) {
+      const ball = document.getElementById("ball");
+      const target = document.getElementById(targetPlayer);
+      if (!ball || !target) return;
+      const rect = target.getBoundingClientRect();
+      const container = document.getElementById("game-container").getBoundingClientRect();
+      const x = rect.left - container.left + rect.width / 2 - 10;
+      const y = rect.top - container.top + rect.height / 2 - 10;
+      ball.style.transform = `translate(${x}px, ${y}px)`;
+    }
+
+    function aiTurn() {
+      if (totalThrows >= maxThrows || gameEnded) {
+        endRound();
+        return;
+      }
+
+      setTimeout(() => {
+        if (gameEnded) return;
+
+        let nextPlayer;
+        if (participantReceivesLeft > 0 && Math.random() < 0.5) {
+          nextPlayer = "player0";
+          participantReceivesLeft--;
+        } else {
+          nextPlayer = getRandomAI();
         }
 
-        function selectAvatar(avatar) {
-            let playerName = document.getElementById("player-name-input").value.trim();
-            if (playerName === "") {
-                alert("Please enter your name.");
-                return;
-            }
+        const throwerElement = document.getElementById(currentPlayer);
+        const receiverElement = document.getElementById(nextPlayer);
+        if (!throwerElement || !receiverElement) return;
 
-            document.getElementById("player1").src = `https://openmoji.org/data/color/svg/${avatar}.svg`;
-            document.getElementById("player1-name").innerText = playerName;
+        updateBallHolder(nextPlayer);
+        totalThrows++;
 
-            nextScreen(3);
-            setTimeout(() => nextScreen(4), 15000);
+        gameLog.push({ from: currentPlayer, to: nextPlayer, type: "AI", timestamp: Date.now() });
+
+        const infoElement = document.getElementById("info");
+        if (infoElement) {
+          infoElement.innerText = (nextPlayer === "player0")
+            ? `${throwerElement.innerText} threw the ball to ${nickname} - Your Turn!`
+            : `${throwerElement.innerText} threw the ball to ${receiverElement.innerText}`;
         }
 
-        function startGame() {
-            nextScreen(5);
-            passBall(2, randomPlayer());
-        }
+        if (nextPlayer !== "player0") aiTurn();
+      }, getSlowerReactionTime());
+    }
 
-        function passBall(from, to) {
-            if (throwCount >= maxThrows) {
-                alert("Game Ended!");
-                return;
-            }
+    function endRound() {
+      gameEnded = true;
+      const gameLogString = JSON.stringify(gameLog);
+      console.log("📤 Sending to parent:", gameLogString);
 
-            throwCount++;
-            let ball = document.getElementById("ball");
-            let toPlayer = document.getElementById(`player${to}`);
+      // Send to Qualtrics (parent frame)
+      window.parent.postMessage({ type: "CyberSocietyEnd", gameLog: gameLogString }, "*");
 
-            ball.style.left = toPlayer.offsetLeft + "px";
-            ball.style.top = toPlayer.offsetTop + "px";
-
-            if (to === 1) {
-                participantHasBall = true;
-                participantThrows++;
-                return;
-            }
-
-            let delay = (Math.random() * 1.3 + 1.2) * 1000;
-            setTimeout(() => {
-                let nextThrow = randomPlayer();
-                if (participantThrows < requiredParticipantThrows && Math.random() < 0.5) {
-                    nextThrow = 1;
-                }
-                passBall(to, nextThrow);
-            }, delay);
-        }
-
-        function randomPlayer() {
-            return [2, 3, 4][Math.floor(Math.random() * 3)];
-        }
-
-        function playerThrows(to) {
-            if (participantHasBall && to !== 1) {
-                participantHasBall = false;
-                passBall(1, to);
-            }
-        }
-
-        window.onload = function () {
-            let avatars = ["1F97B","1F458","1F9DC","26EA","2721","1FAB7","1F3B8","1F9B8","1F3B9","1F9B9","2695","1F6D0",
-                           "1F9D1-200D-1FAA9", "E183", "1F469", "1F468", "26F9-FE0F-200D-2640-FE0F",
-                           "26F9-FE0F-200D-2642-FE0F", "1F937", "1F483", "1F3BC", "1F3F3-FE0F-200D-1F308",
-                           "1F3C8", "1F3C0", "E184", "1F6B2", "1F9D1-200D-1F4BB", "1F408", "1F415", "1FA96", "1F47E"];
-            document.getElementById("avatar-selection").innerHTML = avatars.map(avatar => 
-                `<img src="https://openmoji.org/data/color/svg/${avatar}.svg" class="avatar-option" onclick="selectAvatar('${avatar}')">`
-            ).join("");
-        };
-    </script>
-
+      // Delay visual replacement
+      setTimeout(() => {
+        document.body.innerHTML = `
+          <div style="background-color: #d3d3d3; width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center;">
+            <div style="font-size: 24px; font-weight: bold; color: #2c3e50;">Round has ended!</div>
+          </div>`;
+      }, 500);
+    }
+  </script>
 </body>
 </html>
