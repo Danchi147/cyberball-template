@@ -186,10 +186,10 @@
       const gameLogString = JSON.stringify(gameLog);
       console.log("📤 Posting game log to parent:", gameLogString);
 
-      // Send to parent first
+      // Send game log to Qualtrics
       window.parent.postMessage({ type: "CyberSocietyEnd", gameLog: gameLogString }, "*");
 
-      // Delay DOM change to ensure message is sent before iframe is wiped
+      // Delay the message before DOM wipe
       setTimeout(() => {
         document.body.innerHTML = `
           <div style="background-color: #d3d3d3; width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center;">
