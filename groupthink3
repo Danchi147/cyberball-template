@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GroupThink</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background-color: #d3d3d3;
+      color: black;
+      overflow: hidden;
+    }
+    .game-container {
+      position: relative;
+      width: 400px;
+      height: 400px;
+      margin: 50px auto;
+    }
+    .player {
+      width: 80px;
+      height: 80px;
+      background-color: #808080;
+      border-radius: 50%;
+      position: absolute;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      border: 3px solid transparent;
+      color: white;
+      transition: border 0.3s ease;
+      z-index: 2;
+    }
+    .player.has-ball {
+      border: 3px solid green;
+    }
+    .ball {
+      width: 20px;
+      height: 20px;
+      background-color: green;
+      border-radius: 50%;
+      position: absolute;
+      transition: left 0.8s ease-in-out, top 0.8s ease-in-out;
+      z-index: 3;
+      pointer-events: none;
+    }
+    .info {
+      margin-top: 20px;
+      font-size: 18px;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="game-screen">
+    <h1>GroupThink</h1>
+    <p>Click on a player to pass the ball when it's your turn.</p>
+    <div class="game-container" id="game-container">
+      <div class="player has-ball" id="player3" style="left: 70px; top: 50px;">Alex</div>
+      <div class="player" id="player2" style="left: 250px; top: 50px;">Taylor</div>
+      <div class="player" id="player1" style="left: 300px; top: 200px;">Casey</div>
+      <div class="player" id="player4" style="left: 20px; top: 200px;">Jordan</div>
+      <div class="player" id="player0" style="left: 160px; top: 300px;">You</div>
+      <div class="ball" id="ball"></div>
+    </div>
+    <div class="info" id="info">The game is starting...</div>
+  </div>
+
+  <script>
+    console.log("✅ Game loaded (version: gameLog3)");
+
+    const players = ["player0", "player1", "player2", "player3", "player4"];
+    let currentPlayer = "player3";
+    let totalThrows = 0;
+    const maxThrows = 15;
+    let participantReceivesLeft = 3;
+    let gameEnded = false;
+    let gameLog = [];
+    let lastPlayerReceiveTime = null;
+
+    startGame();
+
+    function startGame() {
+      document.getElementById("game-screen").style.display = "block";
+      moveBall(currentPlayer);
+      setTimeout(() => { aiTurn(); }, getSlowerReactionTime());
+
+      document.querySelectorAll(".player").forEach(player => {
+        player.addEventListener("click", function () {
+          if (
+            gameEnded ||
+            currentPlayer !== "player0" ||
+            totalThrows >= maxThrows ||
+            !this.classList.contains("player") ||
+            this.id === "player0"
+          ) return;
+
+          const selectedPlayer = this.id;
+          const receiverElement = document.getElementById(selectedPlayer);
+          if (!receiverElement) return;
+
+          updateBallHolder(selectedPlayer);
+          totalThrows++;
+
+          const rt = lastPlayerReceiveTime ? Date.now() - lastPlayerReceiveTime : null;
+          lastPlayerReceiveTime = null;
+
+          gameLog.push({
+            from: document.getElementById("player0").innerText,
+            to: receiverElement.innerText,
+            type: "Player",
+            rt
+          });
+
+          const infoElement = document.getElementById("info");
+          if (infoElement) infoElement.innerText = `You passed the ball to ${receiverElement.innerText}`;
+
+          setTimeout(() => { aiTurn(); }, getSlowerReactionTime());
+        });
+      });
+    }
+
+    function updateBallHolder(newHolder) {
+      const targetElement = document.getElementById(newHolder);
+      if (!targetElement) return;
+
+      document.querySelectorAll(".player").forEach(player => player.classList.remove("has-ball"));
+      targetElement.classList.add("has-ball");
+      moveBall(newHolder);
+      currentPlayer = newHolder;
+
+      if (newHolder === "player0") {
+        lastPlayerReceiveTime = Date.now();
+      }
+    }
+
+    function getSlowerReactionTime() {
+      return Math.floor(Math.random() * 701) + 2000;
+    }
+
+    function moveBall(targetPlayer) {
+      const ball = document.getElementById("ball");
+      const target = document.getElementById(targetPlayer);
+      const container = document.getElementById("game-container");
+
+      if (!ball || !target || !container) return;
+
+      const targetRect = target.getBoundingClientRect();
+      const containerRect = container.getBoundingClientRect();
+
+      const centerX = targetRect.left - containerRect.left + target.offsetWidth / 2 - ball.offsetWidth / 2;
+      const centerY = targetRect.top - containerRect.top + target.offsetHeight / 2 - ball.offsetHeight / 2;
+
+      ball.style.left = `${centerX}px`;
+      ball.style.top = `${centerY}px`;
+    }
+
+    function aiTurn() {
+      if (totalThrows >= maxThrows || gameEnded) {
+        endRound();
+        return;
+      }
+
+      let nextPlayer;
+      const aiThrowsRemaining = maxThrows - totalThrows - participantReceivesLeft;
+      const shouldGiveToPlayer =
+        participantReceivesLeft > 0 &&
+        Math.random() < participantReceivesLeft / aiThrowsRemaining;
+
+      if (shouldGiveToPlayer) {
+        nextPlayer = "player0";
+        participantReceivesLeft--;
+      } else {
+        const aiTargets = players.filter(p => p !== currentPlayer && p !== "player0");
+        nextPlayer = aiTargets[Math.floor(Math.random() * aiTargets.length)];
+      }
+
+      const throwerElement = document.getElementById(currentPlayer);
+      const receiverElement = document.getElementById(nextPlayer);
+      if (!throwerElement || !receiverElement) return;
+
+      updateBallHolder(nextPlayer);
+      totalThrows++;
+
+      gameLog.push({
+        from: throwerElement.innerText,
+        to: receiverElement.innerText,
+        type: "AI",
+        timestamp: Date.now()
+      });
+
+      const infoElement = document.getElementById("info");
+      if (infoElement) {
+        infoElement.innerText =
+          nextPlayer === "player0"
+            ? `${throwerElement.innerText} passed the ball to you – it's your turn!`
+            : `${throwerElement.innerText} passed the ball to ${receiverElement.innerText}`;
+      }
+
+      if (nextPlayer !== "player0") {
+        setTimeout(() => { aiTurn(); }, getSlowerReactionTime());
+      }
+    }
+
+    function endRound() {
+      gameEnded = true;
+      const gameLogString = JSON.stringify(gameLog);
+
+      console.log("📤 Sending to Qualtrics with tag: CyberSociety_GameLog3");
+      window.parent.postMessage({ type: "CyberSociety_GameLog3", gameLog: gameLogString }, "*");
+
+      setTimeout(() => {
+        window.parent.postMessage({ type: "CyberSociety_GameLog3", gameLog: gameLogString }, "*");
+      }, 500);
+
+      setTimeout(() => {
+        document.body.innerHTML = `
+          <div style="background-color: #d3d3d3; width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center;">
+            <div style="font-size: 24px; font-weight: bold; color: #2c3e50;">The round has ended!</div>
+          </div>`;
+      }, 700);
+    }
+  </script>
+</body>
+</html>
