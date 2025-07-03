@@ -32,7 +32,7 @@
       cursor: pointer;
       border: 3px solid transparent;
       color: white;
-      transition: border 0.3s ease;
+      transition: border 0.3s ease, width 0.3s ease, height 0.3s ease;
       z-index: 2;
     }
     .player.has-ball {
@@ -51,16 +51,6 @@
     .info {
       margin-top: 20px;
       font-size: 18px;
-    }
-
-    /* Grow animation */
-    @keyframes grow {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.3); }
-      100% { transform: scale(1); }
-    }
-    .player.grow {
-      animation: grow 0.5s ease-in-out;
     }
   </style>
 </head>
@@ -81,7 +71,7 @@
   </div>
 
   <script>
-    console.log("✅ Game loaded (version: gameLog5)");
+    console.log("✅ Game loaded (version: growBy10)");
 
     const players = ["player0", "player1", "player2", "player3", "player4"];
     let currentPlayer = "player3";
@@ -91,21 +81,23 @@
     let gameEnded = false;
     let gameLog = [];
     let lastPlayerReceiveTime = null;
+    const receiveCounts = {}; // playerID -> count
 
     startGame();
 
     function startGame() {
       document.getElementById("game-screen").style.display = "block";
       moveBall(currentPlayer);
+      updateReceiveCount(currentPlayer); // initial ball holder
       setTimeout(() => { aiTurn(); }, getSlowerReactionTime());
 
       document.querySelectorAll(".player").forEach(player => {
+        receiveCounts[player.id] = 0;
         player.addEventListener("click", function () {
           if (
             gameEnded ||
             currentPlayer !== "player0" ||
             totalThrows >= maxThrows ||
-            !this.classList.contains("player") ||
             this.id === "player0"
           ) return;
 
@@ -126,9 +118,7 @@
             rt
           });
 
-          const infoElement = document.getElementById("info");
-          if (infoElement) infoElement.innerText = `You passed the ball to ${receiverElement.innerText}`;
-
+          document.getElementById("info").innerText = `You passed the ball to ${receiverElement.innerText}`;
           setTimeout(() => { aiTurn(); }, getSlowerReactionTime());
         });
       });
@@ -141,18 +131,25 @@
       document.querySelectorAll(".player").forEach(player => player.classList.remove("has-ball"));
       targetElement.classList.add("has-ball");
 
-      // Add grow animation
-      targetElement.classList.add("grow");
-      setTimeout(() => {
-        targetElement.classList.remove("grow");
-      }, 500);
-
       moveBall(newHolder);
       currentPlayer = newHolder;
+
+      updateReceiveCount(newHolder);
 
       if (newHolder === "player0") {
         lastPlayerReceiveTime = Date.now();
       }
+    }
+
+    function updateReceiveCount(playerId) {
+      receiveCounts[playerId]++;
+      const element = document.getElementById(playerId);
+      const baseSize = 80;
+      const growthFactor = 1 + 0.1 * receiveCounts[playerId];
+      const newSize = baseSize * growthFactor;
+
+      element.style.width = `${newSize}px`;
+      element.style.height = `${newSize}px`;
     }
 
     function getSlowerReactionTime() {
@@ -211,12 +208,10 @@
       });
 
       const infoElement = document.getElementById("info");
-      if (infoElement) {
-        infoElement.innerText =
-          nextPlayer === "player0"
-            ? `${throwerElement.innerText} passed the ball to you – it's your turn!`
-            : `${throwerElement.innerText} passed the ball to ${receiverElement.innerText}`;
-      }
+      infoElement.innerText =
+        nextPlayer === "player0"
+          ? `${throwerElement.innerText} passed the ball to you – it's your turn!`
+          : `${throwerElement.innerText} passed the ball to ${receiverElement.innerText}`;
 
       if (nextPlayer !== "player0") {
         setTimeout(() => { aiTurn(); }, getSlowerReactionTime());
