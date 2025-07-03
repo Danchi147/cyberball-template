@@ -77,7 +77,7 @@
     let currentPlayer = "player3";
     let totalThrows = 0;
     const maxThrows = 15;
-    let participantReceivesLeft = 0; // 👈 Player0 never gets the ball
+    let participantReceivesLeft = 0; // Player0 gets 0 throws
     let gameEnded = false;
     let gameLog = [];
     let lastPlayerReceiveTime = null;
@@ -92,6 +92,7 @@
 
       document.querySelectorAll(".player").forEach(player => {
         receiveCounts[player.id] = 0;
+
         player.addEventListener("click", function () {
           if (
             gameEnded ||
@@ -135,7 +136,20 @@
 
       if (newHolder === "player0") {
         lastPlayerReceiveTime = Date.now();
+      } else {
+        growPlayer(newHolder);
       }
+    }
+
+    function growPlayer(playerId) {
+      receiveCounts[playerId]++;
+      const baseSize = 80;
+      const growthFactor = 1 + receiveCounts[playerId] * 0.1;
+      const newSize = baseSize * growthFactor;
+
+      const player = document.getElementById(playerId);
+      player.style.width = `${newSize}px`;
+      player.style.height = `${newSize}px`;
     }
 
     function getSlowerReactionTime() {
@@ -166,7 +180,7 @@
       }
 
       let nextPlayer;
-      const aiTargets = players.filter(p => p !== currentPlayer && p !== "player0"); // 👈 exclude player0
+      const aiTargets = players.filter(p => p !== currentPlayer && p !== "player0");
       nextPlayer = aiTargets[Math.floor(Math.random() * aiTargets.length)];
 
       const throwerElement = document.getElementById(currentPlayer);
@@ -186,9 +200,7 @@
       const infoElement = document.getElementById("info");
       infoElement.innerText = `${throwerElement.innerText} passed the ball to ${receiverElement.innerText}`;
 
-      if (nextPlayer !== "player0") {
-        setTimeout(() => { aiTurn(); }, getSlowerReactionTime());
-      }
+      setTimeout(() => { aiTurn(); }, getSlowerReactionTime());
     }
 
     function endRound() {
