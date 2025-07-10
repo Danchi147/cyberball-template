@@ -3,20 +3,43 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>CyberSociety Game</title>
+  <title>CyberSociety_GameLog12.60</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      text-align: center;
       background-color: #d3d3d3;
       color: black;
+      margin: 0;
+      padding: 0;
+      text-align: center;
       overflow: hidden;
+    }
+    #nickname-screen, #waiting-screen, #game-screen {
+      display: none;
+      width: 100vw;
+      height: 100vh;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+    }
+    #nickname-screen input {
+      padding: 10px;
+      font-size: 16px;
+    }
+    #nickname-screen button {
+      padding: 10px 20px;
+      font-size: 16px;
+      margin-top: 10px;
+    }
+    #waiting-screen img {
+      width: 100px;
+      margin-top: 20px;
     }
     .game-container {
       position: relative;
       width: 400px;
       height: 400px;
-      margin: 50px auto;
+      margin: 30px auto;
     }
     .player {
       width: 80px;
@@ -32,7 +55,8 @@
       cursor: pointer;
       border: 3px solid transparent;
       color: white;
-      transition: border 0.3s ease;
+      transition: border 0.3s ease, width 0.3s ease, height 0.3s ease;
+      z-index: 2;
     }
     .player.has-ball {
       border: 3px solid green;
@@ -43,100 +67,166 @@
       background-color: green;
       border-radius: 50%;
       position: absolute;
-      transition: transform 0.8s ease-in-out;
+      transition: left 0.8s ease-in-out, top 0.8s ease-in-out;
+      z-index: 3;
+      pointer-events: none;
     }
     .info {
-      margin-top: 20px;
+      margin-top: 10px;
       font-size: 18px;
+    }
+    .scoreboard {
+      position: absolute;
+      right: 20px;
+      top: 20px;
+      background: white;
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 14px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+      z-index: 5;
+    }
+    .score-change-up {
+      color: green;
+      transition: color 0.4s;
+    }
+    .score-change-down {
+      color: red;
+      transition: color 0.4s;
     }
   </style>
 </head>
 <body>
+  <!-- Nickname Screen -->
+  <div id="nickname-screen" style="display:flex;">
+    <h2>Please enter your nickname:</h2>
+    <input type="text" id="nickname-input" placeholder="Your name..." />
+    <button onclick="startWaiting()">Start</button>
+  </div>
+
+  <!-- Waiting Screen -->
+  <div id="waiting-screen">
+    <h2>Waiting for other players to log in...</h2>
+    <img src="https://icon-library.com/images/waiting-icon-gif/waiting-icon-gif-1.jpg" alt="Waiting..." />
+  </div>
+
+  <!-- Game Screen -->
   <div id="game-screen">
-    <h1>CyberSociety Game3</h1>
-    <p>Click on a player to pass the ball when you have it.</p>
+    <h1>GroupThink</h1>
+    <p>Click on a player to pass the ball when it's your turn.</p>
     <div class="game-container" id="game-container">
-      <div class="player has-ball" id="player3" style="left: 70px; top: 50px;">Ryan</div>
-      <div class="player" id="player2" style="left: 250px; top: 50px;">Emma</div>
-      <div class="player" id="player1" style="left: 300px; top: 200px;">Jake</div>
-      <div class="player" id="player4" style="left: 20px; top: 200px;">Sophia</div>
+      <div class="player has-ball" id="player3" style="left: 70px; top: 50px;">Alex</div>
+      <div class="player" id="player2" style="left: 250px; top: 50px;">Taylor</div>
+      <div class="player" id="player1" style="left: 300px; top: 200px;">Casey</div>
+      <div class="player" id="player4" style="left: 20px; top: 200px;">Jordan</div>
       <div class="player" id="player0" style="left: 160px; top: 300px;">You</div>
       <div class="ball" id="ball"></div>
+      <div class="scoreboard" id="scoreboard"></div>
     </div>
-    <div class="info" id="info">Game is starting...</div>
+    <div class="info" id="info">The game is starting...</div>
   </div>
 
   <script>
-    console.log("✅ CyberSociety Game Loaded");
-
     let nickname = "You";
     const players = ["player0", "player1", "player2", "player3", "player4"];
+    const scores = {};
     let currentPlayer = "player3";
     let totalThrows = 0;
-    const maxThrows = 15;
-    let participantReceivesLeft = 3;
-    let participantThrowsLeft = 3;
+    const maxThrows = 60;
+    let participantReceivesLeft = 12;
     let gameEnded = false;
     let gameLog = [];
+    let lastPlayerReceiveTime = null;
 
-    startGame();
+    function startWaiting() {
+      nickname = document.getElementById("nickname-input").value || "You";
+      document.getElementById("player0").innerText = nickname;
+      document.getElementById("nickname-screen").style.display = "none";
+      document.getElementById("waiting-screen").style.display = "flex";
+      setTimeout(startGame, 8000);
+    }
 
     function startGame() {
+      players.forEach(p => scores[p] = 0);
+      updateScoreboard();
+      document.getElementById("waiting-screen").style.display = "none";
       document.getElementById("game-screen").style.display = "block";
-      moveBall("player3");
-      aiTurn();
+      moveBall(currentPlayer);
+      setTimeout(() => { aiTurn(); }, getSlowerReactionTime());
 
       document.querySelectorAll(".player").forEach(player => {
         player.addEventListener("click", function () {
-          if (gameEnded || currentPlayer !== "player0" || totalThrows >= maxThrows || participantThrowsLeft <= 0) return;
-
-          const selectedPlayer = this.id;
-          if (selectedPlayer === "player0") return;
-
-          const receiverElement = document.getElementById(selectedPlayer);
-          if (!receiverElement) return;
-
-          updateBallHolder(selectedPlayer);
-          totalThrows++;
-          participantThrowsLeft--;
-
-          gameLog.push({ from: "player0", to: selectedPlayer, type: "Player", timestamp: Date.now() });
-
-          const infoElement = document.getElementById("info");
-          if (infoElement) infoElement.innerText = `${nickname} threw the ball to ${receiverElement.innerText}`;
-
-          aiTurn();
+          if (gameEnded || currentPlayer !== "player0" || totalThrows >= maxThrows || this.id === "player0") return;
+          handleThrow("player0", this.id, "Player");
         });
       });
     }
 
-    function updateBallHolder(newHolder) {
-      document.querySelectorAll(".player").forEach(player => player.classList.remove("has-ball"));
-      const targetElement = document.getElementById(newHolder);
-      if (!targetElement) return;
-      targetElement.classList.add("has-ball");
-      moveBall(newHolder);
-      currentPlayer = newHolder;
+    function handleThrow(fromId, toId, type) {
+      const from = document.getElementById(fromId);
+      const to = document.getElementById(toId);
+      updateBallHolder(toId);
+      totalThrows++;
+      const rt = (type === "Player") ? (Date.now() - lastPlayerReceiveTime) : null;
+      if (toId === "player0") lastPlayerReceiveTime = Date.now();
+      updateScores(toId);
+      gameLog.push({
+        from: from.innerText,
+        to: to.innerText,
+        type,
+        rt,
+        timestamp: Date.now()
+      });
+      document.getElementById("info").innerText = 
+        toId === "player0" ? `${from.innerText} passed the ball to you – it's your turn!` : `${from.innerText} passed the ball to ${to.innerText}`;
+      if (type === "Player") setTimeout(aiTurn, getSlowerReactionTime());
     }
 
-    function getRandomAI() {
-      const aiPlayers = players.filter(p => p !== "player0" && p !== currentPlayer);
-      return aiPlayers[Math.floor(Math.random() * aiPlayers.length)];
+    function updateBallHolder(id) {
+      document.querySelectorAll(".player").forEach(p => p.classList.remove("has-ball"));
+      document.getElementById(id).classList.add("has-ball");
+      currentPlayer = id;
+      moveBall(id);
+    }
+
+    function updateScores(id) {
+      const oldScore = scores[id];
+      scores[id] += 10;
+      const player = document.getElementById(id);
+      const newHeight = 80 + scores[id] * 0.5;
+      player.style.height = `${newHeight}px`;
+      player.style.width = `${newHeight}px`;
+      updateScoreboard(id, oldScore, scores[id]);
+    }
+
+    function updateScoreboard(updatedId = null, old = 0, now = 0) {
+      const board = document.getElementById("scoreboard");
+      board.innerHTML = "";
+      players.forEach(p => {
+        const span = document.createElement("div");
+        span.innerText = `${(p === "player0" ? nickname : document.getElementById(p).innerText)}: ${scores[p]}`;
+        if (p === updatedId && p === "player0") {
+          span.className = (now > old) ? "score-change-up" : "score-change-down";
+          setTimeout(() => span.className = "", 500);
+        }
+        board.appendChild(span);
+      });
     }
 
     function getSlowerReactionTime() {
-      return Math.floor(Math.random() * 501) + 1500;
+      return Math.floor(Math.random() * 701) + 2000;
     }
 
-    function moveBall(targetPlayer) {
+    function moveBall(targetId) {
       const ball = document.getElementById("ball");
-      const target = document.getElementById(targetPlayer);
-      if (!ball || !target) return;
-      const rect = target.getBoundingClientRect();
-      const container = document.getElementById("game-container").getBoundingClientRect();
-      const x = rect.left - container.left + rect.width / 2 - 10;
-      const y = rect.top - container.top + rect.height / 2 - 10;
-      ball.style.transform = `translate(${x}px, ${y}px)`;
+      const target = document.getElementById(targetId);
+      const container = document.getElementById("game-container");
+      const tRect = target.getBoundingClientRect();
+      const cRect = container.getBoundingClientRect();
+      const x = tRect.left - cRect.left + target.offsetWidth / 2 - ball.offsetWidth / 2;
+      const y = tRect.top - cRect.top + target.offsetHeight / 2 - ball.offsetHeight / 2;
+      ball.style.left = `${x}px`;
+      ball.style.top = `${y}px`;
     }
 
     function aiTurn() {
@@ -144,56 +234,26 @@
         endRound();
         return;
       }
-
-      setTimeout(() => {
-        if (gameEnded) return;
-
-        let nextPlayer;
-        if (participantReceivesLeft > 0 && Math.random() < 0.5) {
-          nextPlayer = "player0";
-          participantReceivesLeft--;
-        } else {
-          nextPlayer = getRandomAI();
-        }
-
-        const throwerElement = document.getElementById(currentPlayer);
-        const receiverElement = document.getElementById(nextPlayer);
-        if (!throwerElement || !receiverElement) return;
-
-        updateBallHolder(nextPlayer);
-        totalThrows++;
-
-        gameLog.push({ from: currentPlayer, to: nextPlayer, type: "AI", timestamp: Date.now() });
-
-        const infoElement = document.getElementById("info");
-        if (infoElement) {
-          infoElement.innerText = (nextPlayer === "player0")
-            ? `${throwerElement.innerText} threw the ball to ${nickname} - Your Turn!`
-            : `${throwerElement.innerText} threw the ball to ${receiverElement.innerText}`;
-        }
-
-        if (nextPlayer !== "player0") aiTurn();
-      }, getSlowerReactionTime());
+      const aiThrowsRemaining = maxThrows - totalThrows - participantReceivesLeft;
+      const shouldPassToYou = participantReceivesLeft > 0 && Math.random() < participantReceivesLeft / Math.max(aiThrowsRemaining, 1);
+      const nextId = shouldPassToYou ? "player0" : players.filter(p => p !== currentPlayer && p !== "player0")[Math.floor(Math.random() * 3) + 1];
+      if (shouldPassToYou) participantReceivesLeft--;
+      handleThrow(currentPlayer, nextId, "AI");
+      if (nextId !== "player0") setTimeout(aiTurn, getSlowerReactionTime());
     }
 
     function endRound() {
       gameEnded = true;
-      const gameLogString = JSON.stringify(gameLog);
-
-      console.log("📤 Sending game log to parent:", gameLogString);
-      window.parent.postMessage({ type: "CyberSocietyEnd", gameLog: gameLogString }, "*");
-
-      // Retry once after 500ms in case listener wasn't ready
+      const logString = JSON.stringify(gameLog);
+      console.log("📤 Sending to Qualtrics with tag: CyberSociety_GameLog12.60");
+      window.parent.postMessage({ type: "CyberSociety_GameLog12.60", gameLog: logString }, "*");
       setTimeout(() => {
-        console.log("🔁 Retrying message send...");
-        window.parent.postMessage({ type: "CyberSocietyEnd", gameLog: gameLogString }, "*");
+        window.parent.postMessage({ type: "CyberSociety_GameLog12.60", gameLog: logString }, "*");
       }, 500);
-
-      // Show "Round has ended" after 700ms
       setTimeout(() => {
         document.body.innerHTML = `
           <div style="background-color: #d3d3d3; width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center;">
-            <div style="font-size: 24px; font-weight: bold; color: #2c3e50;">Round has ended!</div>
+            <div style="font-size: 24px; font-weight: bold; color: #2c3e50;">The round has ended!</div>
           </div>`;
       }, 700);
     }
