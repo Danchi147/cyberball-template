@@ -11,12 +11,13 @@
       background-color: #d3d3d3;
       color: black;
       overflow: hidden;
+      padding-top: 40px; /* Added spacing to prevent overlap */
     }
     .game-container {
       position: relative;
       width: 400px;
       height: 400px;
-      margin: 50px auto;
+      margin: 80px auto 50px auto; /* More top margin */
     }
     .player {
       width: 80px;
@@ -69,12 +70,12 @@
     <div class="info" id="info">The game is starting...</div>
   </div>
   <script>
-    console.log("✅ Game loaded (version: CyberSociety_GameLog20.60)");
+    console.log("✅ Game loaded (version: CyberSociety_GameLog12.60)");
     const players = ["player0", "player1", "player2", "player3", "player4"];
     let currentPlayer = "player3";
     let totalThrows = 0;
     const maxThrows = 60;
-    let participantReceivesLeft = 20;
+    let participantReceivesLeft = 12;
     let gameEnded = false;
     let gameLog = [];
     let lastPlayerReceiveTime = null;
@@ -189,10 +190,10 @@
     function endRound() {
       gameEnded = true;
       const gameLogString = JSON.stringify(gameLog);
-      console.log("📤 Sending to Qualtrics with tag: CyberSociety_GameLog20.60");
-      window.parent.postMessage({ type: "CyberSociety_GameLog20.60", gameLog: gameLogString }, "*");
+      console.log("📤 Sending to Qualtrics with tag: CyberSociety_GameLog12.60");
+      window.parent.postMessage({ type: "CyberSociety_GameLog12.60", gameLog: gameLogString }, "*");
       setTimeout(() => {
-        window.parent.postMessage({ type: "CyberSociety_GameLog20.60", gameLog: gameLogString }, "*");
+        window.parent.postMessage({ type: "CyberSociety_GameLog12.60", gameLog: gameLogString }, "*");
       }, 500);
       setTimeout(() => {
         document.body.innerHTML = `
