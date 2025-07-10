@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
 <head>
@@ -11,13 +12,13 @@
       background-color: #d3d3d3;
       color: black;
       overflow: hidden;
-      padding-top: 40px; /* Added spacing to prevent overlap */
+      padding-top: 40px;
     }
     .game-container {
       position: relative;
       width: 400px;
       height: 400px;
-      margin: 80px auto 50px auto; /* More top margin */
+      margin: 80px auto 50px auto;
     }
     .player {
       width: 80px;
@@ -53,10 +54,38 @@
       margin-top: 20px;
       font-size: 18px;
     }
+    #nickname-screen, #waiting-screen {
+      display: none;
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      background: #d3d3d3;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      z-index: 10;
+    }
+    #waiting-screen img {
+      width: 100px;
+      margin-top: 20px;
+    }
   </style>
 </head>
 <body>
-  <div id="game-screen">
+  <div id="nickname-screen" style="display:flex; flex-direction:column;">
+    <h2>Please enter your nickname:</h2>
+    <input type="text" id="nickname-input" placeholder="Your name..." />
+    <button onclick="startWaiting()">Start</button>
+  </div>
+
+  <div id="waiting-screen">
+    <h2>Waiting for other players to log in...</h2>
+    <img src="https://icon-library.com/images/waiting-icon-gif/waiting-icon-gif-1.jpg" alt="Waiting..." />
+  </div>
+
+  <div id="game-screen" style="display:none;">
     <h1>GroupThink</h1>
     <p>Click on a player to pass the ball when it's your turn.</p>
     <div class="game-container" id="game-container">
@@ -69,8 +98,9 @@
     </div>
     <div class="info" id="info">The game is starting...</div>
   </div>
+
   <script>
-    console.log("✅ Game loaded (version: CyberSociety_GameLog12.60)");
+    let nickname = "You";
     const players = ["player0", "player1", "player2", "player3", "player4"];
     let currentPlayer = "player3";
     let totalThrows = 0;
@@ -81,9 +111,16 @@
     let lastPlayerReceiveTime = null;
     const receiveCounts = {};
 
-    startGame();
+    function startWaiting() {
+      nickname = document.getElementById("nickname-input").value || "You";
+      document.getElementById("player0").innerText = nickname;
+      document.getElementById("nickname-screen").style.display = "none";
+      document.getElementById("waiting-screen").style.display = "flex";
+      setTimeout(startGame, 8000);
+    }
 
     function startGame() {
+      document.getElementById("waiting-screen").style.display = "none";
       document.getElementById("game-screen").style.display = "block";
       moveBall(currentPlayer);
       setTimeout(() => { aiTurn(); }, getSlowerReactionTime());
@@ -190,10 +227,10 @@
     function endRound() {
       gameEnded = true;
       const gameLogString = JSON.stringify(gameLog);
-      console.log("📤 Sending to Qualtrics with tag: CyberSociety_GameLog12.60");
-      window.parent.postMessage({ type: "CyberSociety_GameLog12.60", gameLog: gameLogString }, "*");
+      console.log("📤 Sending to Qualtrics with tag: CyberSizeLog12");
+      window.parent.postMessage({ type: "CyberSizeLog12", gameLog: gameLogString }, "*");
       setTimeout(() => {
-        window.parent.postMessage({ type: "CyberSociety_GameLog12.60", gameLog: gameLogString }, "*");
+        window.parent.postMessage({ type: "CyberSizeLog12", gameLog: gameLogString }, "*");
       }, 500);
       setTimeout(() => {
         document.body.innerHTML = `
