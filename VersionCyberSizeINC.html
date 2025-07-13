@@ -11,13 +11,13 @@
       background-color: #d3d3d3;
       color: black;
       overflow: hidden;
-      padding-top: 40px;
+      padding-top: 20px;
     }
     .game-container {
       position: relative;
       width: 500px;
       height: 500px;
-      margin: 30px auto 50px auto; /* Moved container up */
+      margin: 20px auto 50px auto;
     }
     .player {
       width: 80px;
@@ -88,11 +88,11 @@
     <h1>GroupThrow</h1>
     <p>Click on a player to pass the ball when it's your turn.</p>
     <div class="game-container" id="game-container">
-      <div class="player has-ball" id="player3" style="left: 60px; top: 0px;">Alex</div>
-      <div class="player" id="player2" style="left: 320px; top: 0px;">Taylor</div>
-      <div class="player" id="player1" style="left: 370px; top: 210px;">Casey</div>
-      <div class="player" id="player4" style="left: 20px; top: 210px;">Jordan</div>
-      <div class="player" id="player0" style="left: 190px; top: 300px;">You</div>
+      <div class="player has-ball" id="player3" style="left: 60px; top: -40px;">Alex</div>
+      <div class="player" id="player2" style="left: 320px; top: -40px;">Taylor</div>
+      <div class="player" id="player1" style="left: 370px; top: 140px;">Casey</div>
+      <div class="player" id="player4" style="left: 20px; top: 140px;">Jordan</div>
+      <div class="player" id="player0" style="left: 190px; top: 260px;">You</div>
       <div class="ball" id="ball"></div>
     </div>
     <div class="info" id="info">The game is starting...</div>
@@ -162,7 +162,7 @@
     function growPlayer(playerId) {
       receiveCounts[playerId]++;
       const baseSize = 80;
-      const growthFactor = 1 + receiveCounts[playerId] * 0.075; // 7.5% growth per catch
+      const growthFactor = 1 + receiveCounts[playerId] * 0.15; // 15% growth per catch
       const newSize = baseSize * growthFactor;
       const player = document.getElementById(playerId);
       player.style.width = `${newSize}px`;
