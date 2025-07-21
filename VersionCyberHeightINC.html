@@ -212,8 +212,8 @@ function aiTurn() {
 function endRound() {
   gameEnded = true;
   const gameLogString = JSON.stringify(gameLog);
-  console.log("📤 Sending to Qualtrics with tag: CyberHeightLog12");
-  window.parent.postMessage({ type: "CyberHeightLog12", gameLog: gameLogString }, "*");
+  console.log("📤 Sending to Qualtrics with tag: CyberSizeLog12");
+  window.parent.postMessage({ type: "CyberSizeLog12", gameLog: gameLogString }, "*");
   setTimeout(() => {
     document.body.innerHTML = `
       <div style="background-color: #d3d3d3; width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center;">
