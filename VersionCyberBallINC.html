@@ -226,7 +226,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function endRound() {
     gameEnded = true;
     const gameLogString = JSON.stringify(gameLog);
-    console.log("📤 Sending to Qualtrics with tag: CyberSizeLog12);
+    console.log("📤 Sending to Qualtrics with tag: CyberSizeLog12");
     window.parent.postMessage({ type: "CyberSizeLog12", gameLog: gameLogString }, "*");
     setTimeout(() => {
       window.parent.postMessage({ type: "CyberSizeLog12", gameLog: gameLogString }, "*");
