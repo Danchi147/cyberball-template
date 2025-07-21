@@ -4,22 +4,31 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>CyberCatch</title>
-  <link href="https://fonts.googleapis.com/css2?family=Freckle+Face&display=swap" rel="stylesheet">
+
   <style>
+    @font-face {
+      font-family: 'Jungle Adventurer';
+      src: url(data:font/ttf;base64,AAEAAAAVAQAA...TRUNCATED_FOR_BREVITY...) format('truetype');
+      font-weight: normal;
+      font-style: normal;
+    }
+
     body {
-      font-family: 'Freckle Face', Arial, sans-serif !important;
+      font-family: 'Jungle Adventurer', Arial, sans-serif !important;
       text-align: center;
       background-color: #d3d3d3;
       color: black;
       overflow: hidden;
       padding-top: 40px;
     }
+
     .game-container {
       position: relative;
       width: 400px;
       height: 400px;
       margin: 80px auto 50px auto;
     }
+
     .player {
       width: 80px;
       height: 80px;
@@ -36,6 +45,7 @@
       color: white;
       z-index: 2;
     }
+
     .ball {
       width: 20px;
       height: 20px;
@@ -46,10 +56,12 @@
       z-index: 3;
       pointer-events: none;
     }
+
     .info {
       margin-top: 20px;
       font-size: 18px;
     }
+
     #nickname-screen, #waiting-screen {
       display: none;
       position: absolute;
@@ -63,18 +75,21 @@
       flex-direction: column;
       z-index: 10;
     }
+
     #nickname-screen input {
       margin-top: 10px;
       padding: 8px;
       font-size: 16px;
     }
+
     #nickname-screen button {
-      font-family: 'Freckle Face', Arial, sans-serif !important;
+      font-family: 'Jungle Adventurer', Arial, sans-serif !important;
       margin-top: 20px;
       padding: 8px 16px;
       font-size: 16px;
       cursor: pointer;
     }
+
     #waiting-screen img {
       width: 100px;
       margin-top: 20px;
@@ -240,5 +255,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 </script>
+
 </body>
 </html>
