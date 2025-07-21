@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <link href="https://fonts.cdnfonts.com/css/jungle-adventurer" rel="stylesheet">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CyberCatch</title>
+  <style>
+    body {
+      font-family: 'Jungle Adventurer', Arial, sans-serif !important;
+      text-align: center;
+      background-color: #d3d3d3;
+      color: black;
+      overflow: hidden;
+      padding-top: 40px;
+    }
+    .game-container {
+      position: relative;
+      width: 400px;
+      height: 400px;
+      margin: 80px auto 30px;
+    }
+    .player {
+      width: 80px;
+      height: 80px;
+      background-color: #808080;
+      border-radius: 50%;
+      position: absolute;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-weight: bold;
+      color: white;
+      cursor: pointer;
+      border: 3px solid transparent;
+      transition: top 0.3s ease;
+    }
+    .player.has-ball {
+      border-color: green;
+    }
+    .ball {
+      width: 20px;
+      height: 20px;
+      background-color: green;
+      border-radius: 50%;
+      position: absolute;
+      transition: left 0.8s ease-in-out, top 0.8s ease-in-out;
+      z-index: 5;
+    }
+   #nickname-screen, #waiting-screen {
+      display: none;
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      background: #d3d3d3;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      z-index: 10;
+    }
+    #nickname-screen input {
+      margin-top: 10px;
+      padding: 8px;
+      font-size: 16px;
+    }
+    #nickname-screen button {
+      font-family: 'Jungle Adventurer', Arial, sans-serif !important;
+      margin-top: 20px;
+      padding: 8px 16px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    #waiting-screen img {
+      width: 100px;
+      margin-top: 20px;
+ 
+    }
+  </style>
+</head>
+<body>
+
+<div id="nickname-screen" style="display:flex; flex-direction:column;">
+  <h2>Please enter your nickname:</h2>
+  <input type="text" id="nickname-input" placeholder="Your name..." />
+  <button onclick="startWaiting()">Start</button>
+</div>
+
+<div id="waiting-screen">
+  <h2>Waiting for other players to log in...</h2>
+  <img src="https://icon-library.com/images/waiting-icon-gif/waiting-icon-gif-1.jpg" alt="Waiting..." />
+</div>
+
+<div id="game-screen" style="display:none;">
+  <h1>GroupThink</h1>
+  <p>Click on a player to pass the ball when it's your turn.</p>
+  <div class="game-container" id="game-container">
+    <div class="player has-ball" id="player3" style="left: 20px; top: 250px;">Alex</div>
+    <div class="player" id="player2" style="left: 120px; top: 250px;">Taylor</div>
+    <div class="player" id="player1" style="left: 420px; top: 250px;">Casey</div>
+    <div class="player" id="player4" style="left: 320px; top: 250px;">Jordan</div>
+    <div class="player" id="player0" style="left: 220px; top: 250px;">You</div>
+    <div class="ball" id="ball"></div>
+  </div>
+  <div class="info" id="info">The game is starting...</div>
+</div>
+
+<script>
+let nickname = "You";
+const players = ["player0", "player1", "player2", "player3", "player4"];
+let currentPlayer = "player3";
+let totalThrows = 0;
+const maxThrows = 60;
+let participantReceivesLeft = 12;
+let gameEnded = false;
+let gameLog = [];
+let lastPlayerReceiveTime = null;
+const receiveCounts = {};
+
+function startWaiting() {
+  nickname = document.getElementById("nickname-input").value || "You";
+  document.getElementById("player0").innerText = nickname;
+  document.getElementById("nickname-screen").style.display = "none";
+  document.getElementById("waiting-screen").style.display = "flex";
+  setTimeout(startGame, 8000);
+}
+
+function startGame() {
+  document.getElementById("waiting-screen").style.display = "none";
+  document.getElementById("game-screen").style.display = "block";
+  moveBall(currentPlayer);
+  document.querySelectorAll(".player").forEach(player => {
+    receiveCounts[player.id] = 0;
+    player.addEventListener("click", function () {
+      if (gameEnded || currentPlayer !== "player0" || totalThrows >= maxThrows || this.id === "player0") return;
+      processThrow("player0", this.id, "Player");
+    });
+  });
+  setTimeout(() => { aiTurn(); }, getSlowerReactionTime());
+}
+
+function processThrow(fromId, toId, type) {
+  updateBallHolder(toId);
+  totalThrows++;
+  if (type === "Player") {
+    const rt = lastPlayerReceiveTime ? Date.now() - lastPlayerReceiveTime : null;
+    lastPlayerReceiveTime = null;
+    gameLog.push({ from: nickname, to: document.getElementById(toId).innerText, type, rt });
+  } else {
+    gameLog.push({ from: document.getElementById(fromId).innerText, to: document.getElementById(toId).innerText, type, timestamp: Date.now() });
+  }
+  document.getElementById("info").innerText =
+    toId === "player0"
+      ? document.getElementById(fromId).innerText + " passed the ball to you – it's your turn!"
+      : document.getElementById(fromId).innerText + " passed the ball to " + document.getElementById(toId).innerText;
+  if (toId !== "player0") setTimeout(() => { aiTurn(); }, getSlowerReactionTime());
+}
+
+function updateBallHolder(newHolder) {
+  const target = document.getElementById(newHolder);
+  document.querySelectorAll(".player").forEach(p => p.classList.remove("has-ball"));
+  target.classList.add("has-ball");
+  moveBall(newHolder);
+  currentPlayer = newHolder;
+
+  if (!receiveCounts[newHolder]) receiveCounts[newHolder] = 0;
+  receiveCounts[newHolder]++;
+  // Move player upward by 5px for each reception
+  const currentTop = parseInt(target.style.top);
+  target.style.top = (currentTop - 15) + "px";
+
+  if (newHolder === "player0") {
+    lastPlayerReceiveTime = Date.now();
+  }
+}
+
+function moveBall(targetId) {
+  const ball = document.getElementById("ball");
+  const target = document.getElementById(targetId);
+  const container = document.getElementById("game-container");
+  const tRect = target.getBoundingClientRect();
+  const cRect = container.getBoundingClientRect();
+  const x = tRect.left - cRect.left + target.offsetWidth/2 - ball.offsetWidth/2;
+  const y = tRect.top - cRect.top + target.offsetHeight/2 - ball.offsetHeight/2;
+  ball.style.left = `${x}px`;
+  ball.style.top = `${y}px`;
+}
+
+function getSlowerReactionTime() {
+  return Math.floor(Math.random() * 701) + 2000;
+}
+
+function aiTurn() {
+  if (totalThrows >= maxThrows || gameEnded) {
+    endRound();
+    return;
+  }
+  let next;
+  const aiThrowsRemaining = maxThrows - totalThrows - participantReceivesLeft;
+  const giveToYou = participantReceivesLeft > 0 && Math.random() < participantReceivesLeft / Math.max(aiThrowsRemaining, 1);
+  if (giveToYou) {
+    next = "player0";
+    participantReceivesLeft--;
+  } else {
+    const aiTargets = players.filter(p => p !== currentPlayer && p !== "player0");
+    next = aiTargets[Math.floor(Math.random() * aiTargets.length)];
+  }
+  processThrow(currentPlayer, next, "AI");
+}
+
+function endRound() {
+  gameEnded = true;
+  const gameLogString = JSON.stringify(gameLog);
+  console.log("📤 Sending to Qualtrics with tag: CyberHeightLog12");
+  window.parent.postMessage({ type: "CyberHeightLog12", gameLog: gameLogString }, "*");
+  setTimeout(() => {
+    document.body.innerHTML = `
+      <div style="background-color: #d3d3d3; width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center;">
+        <div style="font-size: 24px; font-weight: bold; color: #2c3e50;">The round has ended!</div>
+      </div>`;
+  }, 700);
+}
+</script>
+</body>
+</html>
