@@ -2,104 +2,223 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Belonging: Reward–Threat Curve (Interactive)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+<title>Too Little, Too Much, Just Enough — An Interactive Commentary on Belongingness</title>
 <style>
   :root{
-    --bg:#ffffff;
-    --panel:#ffffff;
-    --ink:#111111;
-    --muted:#444444;
-    --accent:#10b981; /* green for reward */
-    --accent2:#1d4ed8; /* blue for reference line */
-    --threat:#ef4444; /* red for threat */
-    --grid:#e5e7eb; /* light grey grid */
-    --axis:#111111; /* axis and tick */
-    --border:#d1d5db; /* panel border */
+    --bg:#ffffff; --ink:#111111; --muted:#444444; --border:#d1d5db; --panel:#ffffff;
+    --grid:#e5e7eb; --axis:#111111; --accent:#10b981; --threat:#ef4444; --ref:#1d4ed8; --zone:#bfdbfe;
     --ff: Georgia, "Times New Roman", Times, serif;
   }
   *{box-sizing:border-box}
-  body{
-    margin:0; background:var(--bg); color:var(--ink); font:16px/1.5 var(--ff);
-  }
-  .wrap{max-width:1100px; margin:24px auto; padding:0 16px;}
-  h1{font-size:clamp(20px, 3vw, 28px); margin:0 0 12px; letter-spacing:0.2px}
-  .grid{display:grid; grid-template-columns: 360px 1fr; gap:18px; align-items:start;}
-  @media (max-width: 920px){.grid{grid-template-columns: 1fr}}
-  .panel{background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:14px}
-  .controls h2{font-size:18px; margin:4px 0 8px}
-  .row{display:grid; grid-template-columns: 1fr 110px; gap:10px; align-items:center; margin:12px 0}
-  .row label{display:block; font-size:13px; color:var(--muted); margin-bottom:6px}
-  input[type="range"], input[type="number"], button, label, .legend, .readout{font-family: var(--ff);}
-  input[type="range"]{width:100%}
-  input[type="number"]{width:100%; padding:8px 10px; background:#fff; color:var(--ink); border:1px solid var(--border); border-radius:10px;}
-  .buttons{display:flex; gap:10px; flex-wrap:wrap; margin-top:8px}
-  button{background:#fff; border:1px solid var(--border); color:var(--ink); padding:8px 12px; border-radius:10px; cursor:pointer; font-weight:600}
-  button.primary{border-color:#93c5fd}
-  .canvas-panel{position:relative}
-  svg{width:100%; height:auto; display:block; font-family: var(--ff);}
-  .legend{display:flex; gap:18px; align-items:center; flex-wrap:wrap; margin-top:8px; color:var(--muted)}
-  .chip{display:inline-flex; align-items:center; gap:8px}
-  .chip i{display:inline-block; width:20px; height:4px; border-radius:2px}
-  .chip .reward{background:var(--accent)}
-  .chip .threat{background:var(--threat)}
+  html,body{height:100%}
+  body{margin:0; background:var(--bg); color:var(--ink); font:16px/1.55 var(--ff)}
+  .wrap{max-width:1100px; margin:0 auto; padding:18px 14px 80px}
+  header h1{font:700 clamp(20px,4.5vw,36px)/1.15 var(--ff); margin:0 0 6px}
+  header p{margin:0; color:var(--muted)}
+
+  /* Quick actions */
+  .actions{display:flex; gap:10px; flex-wrap:wrap; margin:16px 0 18px}
+  .chip{border:1px solid var(--border); border-radius:999px; padding:8px 12px; cursor:pointer; background:#fff; font-weight:700}
+  .chip:active{transform:translateY(1px)}
+  .chip.active{border-color:#111}
+
+  /* Card scroller */
+  .scroller{display:grid; grid-auto-flow:column; grid-auto-columns: min(86vw, 580px); gap:14px; overflow-x:auto; padding:6px 2px 6px 0; scroll-snap-type: x mandatory}
+  .card{scroll-snap-align:start; background:var(--panel); border:1px solid var(--border); border-radius:14px; padding:16px}
+  .card h2{font:700 18px/1.2 var(--ff); margin:2px 0 10px}
+  .pill{display:inline-block; font:12px/1.1 var(--ff); color:#0f5132; background:#d1fae5; border:1px solid #a7f3d0; border-radius:999px; padding:4px 8px; margin-right:6px}
+  .card p{margin:10px 0}
+  .ref{color:var(--muted); font-size:14px}
+
+  /* Dots under scroller */
+  .dots{display:flex; gap:8px; justify-content:center; align-items:center; padding:8px 0 14px}
+  .dot{width:10px; height:10px; border-radius:50%; background:#fff; border:1px solid var(--border); cursor:pointer}
+  .dot.active{background:#111}
+
+  /* Sticky helper */
+  .sticky-help{position:sticky; top:0; z-index:10; background:linear-gradient(#fff, #fff); padding:8px 0 10px}
+  .sticky-help .note{font:italic 14px/1.3 var(--ff); color:var(--muted)}
+
+  /* Model section */
+  .model{margin-top:22px}
+  .panel{background:#fff; border:1px solid var(--border); border-radius:12px; padding:12px}
+  .grid{display:grid; grid-template-columns: 380px 1fr; gap:16px; align-items:start}
+  @media (max-width:900px){ .grid{grid-template-columns:1fr} }
+  .row{display:grid; grid-template-columns: 1fr 120px; gap:10px; align-items:center; margin:12px 0}
+  .row label{display:block; font:14px/1.3 var(--ff); color:var(--muted); margin-bottom:6px}
+  input[type="range"], input[type="number"], button, label, select{font-family:var(--ff)}
+  input[type="range"]{width:100%; height:34px}
+  input[type="number"], select{width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:10px; font-size:16px; background:#fff; color:var(--ink)}
+  button{background:#fff; border:1px solid var(--border); color:var(--ink); padding:10px 14px; border-radius:10px; cursor:pointer; font-weight:700}
+  button:active{transform:translateY(1px)}
+  .legend{display:flex; gap:16px; align-items:center; flex-wrap:wrap; margin-top:8px; color:var(--muted)}
+  .chipkey{display:inline-flex; align-items:center; gap:8px}
+  .chipkey i{display:inline-block; width:20px; height:4px; border-radius:2px}
+  .chipkey .reward{background:var(--accent)}
+  .chipkey .threat{background:var(--threat)}
+  .chipkey .zone{background:var(--zone)}
   .readout{margin-top:8px; color:var(--muted)}
-  .mono{font-family: var(--ff); font-weight:600; color:var(--ink)}
+  svg{width:100%; height:auto; display:block; font-family:var(--ff); touch-action:none}
+  .mono{font-weight:700}
+
+  /* SVG inner styles */
+  .svg-scope .axes line, .svg-scope .axes path { stroke: var(--axis) }
+  .svg-scope .grid line { stroke: var(--grid) }
+  .svg-scope .axis-label { fill: var(--axis); font-size: 12px }
+  .svg-scope .tick text { fill: var(--axis); font-size: 12px }
+  .svg-scope .tick line { stroke: var(--axis) }
+  .svg-scope .curve path.reward { stroke: var(--accent); stroke-width: 3; fill: none }
+  .svg-scope .curve path.threat { stroke: var(--threat); stroke-width: 3; fill: none }
+  .svg-scope .ref-line { stroke: var(--ref); stroke-width: 2; stroke-dasharray: 6 6 }
+  .svg-scope .zero-line { stroke: #9ca3af; stroke-dasharray: 4 6 }
+  .svg-scope .sample-dot { fill: var(--axis); stroke: var(--axis); stroke-width: 1.5; r: 3.5 }
+  .svg-scope .sample-guide { stroke: #9ca3af; stroke-width: 1; stroke-dasharray: 3 5 }
+  .svg-scope .hover-rect { fill: transparent; cursor: crosshair }
 </style>
 </head>
 <body>
   <div class="wrap">
-    <h1>Belonging: Reward–Threat Curve</h1>
+    <header>
+      <h1>Too Little, Too Much, Just Enough: Belongingness as a Dynamic System</h1>
+      <p>An interactive commentary proposing a reference‑dependent framework with a tunable <em>satiation point</em> and separate <em>social threat</em> (α) and <em>social reward</em> (β) sensitivities.</p>
+    </header>
 
-    <div class="grid">
-      <!-- Controls -->
-      <div class="panel controls">
-        <h2>Parameters</h2>
-
-        <div class="row">
-          <div>
-            <label for="satiation">Satiation point (X, %): <span id="satiationLabel" class="mono">50</span></label>
-            <input id="satiation" type="range" min="0" max="100" step="1" value="50" />
-          </div>
-          <input id="satiationNum" type="number" min="0" max="100" step="1" value="50" />
-        </div>
-
-        <div class="row">
-          <div>
-            <label for="alpha">Social threat sensitivity α (curvature): <span id="alphaLabel" class="mono">0.88</span></label>
-            <input id="alpha" type="range" min="0.2" max="2" step="0.02" value="0.88" />
-          </div>
-          <input id="alphaNum" type="number" min="0.2" max="2" step="0.02" value="0.88" />
-        </div>
-
-        <div class="row">
-          <div>
-            <label for="beta">Social reward sensitivity β (curvature): <span id="betaLabel" class="mono">0.88</span></label>
-            <input id="beta" type="range" min="0.2" max="2" step="0.02" value="0.88" />
-          </div>
-          <input id="betaNum" type="number" min="0.2" max="2" step="0.02" value="0.88" />
-        </div>
-
-        <div class="buttons">
-          <button class="primary" id="resetBtn" title="Reset to defaults">Reset</button>
-          <button id="downloadBtn" title="Save SVG as file">Download SVG</button>
-        </div>
-      </div>
-
-      <!-- Chart -->
-      <div class="panel canvas-panel">
-        <svg id="chart" viewBox="0 0 960 560" role="img" aria-label="Reward–Threat curve chart"></svg>
-        <div class="legend">
-          <span class="chip"><i class="reward"></i> Social Reward (Need‑Fulfillment)</span>
-          <span class="chip"><i class="threat"></i> Social Threat</span>
-        </div>
-        <div class="readout small" id="readout"></div>
-      </div>
+    <div class="actions">
+      <button class="chip" data-jump="#cards">Read the summary</button>
+      <button class="chip" data-jump="#model">Try the model</button>
     </div>
+
+    <div class="sticky-help"><div class="note">Swipe → to browse the commentary cards. The dots below show where you are.</div></div>
+
+    <!-- Ordered, scrollable commentary built from your text -->
+    <section id="cards" class="scroller">
+      <article class="card"><span class="pill">1 · Orientation</span><h2>From absence to dynamics</h2><p>For decades, work on belongingness focused on its <em>absence</em>—exclusion, ostracism, and rejection—as threats to a fundamental human motivation (Baumeister & Leary, 1995; Williams, 2009). This illuminated the power of belonging to shape behavior and cognition (Allen & Kern, 2017; DeWall & Bushman, 2011; Tajfel, 1981), yet left a blind spot (Gere & MacDonald, 2010): <strong>when is the need satiated, and what happens beyond fairness?</strong></p></article>
+
+      <article class="card"><span class="pill">2 · Two perspectives</span><h2>Relief vs. growth</h2><p>The <strong>need‑threat/homeostatic</strong> view (Williams, 2009) treats belonging as distress relief. The <strong>social‑growth</strong> perspective (Lavigne et al., 2011) argues that, once basics are met, inclusion—especially <em>overinclusion</em>—can orient people toward self‑actualization, investment in others, and relational growth.</p></article>
+
+      <article class="card"><span class="pill">3 · Evidence</span><h2>Cyberball asymmetry</h2><p>Meta‑analyses show robust exclusion effects across affect, cognition, and behavior (Hartgerink et al., 2015), whereas overinclusion evokes smaller but measurable changes (Hay et al., 2023; Telari et al., 2024). <strong>Satiation is a transition point, not a ceiling.</strong></p></article>
+
+      <article class="card"><span class="pill">4 · Mechanism</span><h2>The sociometer</h2><p>Belongingness works like a sociometer (Leary et al., 1995; Leary, 2005): a monitor of cues of inclusion/exclusion that triggers affective and cognitive responses.</p><p>We re‑express it as a <strong>reference‑dependent value function</strong> with a movable <strong>satiation point</strong> and distinct <strong>sensitivity functions</strong> on either side.</p></article>
+
+      <article class="card"><span class="pill">5 · Parameters</span><h2>Inflection & sensitivities</h2><p><strong>Satiation (s)</strong> marks the shift where under‑attention becomes threat and over‑attention becomes reward. <strong>α</strong> tunes threat curvature (left of s). <strong>β</strong> tunes reward curvature (right of s).</p></article>
+
+      <article class="card"><span class="pill">6 · Differences</span><h2>People and contexts</h2><p>Some individuals experience heightened distress when excluded—or even when included—relative to others (Hanegraaf et al., 2021; Hay et al., 2023; Vijayakumar et al., 2017). Some feel less included even under objective overinclusion (De‑Panfilis et al., 2014). Culture, roles, sex, and socialization also shift what counts as “enough.”</p></article>
+
+      <article class="card"><span class="pill">7 · Threat vs. reward</span><h2>Reward–threat sensitivities</h2><p>People differ in how they track rising and falling inclusion. Some show sharp reactivity to declines (Reinhard et al., 2019) and prolonged recovery after exclusion (Zadro et al., 2006; Oaten et al., 2008; Weinbrecht et al., 2019). Threat and reward sensitivity can <strong>dissociate</strong>: a person may be hyper‑vigilant to exclusion yet gain little from overinclusion—or the reverse.</p></article>
+
+      <article class="card"><span class="pill">8 · Links to psychopathology</span><h2>Parameter calibration</h2><p><em>Social anxiety</em>: steep threat slopes (low α). <em>Depression</em>: blunted reward slopes (high β). <em>Attachment</em>: anxious styles may lower exclusion thresholds; avoidant styles may attenuate reward uptake.</p></article>
+
+      <article class="card"><span class="pill">9 · Measurement</span><h2>Operationalizing X & Y</h2><p><strong>X</strong> (inputs): proportion of interaction, time engaged, interaction type/quality, and number of partners. <strong>Y</strong> (DVs): affect (valence, self‑esteem), cognition (expectancy, fairness), behavior (prosocial, withdrawal, conformity), physiology (HRV, cortisol, EDA).</p></article>
+
+      <article class="card"><span class="pill">10 · Personalized curves</span><h2>Comfort & threat zones</h2><p>Identify each person’s inflection and map their <em>comfort zone</em>—here defined analytically as responses above the top 25% of the negative range (<em>y</em> ≥ −0.25) and all positive values—and <em>threat zone</em> below that. Use these to guide precision interventions (adjust s, dampen α, or enhance β).</p></article>
+
+      <article class="card"><span class="pill">11 · Dynamics</span><h2>Systems & computation</h2><p>Fit individual parameters and embed them in dynamic models to study stability, tipping, and recovery trajectories (Robinaugh et al., 2024; Scheffer et al., 2024).</p></article>
+    </section>
+    <div class="dots" id="cardsDots" aria-label="Slide position indicators"></div>
+
+    <!-- Interactive model -->
+    <section id="model" class="model">
+      <div class="panel">
+        <div class="grid">
+          <!-- Controls -->
+          <div>
+            <h2 style="margin:4px 0 8px">Parameters</h2>
+
+            <div class="row">
+              <div>
+                <label for="satiation">Satiation point (X, %): <span id="satiationLabel" class="mono">50</span></label>
+                <input id="satiation" type="range" min="0" max="100" step="1" value="50" />
+              </div>
+              <input id="satiationNum" inputmode="numeric" type="number" min="0" max="100" step="1" value="50" />
+            </div>
+
+            <div class="row">
+              <div>
+                <label for="alpha">Social threat sensitivity α (curvature): <span id="alphaLabel" class="mono">0.88</span></label>
+                <input id="alpha" type="range" min="0.2" max="2" step="0.02" value="0.88" />
+              </div>
+              <input id="alphaNum" inputmode="decimal" type="number" min="0.2" max="2" step="0.02" value="0.88" />
+            </div>
+
+            <div class="row">
+              <div>
+                <label for="beta">Social reward sensitivity β (curvature): <span id="betaLabel" class="mono">0.88</span></label>
+                <input id="beta" type="range" min="0.2" max="2" step="0.02" value="0.88" />
+              </div>
+              <input id="betaNum" inputmode="decimal" type="number" min="0.2" max="2" step="0.02" value="0.88" />
+            </div>
+
+            <div class="row">
+              <div>
+                <label for="dv">Dependent variable (Y‑axis)</label>
+                <select id="dv">
+                  <option value="value">Value: Need‑Fulfillment (+) / Threat (−)</option>
+                  <option value="affect">Affect (− → +)</option>
+                  <option value="esteem">Self‑esteem (low → high)</option>
+                  <option value="expectancy">Inclusion expectancy (low → high)</option>
+                  <option value="fairness">Perceived fairness (low → high)</option>
+                  <option value="prosocial">Prosocial engagement (low → high)</option>
+                  <option value="withdrawal">Withdrawal (low → high)</option>
+                  <option value="hrv">Physiology: HRV (low → high)</option>
+                  <option value="cortisol">Physiology: Cortisol (low → high)</option>
+                  <option value="eda">Physiology: EDA (low → high)</option>
+                </select>
+              </div>
+              <div></div>
+            </div>
+
+            <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:8px">
+              <button id="resetBtn">Reset</button>
+              <button id="downloadBtn">Download SVG</button>
+            </div>
+
+            <h2 style="margin:18px 0 8px">Case examples</h2>
+            <div class="actions" id="caseChips" style="margin-top:6px">
+              <button class="chip" data-case="jordan">Jordan</button>
+              <button class="chip" data-case="avery">Avery</button>
+              <button class="chip" data-case="riley">Riley</button>
+            </div>
+            <div id="caseText" style="color:var(--muted); margin-top:6px"></div>
+          </div>
+
+          <!-- Chart -->
+          <div class="svg-scope">
+            <svg id="chart" viewBox="0 0 960 560" role="img" aria-label="Reward–Threat curve chart"></svg>
+            <div class="legend">
+              <span class="chipkey"><i class="zone"></i> Comfort zone (y ≥ −0.25)</span>
+              <span class="chipkey"><i class="reward"></i> Social Reward (Need‑Fulfillment)</span>
+              <span class="chipkey"><i class="threat"></i> Social Threat</span>
+            </div>
+            <div class="readout" id="readout"></div>
+          </div>
+        </div>
+      </div>
+    </section>
   </div>
 
 <script>
 (function(){
+  // Smooth jump links
+  document.querySelectorAll('[data-jump]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const to = btn.getAttribute('data-jump');
+      const el = document.querySelector(to); if (el) el.scrollIntoView({behavior:'smooth'});
+    });
+  });
+
+  // Scroller dots
+  const scroller = document.getElementById('cards');
+  const cards = Array.from(scroller.querySelectorAll('.card'));
+  const dotsWrap = document.getElementById('cardsDots');
+  const dots = cards.map((_,i)=>{ const d = document.createElement('button'); d.className='dot'; d.setAttribute('aria-label', `Go to card ${i+1}`); d.addEventListener('click',()=> cards[i].scrollIntoView({behavior:'smooth', inline:'start'})); dotsWrap.appendChild(d); return d; });
+  function setActiveDot(i){ dots.forEach((d,j)=> d.classList.toggle('active', j===i)); }
+  const io = new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{ if(e.isIntersecting){ const idx = cards.indexOf(e.target); if(idx>=0) setActiveDot(idx); }});
+  }, {root: scroller, threshold: 0.6});
+  cards.forEach(c=> io.observe(c));
+  setActiveDot(0);
+
   // SVG & layout
   const svg = document.getElementById('chart');
   const NS = 'http://www.w3.org/2000/svg';
@@ -114,29 +233,12 @@
   const gAxes = el('g', {class: 'axes'});
   const gCurve = el('g', {class: 'curve'});
   const gOverlay = el('g', {class: 'overlay'});
-  svg.appendChild(gRoot);
-  gRoot.appendChild(gGrid);
-  gRoot.appendChild(gAxes);
-  gRoot.appendChild(gCurve);
-  gRoot.appendChild(gOverlay);
+  const gZone = el('g', {class: 'zone-group'});
+  svg.appendChild(gRoot); gRoot.appendChild(gGrid); gRoot.appendChild(gAxes); gRoot.appendChild(gZone); gRoot.appendChild(gCurve); gRoot.appendChild(gOverlay);
 
-  // Styles in-SVG (for crisp print/export)
+  // Styles inside SVG for crisp export
   const style = el('style', {});
-  style.textContent = `
-    text { font-family: Georgia, 'Times New Roman', Times, serif; }
-    .axes line, .axes path { stroke: var(--axis); }
-    .grid line { stroke: var(--grid); }
-    .axis-label { fill: var(--axis); font-size: 12px; }
-    .tick text { fill: var(--axis); font-size: 12px; }
-    .tick line { stroke: var(--axis); }
-    .curve path.reward { stroke: var(--accent); stroke-width: 3; fill: none; }
-    .curve path.threat { stroke: var(--threat); stroke-width: 3; fill: none; }
-    .ref-line { stroke: var(--accent2); stroke-width: 2; stroke-dasharray: 6 6; }
-    .zero-line { stroke: #9ca3af; stroke-dasharray: 4 6; }
-    .sample-dot { fill: var(--axis); stroke: var(--axis); stroke-width: 1.5; r: 3.5; }
-    .sample-guide { stroke: #9ca3af; stroke-width: 1; stroke-dasharray: 3 5; }
-    .hover-rect { fill: transparent; cursor: crosshair; }
-  `;
+  style.textContent = `text{font-family: Georgia, 'Times New Roman', Times, serif}`;
   svg.appendChild(style);
 
   // Controls
@@ -146,23 +248,60 @@
     beta: bindPair('beta', 'betaNum', 'betaLabel', v => clamp(+v, 0.2, 2), 0.88),
   };
 
+  const dvSelect = document.getElementById('dv');
+  const dvLabelMap = {
+    value: 'Need‑Fulfillment (+) / Threat (−)',
+    affect: 'Affect (− → +)',
+    esteem: 'Self‑esteem (low → high)',
+    expectancy: 'Inclusion expectancy (low → high)',
+    fairness: 'Perceived fairness (low → high)',
+    prosocial: 'Prosocial engagement (low → high)',
+    withdrawal: 'Withdrawal (low → high)',
+    hrv: 'Physiology: HRV (low → high)',
+    cortisol: 'Physiology: Cortisol (low → high)',
+    eda: 'Physiology: EDA (low → high)'
+  };
+  dvSelect.addEventListener('change', draw);
+
   document.getElementById('resetBtn').addEventListener('click', () => {
-    controls.s.set(50);
-    controls.alpha.set(0.88);
-    controls.beta.set(0.88);
+    controls.s.set(50); controls.alpha.set(0.88); controls.beta.set(0.88); dvSelect.value = 'value';
+    clearCaseActive(); document.querySelector('[data-case="jordan"]').classList.remove('active');
+    document.getElementById('caseText').textContent = '';
     draw();
   });
-
   document.getElementById('downloadBtn').addEventListener('click', () => {
     const data = new XMLSerializer().serializeToString(svg);
     const blob = new Blob([data], {type: 'image/svg+xml;charset=utf-8'});
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = 'belonging-reward-threat-curve.svg'; a.click();
-    URL.revokeObjectURL(url);
+    const a = document.createElement('a'); a.href = url; a.download = 'belonging-reward-threat-curve.svg'; a.click(); URL.revokeObjectURL(url);
   });
 
-  const readout = document.getElementById('readout');
+  // Case examples
+  const caseChips = document.getElementById('caseChips');
+  const caseText = document.getElementById('caseText');
+  const cases = {
+    jordan: {
+      s:90, alpha:0.90, beta:2.0,
+      story: '<strong>Jordan</strong>: grew up in high-visibility, performance-centric contexts (debate, solo presentations). Now often in roles that demand leading the room. Jordan expects near-total airtime (s=90). Small dips are noticeable (α=0.90), and social reward is felt mainly when attention far exceeds “fair share” (β=2.0). Comfort is defined analytically here as responses at or above y = −0.25 (top 25% of the negative range) and all positive values.'
+    },
+    avery: {
+      s:60, alpha:0.60, beta:1.10,
+      story: '<strong>Avery</strong>: first-generation scholar in a competitive lab. Highly tuned to early signs of being sidelined (low α makes the threat curve steep just below s). Overinclusion yields benefits but grows slowly (β≈1.10). Avery prefers sharing the floor but is uneasy when attention drifts far below 60%.'
+    },
+    riley: {
+      s:35, alpha:1.30, beta:0.70,
+      story: '<strong>Riley</strong>: community organizer comfortable facilitating rather than spotlighting. Threat builds only after larger drops (α=1.30 flattens the left side near s). Modest recognition already feels rewarding (β=0.70 gives quick lift). Riley thrives when the group is engaged even with a smaller personal share.'
+    }
+  };
+
+  caseChips.addEventListener('click', (e)=>{
+    const btn = e.target.closest('[data-case]'); if(!btn) return;
+    const key = btn.getAttribute('data-case'); const cfg = cases[key]; if(!cfg) return;
+    controls.s.set(cfg.s); controls.alpha.set(cfg.alpha); controls.beta.set(cfg.beta);
+    caseText.innerHTML = cfg.story; clearCaseActive(); btn.classList.add('active');
+    draw();
+  });
+  function clearCaseActive(){ caseChips.querySelectorAll('.chip').forEach(c=> c.classList.remove('active')); }
 
   // Scales
   const xScale = x => x/100 * innerW;
@@ -170,210 +309,115 @@
 
   function valueAt(x, s, alpha, beta){
     if (x >= s){
-      const d = x - s;
-      const rng = Math.max(100 - s, 1e-9);
-      const norm = d / rng; // 0..1
-      return Math.pow(norm, beta); // up to +1 (reward)
+      const d = x - s; const rng = Math.max(100 - s, 1e-9); const norm = d / rng; return Math.pow(norm, beta);
     } else {
-      const d = s - x;
-      const rng = Math.max(s, 1e-9);
-      const norm = d / rng; // 0..1
-      return -Math.pow(norm, alpha); // down to -1 (threat)
+      const d = s - x; const rng = Math.max(s, 1e-9); const norm = d / rng; return -Math.pow(norm, alpha);
     }
   }
 
   function niceTicks(min, max, count=6){
-    const span = max - min;
-    if (!isFinite(span) || span <= 0){ return [min, max]; }
-    const step0 = span / Math.max(1, count);
-    const mag = Math.pow(10, Math.floor(Math.log10(step0)));
-    const err = step0 / mag;
-    let step;
-    if (err >= 5) step = 10*mag; else if (err >= 2) step = 5*mag; else if (err >= 1) step = 2*mag; else step = mag;
-    const niceMin = Math.floor(min/step)*step;
-    const niceMax = Math.ceil(max/step)*step;
-    const ticks = [];
+    const span = max - min; if (!isFinite(span) || span <= 0){ return [min, max]; }
+    const step0 = span / Math.max(1, count); const mag = Math.pow(10, Math.floor(Math.log10(step0))); const err = step0 / mag;
+    let step; if (err >= 5) step = 10*mag; else if (err >= 2) step = 5*mag; else if (err >= 1) step = 2*mag; else step = mag;
+    const niceMin = Math.floor(min/step)*step; const niceMax = Math.ceil(max/step)*step; const ticks = [];
     for (let t = niceMin; t <= niceMax + 1e-9; t += step){ ticks.push(+t.toFixed(6)); }
     return ticks;
   }
 
+  function xTicksForWidth(){
+    const screenW = svg.getBoundingClientRect().width; let step = 10; if (screenW < 420) step = 20; if (screenW < 320) step = 25;
+    const ticks = []; for (let t=0; t<=100; t+=step) ticks.push(t); if (ticks[ticks.length-1] !== 100) ticks.push(100); return ticks;
+  }
+
   function draw(){
-    // Read params
-    const s = controls.s.get();
-    const alpha = controls.alpha.get();
-    const beta = controls.beta.get();
+    const s = controls.s.get(); const alpha = controls.alpha.get(); const beta = controls.beta.get();
+    const dvKey = dvSelect.value; const dvLabel = dvLabelMap[dvKey] || dvLabelMap.value;
 
-    // Y extents (±1 with a little padding)
-    const yMax = 1.0;
-    const yMin = -1.0;
-    const pad = (yMax - yMin) * 0.08;
-    const ymin = yMin - pad, ymax = yMax + pad;
+    const yMax = 1.0, yMin = -1.0, pad = (yMax - yMin) * 0.08; const ymin = yMin - pad, ymax = yMax + pad;
 
-    // Clear groups
-    gGrid.innerHTML = ''; gAxes.innerHTML = ''; gCurve.innerHTML = ''; gOverlay.innerHTML='';
+    gGrid.innerHTML = ''; gAxes.innerHTML = ''; gCurve.innerHTML = ''; gOverlay.innerHTML = ''; gZone.innerHTML = '';
 
-    // Grid + axes
-    // X ticks (0..100)
-    const xTicks = [0,10,20,30,40,50,60,70,80,90,100];
-    xTicks.forEach(tx => {
-      const x = xScale(tx);
-      gGrid.appendChild(line(x, 0, x, innerH, 'var(--grid)'));
-      const t = el('g', {class:'tick'});
-      t.appendChild(line(x, innerH, x, innerH+6, 'var(--axis)'));
-      const lbl = el('text', {x: x, y: innerH+22, 'text-anchor':'middle'});
-      lbl.textContent = tx;
-      t.appendChild(lbl);
-      gAxes.appendChild(t);
-    });
+    // X ticks
+    const xTicks = xTicksForWidth();
+    xTicks.forEach(tx => { const x = xScale(tx); gGrid.appendChild(line(x,0,x,innerH, 'var(--grid)')); const t = el('g', {class:'tick'});
+      t.appendChild(line(x, innerH, x, innerH+6, 'var(--axis)')); const lbl = el('text', {x:x, y:innerH+22, 'text-anchor':'middle'}); lbl.textContent = tx; t.appendChild(lbl); gAxes.appendChild(t); });
 
     // Y ticks
     const yTicks = niceTicks(ymin, ymax, 6).filter(v => isFinite(v));
-    yTicks.forEach(ty => {
-      const y = yScale(ty, ymin, ymax);
-      gGrid.appendChild(line(0, y, innerW, y, 'var(--grid)'));
-      const t = el('g', {class:'tick'});
-      t.appendChild(line(-6, y, 0, y, 'var(--axis)'));
-      const lbl = el('text', {x: -10, y: y+4, 'text-anchor':'end'});
-      lbl.textContent = roundSmart(ty);
-      t.appendChild(lbl);
-      gAxes.appendChild(t);
-    });
+    yTicks.forEach(ty => { const y = yScale(ty, ymin, ymax); gGrid.appendChild(line(0,y,innerW,y,'var(--grid)')); const t = el('g',{class:'tick'});
+      t.appendChild(line(-6,y,0,y,'var(--axis)')); const lbl = el('text',{x:-10,y:y+4,'text-anchor':'end'}); lbl.textContent = roundSmart(ty); t.appendChild(lbl); gAxes.appendChild(t); });
 
-    // Axis lines
-    gAxes.appendChild(line(0, innerH, innerW, innerH, 'var(--axis)')); // x
-    gAxes.appendChild(line(0, 0, 0, innerH, 'var(--axis)')); // y
+    // Axes
+    gAxes.appendChild(line(0, innerH, innerW, innerH, 'var(--axis)'));
+    gAxes.appendChild(line(0, 0, 0, innerH, 'var(--axis)'));
 
-    // Axis labels
-    const xLab = el('text', {class:'axis-label', x: innerW/2, y: innerH+40, 'text-anchor':'middle'});
-    xLab.textContent = 'Social attention (% participation)';
-    gAxes.appendChild(xLab);
-
-    const yLab = el('text', {class:'axis-label', x: -M.left+8, y: -12});
-    yLab.textContent = 'Need‑Fulfillment (+) / Threat (−)';
-    gAxes.appendChild(yLab);
+    // Labels (Y label is DV‑dependent)
+    const xLab = el('text',{class:'axis-label', x: innerW/2, y: innerH+40, 'text-anchor':'middle'}); xLab.textContent = 'Social attention (% participation)'; gAxes.appendChild(xLab);
+    const yLab = el('text',{class:'axis-label', x: -M.left+8, y: -12}); yLab.textContent = dvLabel; gAxes.appendChild(yLab);
 
     // Zero line
-    const y0 = yScale(0, ymin, ymax);
-    const zero = line(0, y0, innerW, y0, null);
-    zero.setAttribute('class','zero-line');
-    gAxes.appendChild(zero);
+    const y0 = yScale(0, ymin, ymax); const zero = line(0,y0,innerW,y0,null); zero.setAttribute('class','zero-line'); gAxes.appendChild(zero);
 
-    // Vertical reference line at s
-    const xs = xScale(s);
-    const ref = line(xs, 0, xs, innerH, null);
-    ref.setAttribute('class','ref-line');
-    gAxes.appendChild(ref);
+    // Comfort zone (horizontal band: y >= -0.25)
+    const yTop = yScale(1, ymin, ymax);
+    const yCut = yScale(-0.25, ymin, ymax);
+    const zoneRect = el('rect', {x:0, y:yTop, width:innerW, height:Math.max(0, yCut - yTop), fill:'var(--zone)', opacity:0.28, rx:4});
+    gZone.appendChild(zoneRect);
+    const zoneLbl = el('text', {x: 12, y: yTop + 18, 'text-anchor':'start', fill:'#1e3a8a'}); zoneLbl.textContent = 'Comfort zone (y ≥ −0.25)'; gZone.appendChild(zoneLbl);
 
-    const refLbl = el('text', {x: xs+6, y: 16, fill: 'var(--muted)'});
-    refLbl.textContent = `Satiation = ${s}%`;
-    gAxes.appendChild(refLbl);
+    // Ref line at s
+    const xs = xScale(s); const ref = line(xs,0,xs,innerH,null); ref.setAttribute('class','ref-line'); gAxes.appendChild(ref);
+    const refLbl = el('text', {x: xs+6, y: 16, fill: 'var(--muted)'}); refLbl.textContent = `Satiation = ${s}%`; gAxes.appendChild(refLbl);
 
-    // Curve paths (split at s so we can color differently)
-    const pathReward = el('path', {class:'reward'});
-    const pathThreat = el('path', {class:'threat'});
-    let dReward = '', dThreat = '';
+    // Curve
+    const pathReward = el('path', {class:'reward'}); const pathThreat = el('path', {class:'threat'}); let dReward = '', dThreat = '';
+    for (let x=0; x<=100; x+=1){ const yVal = valueAt(x, s, alpha, beta); const X = xScale(x), Y = yScale(yVal, ymin, ymax);
+      if (x === 0){ dThreat += `M ${X} ${Y}`; } else { if (x <= s){ dThreat += ` L ${X} ${Y}`; } } }
+    for (let x=Math.max(0, Math.floor(s)); x<=100; x+=1){ const yVal = valueAt(x, s, alpha, beta); const X = xScale(x), Y = yScale(yVal, ymin, ymax);
+      if (x === Math.max(0, Math.floor(s))){ dReward += `M ${X} ${Y}`; } else { dReward += ` L ${X} ${Y}`; } }
+    pathThreat.setAttribute('d', dThreat); pathReward.setAttribute('d', dReward); gCurve.appendChild(pathThreat); gCurve.appendChild(pathReward);
 
-    for (let x=0; x<=100; x+=1){
-      const yVal = valueAt(x, s, alpha, beta);
-      const X = xScale(x), Y = yScale(yVal, ymin, ymax);
-      if (x === 0){
-        dThreat += `M ${X} ${Y}`;
-      } else {
-        if (x <= s){ dThreat += ` L ${X} ${Y}`; }
-      }
-    }
-    // Build reward from s to 100
-    for (let x=Math.max(0, Math.floor(s)); x<=100; x+=1){
-      const yVal = valueAt(x, s, alpha, beta);
-      const X = xScale(x), Y = yScale(yVal, ymin, ymax);
-      if (x === Math.max(0, Math.floor(s))){ dReward += `M ${X} ${Y}`; }
-      else { dReward += ` L ${X} ${Y}`; }
-    }
-
-    pathThreat.setAttribute('d', dThreat);
-    pathReward.setAttribute('d', dReward);
-    gCurve.appendChild(pathThreat);
-    gCurve.appendChild(pathReward);
-
-    // Hover sampling
-    const hoverRect = el('rect', {class:'hover-rect', x:0, y:0, width:innerW, height:innerH});
-    gOverlay.appendChild(hoverRect);
-
+    // Pointer sampling (mouse + touch)
+    const hoverRect = el('rect', {class:'hover-rect', x:0, y:0, width:innerW, height:innerH}); gOverlay.appendChild(hoverRect);
     const vGuide = line(0,0,0,innerH,null); vGuide.setAttribute('class','sample-guide'); vGuide.style.opacity=0;
     const hGuide = line(0,0,innerW,0,null); hGuide.setAttribute('class','sample-guide'); hGuide.style.opacity=0;
-    const dot = el('circle', {class:'sample-dot', cx:0, cy:0, r:3.5}); dot.style.opacity=0;
-    gOverlay.appendChild(vGuide); gOverlay.appendChild(hGuide); gOverlay.appendChild(dot);
+    const dot = el('circle',{class:'sample-dot', cx:0, cy:0, r:3.5}); dot.style.opacity=0; gOverlay.appendChild(vGuide); gOverlay.appendChild(hGuide); gOverlay.appendChild(dot);
 
-    hoverRect.addEventListener('mousemove', (e) => {
-      const pt = clientToSvg(e.clientX, e.clientY);
-      const xLocal = Math.max(0, Math.min(innerW, pt.x - M.left));
-      const xVal = (xLocal/innerW) * 100;
-      const yVal = valueAt(xVal, s, alpha, beta);
-      const X = xLocal, Y = yScale(yVal, ymin, ymax);
-      vGuide.setAttribute('x1', X); vGuide.setAttribute('x2', X);
-      hGuide.setAttribute('y1', Y); hGuide.setAttribute('y2', Y);
-      dot.setAttribute('cx', X); dot.setAttribute('cy', Y);
-      vGuide.style.opacity = hGuide.style.opacity = dot.style.opacity = 1;
-      readout.innerHTML = `x = <span class="mono">${xVal.toFixed(1)}%</span>, v(x) = <span class="mono">${yVal.toFixed(3)}</span>`;
-    });
+    let isDown = false; const coarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+    hoverRect.addEventListener('pointerdown', (e)=>{ isDown = true; sample(e); });
+    hoverRect.addEventListener('pointermove', (e)=>{ if (isDown || !coarse) sample(e); });
+    window.addEventListener('pointerup', ()=>{ isDown = false; if (coarse) showGuides(true); });
+    hoverRect.addEventListener('pointerleave', ()=>{ if (!coarse) hideGuides(); });
 
-    hoverRect.addEventListener('mouseleave', () => {
-      vGuide.style.opacity = hGuide.style.opacity = dot.style.opacity = 0;
-      readout.textContent = '';
-    });
+    function sample(e){ const pt = clientToSvg(e.clientX, e.clientY); const xLocal = Math.max(0, Math.min(innerW, pt.x - M.left)); const xVal = (xLocal/innerW) * 100; const yVal = valueAt(xVal, s, alpha, beta);
+      const X = xLocal, Y = yScale(yVal, ymin, ymax); vGuide.setAttribute('x1',X); vGuide.setAttribute('x2',X); hGuide.setAttribute('y1',Y); hGuide.setAttribute('y2',Y); dot.setAttribute('cx',X); dot.setAttribute('cy',Y); showGuides();
+      const dvLabel = dvLabelMap[dvSelect.value] || dvLabelMap.value;
+      readout.innerHTML = `DV = <span class="mono">${dvLabel}</span> | x = <span class="mono">${xVal.toFixed(1)}%</span>, y = <span class="mono">${yVal.toFixed(3)}</span>`; }
+    function showGuides(){ vGuide.style.opacity = hGuide.style.opacity = dot.style.opacity = 1; }
+    function hideGuides(){ vGuide.style.opacity = hGuide.style.opacity = dot.style.opacity = 0; readout.textContent = ''; }
   }
 
   // Helpers
-  function el(tag, attrs){
-    const n = document.createElementNS(NS, tag);
-    for (const k in attrs){ n.setAttribute(k, attrs[k]); }
-    return n;
-  }
-  function line(x1,y1,x2,y2,stroke){
-    const L = el('line', {x1, y1, x2, y2});
-    if (stroke) L.setAttribute('stroke', stroke);
-    return L;
-  }
-  function roundSmart(v){
-    const a = Math.abs(v);
-    if (a === 0) return '0';
-    if (a < 0.001) return v.toExponential(1);
-    if (a < 1) return v.toFixed(2);
-    if (a < 10) return v.toFixed(2);
-    return v.toFixed(0);
-  }
+  function el(tag, attrs){ const n = document.createElementNS(NS, tag); for (const k in attrs){ n.setAttribute(k, attrs[k]); } return n; }
+  function line(x1,y1,x2,y2,stroke){ const L = el('line',{x1,y1,x2,y2}); if (stroke) L.setAttribute('stroke', stroke); return L; }
+  function roundSmart(v){ const a = Math.abs(v); if (a === 0) return '0'; if (a < 0.001) return v.toExponential(1); if (a < 1) return v.toFixed(2); if (a < 10) return v.toFixed(2); return v.toFixed(0); }
   function clamp(v, min, max){ return Math.max(min, Math.min(max, v)); }
-
-  function clientToSvg(clientX, clientY){
-    const pt = svg.createSVGPoint();
-    pt.x = clientX; pt.y = clientY;
-    const m = svg.getScreenCTM().inverse();
-    return pt.matrixTransform(m);
-  }
-
-  function bindPair(rangeId, numId, labelId, coerce, initial){
-    const r = document.getElementById(rangeId);
-    const n = document.getElementById(numId);
-    const l = document.getElementById(labelId);
-
-    function set(val){
-      const v = coerce(val);
-      r.value = String(v); n.value = String(v); l.textContent = String(v);
-    }
+  function clientToSvg(clientX, clientY){ const pt = svg.createSVGPoint(); pt.x = clientX; pt.y = clientY; const m = svg.getScreenCTM().inverse(); return pt.matrixTransform(m); }
+  function bindPair(rangeId, numId, labelId, coerce, initial){ const r = document.getElementById(rangeId); const n = document.getElementById(numId); const l = document.getElementById(labelId);
+    function set(val){ const v = coerce(val); r.value = String(v); n.value = String(v); l.textContent = String(v); }
     function get(){ return coerce(r.value); }
-
     function onInput(){ set(r.value); draw(); }
     function onNum(){ set(n.value); draw(); }
+    r.addEventListener('input', onInput); n.addEventListener('input', onNum); set(initial); return {get,set}; }
 
-    r.addEventListener('input', onInput);
-    n.addEventListener('input', onNum);
-    set(initial);
+  // Redraw responsive
+  window.addEventListener('resize', () => draw());
 
-    return {get, set};
-  }
-
-  // Initial render
-  draw();
+  // Start with Jordan selected per examples
+  (function initCases(){
+    const btn = document.querySelector('[data-case="jordan"]'); if(btn){ btn.click(); }
+    else { draw(); }
+  })();
 })();
 </script>
 </body>
