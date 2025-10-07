@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>World Map · PAP / GDP / WHR / GHI / Rabies Risk</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --text: #111827;
+    --muted: #6b7280;
+    --card: #ffffff;
+    --border: #e5e7eb;
+    --shadow: 0 8px 24px rgba(0,0,0,0.08);
+    --tealLight: hsl(190 70% 88%);
+    --tealDark:  hsl(190 70% 38%);
+    --risk: #b91c1c;
+    --safe: #047857;
+  }
+  html, body { height: 100%; }
+  body {
+    margin: 0; padding: 0;
+    font-family: Georgia, "Times New Roman", serif;
+    background: var(--bg); color: var(--text);
+  }
+  .page { max-width: 1100px; margin: 0 auto; padding: 16px; }
+  h1 { margin: 0 0 10px; font-size: clamp(20px, 2.6vw, 28px); }
+  .controls {
+    display: grid; grid-template-columns: 1fr auto auto; gap: 10px;
+    align-items: center; margin-bottom: 10px;
+  }
+  .control { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; }
+  select, input[type="text"], button {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 14px; padding: 6px 10px; border: 1px solid var(--border);
+    border-radius: 10px; background: #fff;
+  }
+  .grid { display: grid; grid-template-columns: 2fr 1fr; gap: 14px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow); }
+  .card .inner { padding: 10px; }
+  .mapWrap { position: relative; }
+  svg { width: 100%; height: 500px; display: block; }
+  .legend { display: flex; align-items: center; gap: 12px; margin: 4px 0 6px; font-size: 12px; }
+  .gradientBar { width: 200px; height: 8px; border-radius: 6px; background: linear-gradient(90deg, var(--tealLight), var(--tealDark)); }
+  .swatch { width: 12px; height: 12px; border-radius: 3px; display: inline-block; vertical-align: -2px; }
+  .tooltip {
+    position: fixed; z-index: 9999; pointer-events: none;
+    background: rgba(255,255,255,0.98); border: 1px solid var(--border); box-shadow: var(--shadow);
+    border-radius: 10px; padding: 8px 10px; min-width: 200px; font-size: 12px;
+  }
+  .tooltip .title { font-weight: 700; margin-bottom: 4px; }
+  .tooltip .grid2 { display: grid; grid-template-columns: auto auto; gap: 4px 12px; }
+  .sideHeader { display:flex; align-items:center; justify-content: space-between; margin-bottom: 6px; }
+  .muted { color: var(--muted); }
+  .tableWrap { max-height: 260px; overflow: auto; border: 1px solid var(--border); border-radius: 10px; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  thead th { position: sticky; top: 0; background: #fff; z-index: 1; }
+  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); }
+  tbody tr:hover { background: #f9fafb; cursor: pointer; }
+  .note { margin-top: 6px; font-size: 11px; color: var(--muted); }
+  .legendMinMax { display:flex; justify-content: space-between; font-size: 11px; margin-top: 3px; }
+  .foot { margin-top: 8px; font-size: 11px; color: var(--muted); }
+  @media (max-width: 900px){
+    .grid { grid-template-columns: 1fr; }
+    svg { height: 440px; }
+    .controls { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+  <div class="page">
+    <h1>World Map — Country Indicators</h1>
+
+    <div class="controls">
+      <label class="control">
+        <span>Color by:</span>
+        <select id="metricSelect">
+          <option value="PAP">PAP (Pet Adoption Prevalence)</option>
+          <option value="GDP">GDP per capita (USD)</option>
+          <option value="GDP_Log">log10(GDP per capita)</option>
+          <option value="WHR">World Happiness Report (0–10)</option>
+          <option value="GHI">Global Health Index (0–100)</option>
+          <option value="RabRisk">Rabies Risk (0/1)</option>
+        </select>
+      </label>
+      <div class="control" style="justify-self:end; gap:8px;">
+        <input type="text" id="filterInput" placeholder="Filter…" />
+        <button id="downloadCsvBtn">Download CSV</button>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <div class="inner mapWrap">
+          <div class="legend" id="legend"></div>
+          <svg id="map" viewBox="0 0 1100 560" preserveAspectRatio="xMidYMid meet" aria-label="Interactive world map"></svg>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="inner">
+          <div class="sideHeader">
+            <div>
+              <div style="font-weight:700;">Selected Country</div>
+            </div>
+            <button id="clearBtn">Clear</button>
+          </div>
+          <div id="countryCard" class="muted" style="font-size:14px;">—</div>
+
+          <div style="margin-top:10px;">
+            <div class="tableWrap">
+              <table id="dataTable">
+                <thead>
+                  <tr>
+                    <th>Country</th>
+                    <th id="metricHeader">PAP (Pet Adoption Prevalence)</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+            <div class="note">Column reflects the chosen “Color by” metric.</div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <div class="foot">
+      Map data © world-atlas/topojson • Built with D3.
+    </div>
+  </div>
+
+  <!-- D3 & TopoJSON -->
+  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
+
+  <script>
+  // ======= DATA =======
+  const DATA = [
+    { country: "Canada", PAP: 0.79, GDP: 54283, GDP_Log: 4.734663841, WHR: 6.803, GHI: 89.3, RabRisk: 1 },
+    { country: "Brazil", PAP: 0.75, GDP: 10280, GDP_Log: 4.011993115, WHR: 6.494, GHI: 83, RabRisk: 1 },
+    { country: "Mexico", PAP: 0.68, GDP: 14157, GDP_Log: 4.150971232, WHR: 6.979, GHI: 70.5, RabRisk: 1 },
+    { country: "United States of America", PAP: 0.8, GDP: 85810, GDP_Log: 4.933537902, WHR: 6.724, GHI: 79.5, RabRisk: 1 },
+    { country: "United Kingdom", PAP: 0.95, GDP: 52637, GDP_Log: 4.721291129, WHR: 6.728, GHI: 88.8, RabRisk: 0 },
+    { country: "South Africa", PAP: 0.78, GDP: 6253, GDP_Log: 3.796088429, WHR: 5.213, GHI: 66.4, RabRisk: 1 },
+    { country: "France", PAP: 0.95, GDP: 46150, GDP_Log: 4.664171705, WHR: 6.593, GHI: 91.2, RabRisk: 0 },
+    { country: "Lithuania", PAP: 0.95, GDP: 29386, GDP_Log: 4.468140474, WHR: 6.829, GHI: 82.3, RabRisk: 1 },
+    { country: "Germany", PAP: 0.93, GDP: 55800, GDP_Log: 4.746634199, WHR: 6.753, GHI: 92.5, RabRisk: 0 },
+    { country: "India", PAP: 0.31, GDP: 2697, GDP_Log: 3.430880946, WHR: 4.389, GHI: 61.3, RabRisk: 1 },
+    { country: "Indonesia", PAP: 0.24, GDP: 4925, GDP_Log: 3.692406235, WHR: 5.617, GHI: 68, RabRisk: 1 },
+    { country: "Thailand", PAP: 0.83, GDP: 7345, GDP_Log: 3.8659918, WHR: 6.222, GHI: 86.2, RabRisk: 1 },
+    { country: "Australia", PAP: 0.97, GDP: 64408, GDP_Log: 4.808939814, WHR: 6.974, GHI: 91, RabRisk: 0 },
+    { country: "New Zealand", PAP: 0.88, GDP: 48747, GDP_Log: 4.687947893, WHR: 6.952, GHI: 90.3, RabRisk: 0 },
+    { country: "Japan", PAP: 0.88, GDP: 32476, GDP_Log: 4.511562533, WHR: 6.147, GHI: 95.1, RabRisk: 0 },
+    { country: "China", PAP: 0.48, GDP: 13303, GDP_Log: 4.123949591, WHR: 5.921, GHI: 46.3, RabRisk: 1 },
+    { country: "Philippines", PAP: 0.59, GDP: 3985, GDP_Log: 3.600428326, WHR: 6.107, GHI: 63.9, RabRisk: 1 },
+    { country: "Turkey", PAP: 0.52, GDP: 15473, GDP_Log: 4.189574526, WHR: 5.262, GHI: 82.4, RabRisk: 1 },
+    { country: "Greece", PAP: 0.31, GDP: 24752, GDP_Log: 4.393610296, WHR: 5.776, GHI: 88.4, RabRisk: 0 },
+    { country: "Poland", PAP: 0.92, GDP: 25023, GDP_Log: 4.398339376, WHR: 6.673, GHI: 86.2, RabRisk: 1 }
+  ];
+  const ALT = new Map([["USA","United States of America"],["United States","United States of America"],["UK","United Kingdom"],["NewZeland","New Zealand"],["Türkiye","Turkey"]]);
+
+  // ======= STATE =======
+  const metricSelect = document.getElementById("metricSelect");
+  const mapSvg = d3.select("#map");
+  const legendDiv = document.getElementById("legend");
+  const countryCard = document.getElementById("countryCard");
+  const clearBtn = document.getElementById("clearBtn");
+  const table = document.getElementById("dataTable");
+  const metricHeader = document.getElementById("metricHeader");
+  const filterInput = document.getElementById("filterInput");
+  const downloadCsvBtn = document.getElementById("downloadCsvBtn");
+
+  let currentMetric = metricSelect.value; // "PAP"
+  let selectedName = null;
+
+  const metrics = [
+    { key: "PAP", label: "PAP (Pet Adoption Prevalence)", type: "continuous", digits: 2 },
+    { key: "GDP", label: "GDP per capita (USD)", type: "continuous", digits: 0 },
+    { key: "GDP_Log", label: "log10(GDP per capita)", type: "continuous", digits: 3 },
+    { key: "WHR", label: "World Happiness Report (0–10)", type: "continuous", digits: 3 },
+    { key: "GHI", label: "Global Health Index (0–100)", type: "continuous", digits: 1 },
+    { key: "RabRisk", label: "Rabies Risk (0/1)", type: "binary", digits: 0 }
+  ];
+  const metricInfo = (k) => metrics.find(m => m.key === k);
+
+  const dataByCountry = new Map(); DATA.forEach(d => dataByCountry.set(d.country, d));
+  const datasetNames = new Set(DATA.map(d => d.country));
+
+  // ======= PROJECTION & PATH =======
+  const width = 1100, height = 560;
+  const projection = d3.geoEqualEarth().fitSize([width, height], {type: "Sphere"});
+  const path = d3.geoPath(projection);
+
+  // zoom + pan
+  const gMap = mapSvg.append("g");
+  mapSvg.call(d3.zoom().scaleExtent([0.9, 8]).on("zoom", (e) => gMap.attr("transform", e.transform)));
+
+  // Graticule
+  const graticule = d3.geoGraticule10();
+  gMap.append("path").datum(graticule).attr("d", path).attr("fill","none").attr("stroke","#e5e7eb").attr("stroke-width",0.5).attr("opacity",0.7);
+
+  // ======= LEGEND =======
+  function renderLegend() {
+    const info = metricInfo(currentMetric);
+    legendDiv.innerHTML = "";
+    if (info.type === "binary") {
+      const wrap = document.createElement("div"); wrap.className = "legend";
+      wrap.innerHTML = `
+        <span class="swatch" style="background:${getBinaryColor(1)}"></span> Risk (1)
+        <span style="width:10px"></span>
+        <span class="swatch" style="background:${getBinaryColor(0)}"></span> No Risk (0)
+      `;
+      legendDiv.appendChild(wrap);
+    } else {
+      const [min,max] = continuousDomain(DATA, currentMetric);
+      const wrap = document.createElement("div"); wrap.className = "legend";
+      wrap.innerHTML = `
+        <div>
+          <div class="gradientBar"></div>
+          <div class="legendMinMax"><span>${min.toFixed(2)}</span><span>${max.toFixed(2)}</span></div>
+        </div>
+      `;
+      legendDiv.appendChild(wrap);
+    }
+  }
+
+  // ======= COLORS =======
+  function getBinaryColor(v) { return v===1 ? getComputedStyle(document.documentElement).getPropertyValue("--risk").trim() : getComputedStyle(document.documentElement).getPropertyValue("--safe").trim(); }
+  function continuousDomain(rows, key) { const vals = rows.map(r => r[key]).filter(v => v!=null && !Number.isNaN(v)); return [d3.min(vals), d3.max(vals)]; }
+  function getContinuousColor(v, min, max) {
+    if (v == null || Number.isNaN(v)) return "#d1d5db";
+    const t = (v - min) / Math.max(1e-9, (max - min));
+    const c0 = d3.hcl(190, 40, 88), c1 = d3.hcl(190, 70, 38);
+    return d3.interpolateHcl(c0, c1)(Math.max(0, Math.min(1, t)));
+  }
+
+  // ======= CARD =======
+  function renderCard(name) {
+    if (!name) { countryCard.innerHTML = "—"; return; }
+    const dsName = datasetNames.has(name) ? name : (ALT.get(name) || name);
+    const row = dataByCountry.get(dsName);
+    if (!row) { countryCard.innerHTML = `<div style="font-weight:700; margin-bottom:4px;">${name}</div><div class="muted">No data.</div>`; return; }
+    const nf = (x, d=2) => (x==null? "—" : Number(x).toLocaleString(undefined, {minimumFractionDigits:d, maximumFractionDigits:d}));
+    const nf0 = (x) => (x==null? "—" : Math.round(Number(x)).toLocaleString());
+    countryCard.innerHTML = `
+      <div style="font-weight:700; margin-bottom:6px;">${name}</div>
+      <div class="tooltip grid2" style="position:static; display:grid; background:white; border:none; box-shadow:none; padding:0;">
+        <span class="muted">PAP</span><span>${nf(row.PAP,2)}</span>
+        <span class="muted">GDP</span><span>${nf0(row.GDP)}</span>
+        <span class="muted">GDP_Log</span><span>${nf(row.GDP_Log,3)}</span>
+        <span class="muted">WHR</span><span>${nf(row.WHR,3)}</span>
+        <span class="muted">GHI</span><span>${nf(row.GHI,1)}</span>
+        <span class="muted">RabRisk</span><span>${row.RabRisk}</span>
+      </div>`;
+  }
+  document.getElementById("clearBtn").addEventListener("click", () => { selectedName = null; renderCard(null); redraw(); });
+
+  // ======= TABLE =======
+  function renderTable() {
+    const info = metricInfo(currentMetric);
+    metricHeader.textContent = info.label;
+    const tbody = table.querySelector("tbody"); tbody.innerHTML = "";
+    const q = filterInput.value.trim().toLowerCase();
+    const rows = DATA.filter(r => q ? r.country.toLowerCase().includes(q) : true).sort((a,b) => a.country.localeCompare(b.country));
+    for (const r of rows) {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td>${r.country}</td><td>${fmt(r[currentMetric], info.digits)}</td>`;
+      tr.addEventListener("click", () => { selectedName = r.country; renderCard(selectedName); redraw(); });
+      tbody.appendChild(tr);
+    }
+  }
+  const fmt = (x, d=2) => (x==null? "—" : (d===0? Math.round(Number(x)).toLocaleString() : Number(x).toLocaleString(undefined, {minimumFractionDigits:d, maximumFractionDigits:d})));
+  document.getElementById("downloadCsvBtn").addEventListener("click", () => {
+    const headers = Object.keys(DATA[0]);
+    const csvLines = [headers.join(",")];
+    DATA.forEach(r => {
+      const row = headers.map(h => {
+        const v = r[h];
+        if (typeof v === "string" && (v.includes(",") || v.includes('"'))) return '"' + v.replace(/"/g, '""') + '"';
+        return v;
+      }).join(",");
+      csvLines.push(row);
+    });
+    const blob = new Blob([csvLines.join("\n")], {type: "text/csv;charset=utf-8;"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = "country_metrics.csv"; a.click();
+    URL.revokeObjectURL(url);
+  });
+  document.getElementById("filterInput").addEventListener("input", renderTable);
+
+  // ======= DRAW MAP =======
+  const tooltip = d3.select("body").append("div").attr("class", "tooltip").style("display", "none");
+  function showTooltip(name, row, x, y) { tooltip.style("left",(x+10)+"px").style("top",(y+10)+"px").style("display","block"); tooltip.html(renderTooltipHTML(name,row)); }
+  function hideTooltip(){ tooltip.style("display","none"); }
+  function renderTooltipHTML(name, row) {
+    if (!row) return `<div class="title">${name}</div><div class="muted">No data</div>`;
+    const nf = (x, d=2) => (x==null? "—" : Number(x).toLocaleString(undefined, {minimumFractionDigits:d, maximumFractionDigits:d}));
+    const nf0 = (x) => (x==null? "—" : Math.round(Number(x)).toLocaleString());
+    return `<div class="title">${name}</div>
+      <div class="grid2">
+        <span class="muted">PAP</span><span>${nf(row.PAP,2)}</span>
+        <span class="muted">GDP</span><span>${nf0(row.GDP)}</span>
+        <span class="muted">GDP_Log</span><span>${nf(row.GDP_Log,3)}</span>
+        <span class="muted">WHR</span><span>${nf(row.WHR,3)}</span>
+        <span class="muted">GHI</span><span>${nf(row.GHI,1)}</span>
+        <span class="muted">RabRisk</span><span>${row.RabRisk}</span>
+      </div>`;
+  }
+
+  function redraw() {
+    renderLegend();
+    renderTable();
+
+    const [min,max] = currentMetric === "RabRisk" ? [0,1] : continuousDomain(DATA, currentMetric);
+    const countries = gMap.selectAll("path.country").data(worldFeatures, d => d.id);
+
+    countries.enter().append("path")
+      .attr("class","country").attr("d", path)
+      .attr("stroke", d => outlineStroke(d)).attr("stroke-width", d => outlineWidth(d))
+      .attr("fill", d => fillColor(d, min, max))
+      .on("mousemove", (event, d) => {
+        const name = d.properties.name || d.properties.NAME || "";
+        const dsName = datasetNames.has(name) ? name : (ALT.get(name) || name);
+        const row = dataByCountry.get(dsName);
+        showTooltip(name, row, event.pageX, event.pageY);
+      })
+      .on("mouseleave", hideTooltip)
+      .on("click", (event, d) => { const name = d.properties.name || d.properties.NAME || ""; selectedName = name; renderCard(name); redraw(); });
+
+    countries.attr("stroke", d => outlineStroke(d)).attr("stroke-width", d => outlineWidth(d)).attr("fill", d => fillColor(d, min, max));
+    countries.exit().remove();
+  }
+
+  function outlineStroke(d) {
+    const name = d.properties.name || d.properties.NAME || "";
+    const inSet = datasetNames.has(name) || datasetNames.has(ALT.get(name));
+    return inSet ? "#2f855a" : "#bdbdbd";
+  }
+  function outlineWidth(d) { return 0.5; }
+  function fillColor(d, min, max) {
+    const name = d.properties.name || d.properties.NAME || "";
+    const dsName = datasetNames.has(name) ? name : (ALT.get(name) || name);
+    const row = dataByCountry.get(dsName);
+    if (!row) return "#eaeaea";
+    if (currentMetric === "RabRisk") return getBinaryColor(row.RabRisk);
+    return getContinuousColor(row[currentMetric], min, max);
+  }
+
+  let worldFeatures = [];
+  fetch("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json")
+    .then(r => r.json())
+    .then(world => {
+      worldFeatures = topojson.feature(world, world.objects.countries).features;
+      renderCard(null);
+      redraw();
+    });
+
+  metricSelect.addEventListener("change", (e) => { currentMetric = e.target.value; redraw(); });
+  </script>
+</body>
+</html>
