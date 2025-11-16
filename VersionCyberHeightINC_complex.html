@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <link href="https://fonts.cdnfonts.com/css/jungle-adventurer" rel="stylesheet">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CyberCatch</title>
+  <style>
+    body {
+      font-family: 'Jungle Adventurer', Arial, sans-serif !important;
+      text-align: center;
+      background-color: #d3d3d3;
+      color: black;
+      overflow: hidden;
+      padding-top: 40px;
+    }
+    .game-container {
+      position: relative;
+      width: 500px;
+      height: 400px;
+      margin: 80px auto 30px;
+    }
+    .player {
+      width: 80px;
+      height: 80px;
+      background-color: #808080;
+      border-radius: 50%;
+      position: absolute;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      border: 3px solid transparent;
+      color: white;
+      z-index: 2;
+      transition: top 0.3s ease;
+    }
+    .player.has-ball {
+      border-color: green;
+    }
+    .ball {
+      width: 20px;
+      height: 20px;
+      background-color: green;
+      border-radius: 50%;
+      position: absolute;
+      transition: left 0.8s ease-in-out, top 0.8s ease-in-out;
+      z-index: 3;
+      pointer-events: none;
+    }
+    .info {
+      margin-top: 20px;
+      font-size: 18px;
+    }
+    #nickname-screen, #waiting-screen {
+      display: none;
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      background: #d3d3d3;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      z-index: 10;
+    }
+    #nickname-screen input {
+      margin-top: 10px;
+      padding: 8px;
+      font-size: 16px;
+    }
+    #nickname-screen button {
+      font-family: 'Jungle Adventurer', Arial, sans-serif !important;
+      margin-top: 20px;
+      padding: 8px 16px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    #waiting-screen img {
+      width: 100px;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="nickname-screen" style="display:flex; flex-direction:column;">
+    <h2>Please enter your nickname:</h2>
+    <input type="text" id="nickname-input" placeholder="Your name..." />
+    <button id="start-button">Start</button>
+  </div>
+
+  <div id="waiting-screen">
+    <h2>Assigning players...</h2>
+    <img src="https://icon-library.com/images/waiting-icon-gif/waiting-icon-gif-1.jpg" alt="Waiting..." />
+  </div>
+
+  <div id="game-screen" style="display:none;">
+    <h1>CyberCatch</h1>
+    <p>Click on a player to pass the ball when it's your turn.</p>
+
+    <div class="game-container" id="game-container">
+      <!-- Horizontal row layout -->
+      <div class="player has-ball" id="player3" style="left: 20px; top: 250px;">Alex</div>
+      <div class="player" id="player2" style="left: 120px; top: 250px;">Taylor</div>
+      <div class="player" id="player0" style="left: 220px; top: 250px;">You</div>
+      <div class="player" id="player4" style="left: 320px; top: 250px;">Jordan</div>
+      <div class="player" id="player1" style="left: 420px; top: 250px;">Casey</div>
+      <div class="ball" id="ball"></div>
+    </div>
+
+    <div class="info" id="info">The game is starting...</div>
+  </div>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+
+  let nickname = "You";
+  const players = ["player0", "player1", "player2", "player3", "player4"];
+  let currentPlayer = "player3";
+
+  let totalThrows = 0;
+  const maxThrows = 60;
+
+  let gameEnded = false;
+  let gameLog = [];
+  let lastPlayerReceiveTime = null;
+
+  const TARGET_PLAYER_RECEIVES = 12;
+  let playerReceivesSoFar = 0;
+
+  // ---- ROLE ASSIGNMENT ----
+  const roles = [
+    { role: "overincluder", throws: 6 },
+    { role: "includer",     throws: 4 },
+    { role: "excluder",     throws: 2 },
+    { role: "ostracizer",   throws: 0 }
+  ];
+
+  function shuffle(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  shuffle(roles);
+
+  const aiQuota = {
+    player1: roles[0].throws,
+    player2: roles[1].throws,
+    player3: roles[2].throws,
+    player4: roles[3].throws
+  };
+
+  // Height visualization data
+  const receiveCounts = {};
+
+  document.getElementById("start-button").addEventListener("click", function () {
+    const input = document.getElementById("nickname-input").value.trim();
+    if (!input) {
+      alert("Please enter your nickname before starting.");
+      return;
+    }
+    nickname = input;
+    document.getElementById("player0").innerText = nickname;
+
+    document.getElementById("nickname-screen").style.display = "none";
+    document.getElementById("waiting-screen").style.display = "flex";
+
+    setTimeout(startGame, 1000);
+  });
+
+
+  function startGame() {
+    document.getElementById("waiting-screen").style.display = "none";
+    document.getElementById("game-screen").style.display = "block";
+
+    // init height counts
+    document.querySelectorAll(".player").forEach(player => {
+      receiveCounts[player.id] = 0;
+    });
+
+    moveBall(currentPlayer);
+    setHasBall(currentPlayer);
+
+    // player click handler
+    document.querySelectorAll(".player").forEach(player => {
+      player.addEventListener("click", function () {
+        if (gameEnded || currentPlayer !== "player0" || totalThrows >= maxThrows || this.id === "player0") return;
+
+        const selectedPlayer = this.id;
+        handlePlayerThrow(selectedPlayer);
+      });
+    });
+
+    setTimeout(aiTurn, getSlowerReactionTime());
+  }
+
+
+  function handlePlayerThrow(toId) {
+    updateBallHolder(toId);
+    totalThrows++;
+
+    const rt = lastPlayerReceiveTime ? Date.now() - lastPlayerReceiveTime : null;
+    lastPlayerReceiveTime = null;
+
+    gameLog.push({
+      from: nickname,
+      to: document.getElementById(toId).innerText,
+      type: "Player",
+      rt
+    });
+
+    document.getElementById("info").innerText =
+      `You passed the ball to ${document.getElementById(toId).innerText}`;
+
+    setTimeout(aiTurn, getSlowerReactionTime());
+  }
+
+
+  function setHasBall(playerId) {
+    document.querySelectorAll(".player").forEach(p => p.classList.remove("has-ball"));
+    const el = document.getElementById(playerId);
+    if (el) el.classList.add("has-ball");
+  }
+
+
+  function updateBallHolder(id) {
+    moveBall(id);
+    currentPlayer = id;
+    setHasBall(id);
+
+    // height visualization
+    if (!receiveCounts[id]) receiveCounts[id] = 0;
+    receiveCounts[id]++;
+
+    const target = document.getElementById(id);
+    const currentTop = parseInt(target.style.top || "250", 10);
+    target.style.top = (currentTop - 15) + "px";
+
+    if (id === "player0") {
+      lastPlayerReceiveTime = Date.now();
+    }
+  }
+
+
+  function moveBall(id) {
+    const ball = document.getElementById("ball");
+    const target = document.getElementById(id);
+    const container = document.getElementById("game-container");
+    if (!ball || !target || !container) return;
+
+    const t = target.getBoundingClientRect();
+    const c = container.getBoundingClientRect();
+
+    const x = t.left - c.left + target.offsetWidth / 2 - ball.offsetWidth / 2;
+    const y = t.top - c.top + target.offsetHeight / 2 - ball.offsetHeight / 2;
+
+    ball.style.left = x + "px";
+    ball.style.top = y + "px";
+  }
+
+
+  function getSlowerReactionTime() {
+    return Math.floor(Math.random() * 701) + 2000;
+  }
+
+
+  function aiTurn() {
+
+    if (totalThrows >= maxThrows || gameEnded) {
+      endRound();
+      return;
+    }
+
+    const thrower = currentPlayer;
+    if (thrower === "player0") return;
+
+    const aiPlayers = ["player1", "player2", "player3", "player4"];
+
+    let nextPlayer = null;
+
+    const remainingTotal = maxThrows - totalThrows;
+    const remainingPlayerReceives = TARGET_PLAYER_RECEIVES - playerReceivesSoFar;
+
+    // Remaining throws that AI can spend (AI->AI + AI->player)
+    const remainingAiThrows = Math.max(0, remainingTotal - remainingPlayerReceives);
+
+    const quotaLeft = aiQuota[thrower] || 0;
+
+    // Probability = quotaLeft / expected remaining turns
+    let pToPlayer = 0;
+    if (quotaLeft > 0 && remainingAiThrows > 0) {
+      const estTurns = remainingAiThrows / 4; // 4 AI players
+      if (estTurns > 0) {
+        pToPlayer = quotaLeft / estTurns;
+      }
+    }
+    pToPlayer = Math.max(0, Math.min(1, pToPlayer));
+
+    const r = Math.random();
+
+    if (quotaLeft > 0 && remainingPlayerReceives > 0 && r < pToPlayer) {
+      // AI throws to human
+      nextPlayer = "player0";
+      aiQuota[thrower]--;
+      playerReceivesSoFar++;
+    } else {
+      // AI throws to another AI
+      // If this AI has 0 quota, prioritize AIs that still have quota > 0
+      const otherAIs = aiPlayers.filter(p => p !== thrower);
+      const quotaAIs = otherAIs.filter(p => aiQuota[p] > 0);
+      const pool = quotaLeft === 0 && quotaAIs.length > 0 ? quotaAIs : otherAIs;
+      nextPlayer = pool[Math.floor(Math.random() * pool.length)];
+    }
+
+    // perform throw
+    updateBallHolder(nextPlayer);
+    totalThrows++;
+
+    const throwerName = document.getElementById(thrower).innerText;
+    const receiverName = document.getElementById(nextPlayer).innerText;
+
+    gameLog.push({
+      from: throwerName,
+      to: receiverName,
+      type: "AI",
+      timestamp: Date.now()
+    });
+
+    document.getElementById("info").innerText =
+      nextPlayer === "player0"
+        ? `${throwerName} passed the ball to you – it's your turn!`
+        : `${throwerName} passed the ball to ${receiverName}`;
+
+    if (nextPlayer !== "player0") {
+      setTimeout(aiTurn, getSlowerReactionTime());
+    }
+  }
+
+
+  function endRound() {
+    gameEnded = true;
+
+    const gameLogString = JSON.stringify(gameLog);
+    console.log("📤 Sending to Qualtrics with tag: CyberSizeLog12");
+
+    window.parent.postMessage({ type: "CyberSizeLog12", gameLog: gameLogString }, "*");
+    setTimeout(() => {
+      window.parent.postMessage({ type: "CyberSizeLog12", gameLog: gameLogString }, "*");
+    }, 500);
+
+    setTimeout(() => {
+      document.body.innerHTML = `
+        <div style="background-color:#d3d3d3;width:100vw;height:100vh;display:flex;align-items:center;justify-content:center;">
+          <div style="font-size:24px;font-weight:bold;color:#2c3e50;">The round has ended!</div>
+        </div>`;
+    }, 700);
+  }
+
+});
+</script>
+
+</body>
+</html>
