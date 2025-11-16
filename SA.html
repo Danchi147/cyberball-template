@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Measure My Social Anxiety</title>
+<style>
+  :root { --font: Georgia, "Times New Roman", serif; --bg:#fff; --fg:#000; --border:#000; --accent:#b00000; }
+  html, body { margin:0; background:var(--bg); color:var(--fg); font-family:var(--font); }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 16px 14px 24px; }
+  h1 { margin: 0 0 6px; font-size: 1.22rem; line-height:1.2; }
+  h2 { margin: 12px 0 6px; font-size: 1.05rem; }
+  p, li { font-size: 0.96rem; line-height: 1.35; }
+  .muted { font-size: 0.88rem; }
+  .small { font-size: 0.82rem; line-height:1.35; }
+  .card { border: 1px solid var(--border); padding: 10px 12px; margin: 10px 0; }
+  .row { display:flex; gap:10px; align-items: center; flex-wrap: wrap; }
+  .spacer { flex:1; }
+  .btn { background:#fff; color:#000; border:1px solid #000; padding:8px 12px; cursor:pointer; font-family:var(--font); text-decoration:none; }
+  .btn:focus { outline:2px dotted #000; outline-offset:2px; }
+  .btn[disabled] { opacity:0.45; cursor:not-allowed; }
+  .error { color:#000; border-left:3px solid #000; padding-left:8px; font-size:0.9rem; display:none; }
+  fieldset { border:none; padding:0; margin: 10px 0; }
+  legend { font-weight:600; margin-bottom:4px; }
+  .opts { display:flex; flex-wrap:wrap; gap:12px; }
+  label.opt { display:flex; align-items:center; gap:4px; }
+  input[type="radio"] { accent-color:#000; }
+  .scale-note { margin-left:2px; }
+
+  /* Results boxes */
+  .scorebox { display:flex; gap:8px; }
+  .box { border:1px solid #000; padding:8px 10px; flex:1; text-align:center; }
+  .box .value { font-weight:700; font-size:1.15rem; }
+  .box .value.accent { color: var(--accent); }
+
+  /* Canvas + legend */
+  .plot-wrap { border:1px solid #000; padding:6px; }
+  canvas { width:100%; height:200px; display:block; }
+  .legend { display:flex; flex-wrap:wrap; gap:12px; font-size:0.85rem; margin-top:6px; }
+  .lg { display:inline-flex; align-items:center; gap:6px; }
+  .ln { width:20px; height:0; border-top:2px solid #000; }
+  .dash { border-top-style: dashed; }
+  .dot { border-top-style: dotted; }
+  .fill { width:16px; height:10px; border:1px solid #000; background: repeating-linear-gradient(45deg,#fff 0,#fff 2px,#000 2px,#000 3px); }
+
+  /* Phase handling */
+  .phase { display:none; }
+  .phase.active { display:block; }
+
+  /* Help button (fixed, bottom-left) */
+  .help-btn { position: fixed; left: 12px; bottom: 12px; z-index: 1001; }
+
+  hr { border:none; border-top:1px solid #000; margin: 14px 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="row">
+    <h1>Measure My Social Anxiety</h1>
+    <span class="spacer"></span>
+  </div>
+
+  <!-- PHASE 1: Instructions + Items -->
+  <section id="phase1" class="phase active" aria-labelledby="intro-h2">
+    <h2 id="intro-h2">Mini‑SPIN‑R — quick self‑check (3 items)</h2>
+    <div class="card">
+      <p class="muted"><strong>Instructions</strong></p>
+      <ul class="muted" style="margin-top:6px;">
+        <li>Think about <strong>the past week</strong> and rate each description from <strong>0</strong> (not at all) to <strong>4</strong> (extremely).</li>
+        <li>These are the paper’s <em>item descriptions</em> for the Mini‑SPIN‑R (SPIN items 5, 12, 14), not the copyrighted full texts.</li>
+        <li>Your score will be placed on the distribution reported in the paper. This is <em>not</em> a diagnosis.</li>
+      </ul>
+    </div>
+
+    <form id="form" class="card" oninput="handleInput()">
+      <fieldset>
+        <legend>1) Fear of being criticized</legend>
+        <div class="opts">
+          <label class="opt"><input type="radio" name="q1" value="0">0</label>
+          <label class="opt"><input type="radio" name="q1" value="1">1</label>
+          <label class="opt"><input type="radio" name="q1" value="2">2</label>
+          <label class="opt"><input type="radio" name="q1" value="3">3</label>
+          <label class="opt"><input type="radio" name="q1" value="4">4</label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>2) Avoidance of criticism</legend>
+        <div class="opts">
+          <label class="opt"><input type="radio" name="q2" value="0">0</label>
+          <label class="opt"><input type="radio" name="q2" value="1">1</label>
+          <label class="opt"><input type="radio" name="q2" value="2">2</label>
+          <label class="opt"><input type="radio" name="q2" value="3">3</label>
+          <label class="opt"><input type="radio" name="q2" value="4">4</label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>3) Fear of being watched</legend>
+        <div class="opts">
+          <label class="opt"><input type="radio" name="q3" value="0">0</label>
+          <label class="opt"><input type="radio" name="q3" value="1">1</label>
+          <label class="opt"><input type="radio" name="q3" value="2">2</label>
+          <label class="opt"><input type="radio" name="q3" value="3">3</label>
+          <label class="opt"><input type="radio" name="q3" value="4">4</label>
+        </div>
+      </fieldset>
+
+      <p class="small scale-note">Scale: 0 = not at all · 1 = a little · 2 = moderately · 3 = very · 4 = extremely</p>
+      <div class="row" style="margin-top:10px;">
+        <button type="button" class="btn" onclick="resetForm()">Reset</button>
+        <span class="spacer"></span>
+        <button id="checkBtn" type="button" class="btn" onclick="goToResults()" disabled>Check My Score</button>
+      </div>
+      <p id="err" class="error" role="alert">Please answer all three items before continuing.</p>
+    </form>
+  </section>
+
+  <!-- PHASE 2: Results + Distribution -->
+  <section id="phase2" class="phase" aria-labelledby="result-h2">
+    <div class="row">
+      <h2 id="result-h2">Your Results</h2>
+      <span class="spacer"></span>
+      <button type="button" class="btn" onclick="backToQuestions()">Back to questions</button>
+    </div>
+
+    <div class="card">
+      <div class="scorebox">
+        <div class="box">
+          <div>Total score</div>
+          <div class="value" id="score" aria-live="polite">0 / 12</div>
+        </div>
+        <div class="box">
+          <div>Percentile (paper sample)</div>
+          <div class="value" id="pct">—</div>
+        </div>
+        <div class="box">
+          <div>Z vs. mean 8.70 (SD 2.53)</div>
+          <div class="value" id="z">—</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card plot-wrap">
+      <canvas id="chart" width="720" height="200" role="img"
+        aria-label="Distribution of Mini‑SPIN‑R with your score, sample mean, and Mini‑SPIN screening cut‑off."></canvas>
+      <div class="legend">
+        <span class="lg"><span class="fill"></span> Area ≤ your score (percentile)</span>
+        <span class="lg"><span class="ln"></span> Your score (turns colored if ≥ 6)</span>
+        <span class="lg"><span class="ln dot"></span> Sample mean (8.70)</span>
+        <span class="lg"><span class="ln dash"></span> Mini‑SPIN screening cut‑off (≥ 6)</span>
+      </div>
+      <p id="hoverTip" class="small" aria-live="polite" style="margin-top:6px;">Hover over the plot to see percentiles at each score.</p>
+      <p class="small" style="margin-top:4px;">
+        Note: The dashed line is from the original <em>Mini‑SPIN screening</em> (different 3 items). The 2013 paper does not provide a Mini‑SPIN‑R cut‑off; the line is a reference only.
+      </p>
+    </div>
+  </section>
+
+  <hr />
+  <p class="small"><strong>Reference</strong><br/>
+    Aderka, Idan M., Mark H. Pollack, Naomi M. Simon, Jasper A. J. Smits, Michael Van Ameringen, Murray B. Stein, and Stefan G. Hofmann.
+    “Development of a brief version of the social phobia inventory using item response theory: the mini‑SPIN‑R.” <em>Behavior Therapy</em> 44(4) (2013): 651–661.
+  </p>
+</div>
+
+<!-- Fixed "Get Help" button: navigates to your uploaded help page; keep both files in the same folder -->
+<a id="helpBtn" class="btn help-btn" href="social-anxiety-help-v5%20(1).html" aria-label="Open help and resources">Get Help</a>
+
+<script>
+  // --- Parameters from Aderka et al., 2013 (Table 1): Mini‑SPIN‑R mean & SD ---
+  const MEAN = 8.70, SD = 2.53;
+  const MIN = 0, MAX = 12;
+  const SCREEN_CUTOFF = 6; // Original Mini-SPIN screening cut-off (reference only)
+  const ACCENT = '#b00000';
+
+  const $ = sel => document.querySelector(sel);
+
+  // Cache frequently used elements early
+  const hoverEl = document.getElementById('hoverTip');
+  const canvasEl = document.getElementById('chart');
+  const canvas = canvasEl;
+  const ctx = canvas.getContext('2d');
+
+  // IMPORTANT: Define currentScore BEFORE any function uses it
+  let currentScore = 0;
+
+  function handleInput() {
+    const complete = getAnsweredCount() === 3;
+    $('#checkBtn').disabled = !complete;
+    if (complete) $('#err').style.display = 'none';
+  }
+
+  function resetForm() {
+    $('#form').reset();
+    handleInput();
+  }
+
+  function getAnsweredCount() {
+    let c = 0;
+    for (let i = 1; i <= 3; i++) {
+      if (document.querySelector('input[name="q' + i + '"]:checked')) c++;
+    }
+    return c;
+  }
+
+  function getScore() {
+    let s = 0;
+    for (let i = 1; i <= 3; i++) {
+      const el = document.querySelector('input[name="q' + i + '"]:checked');
+      if (el) s += parseInt(el.value, 10);
+    }
+    return s;
+  }
+
+  function goToResults() {
+    if (getAnsweredCount() < 3) {
+      $('#err').style.display = 'block';
+      return;
+    }
+    const s = getScore();
+    updateNumbers(s);
+    switchPhase(2);
+
+    // Ensure canvas is visible before sizing/drawing
+    requestAnimationFrame(() => {
+      resizeCanvas();
+      animateMarkerTo(s);
+    });
+  }
+
+  function backToQuestions() {
+    switchPhase(1);
+  }
+
+  function switchPhase(n) {
+    $('#phase1').classList.toggle('active', n === 1);
+    $('#phase2').classList.toggle('active', n === 2);
+  }
+
+  // --- Math helpers ---
+  function erf(x){const s=x<0?-1:1; x=Math.abs(x);
+    const a1=0.254829592,a2=-0.284496736,a3=1.421413741,a4=-1.453152027,a5=1.061405429,p=0.3275911;
+    const t=1/(1+p*x); const y=1-(((((a5*t+a4)*t+a3)*t+a2)*t+a1)*t)*Math.exp(-x*x); return s*y;
+  }
+  function cdf(x, m=MEAN, sd=SD){ return 0.5*(1+erf((x-m)/(sd*Math.SQRT2))); }
+  function zscore(x){ return (x - MEAN) / SD; }
+
+  // --- Numbers panel ---
+  function updateNumbers(s) {
+    const scoreEl = $('#score');
+    scoreEl.textContent = s + ' / ' + MAX;
+    scoreEl.classList.toggle('accent', s >= SCREEN_CUTOFF);
+
+    const z = zscore(s);
+    const pct = Math.max(0, Math.min(100, cdf(s) * 100));
+    $('#z').textContent = (z>=0?'+':'') + z.toFixed(2);
+    $('#pct').textContent = pct.toFixed(1) + '%';
+  }
+
+  // --- Plot setup ---
+  let dpr = window.devicePixelRatio || 1;
+
+  function resizeCanvas() {
+    const cssW = canvas.clientWidth || 720;
+    const cssH = canvas.clientHeight || 200;
+    canvas.width  = Math.round(cssW * dpr);
+    canvas.height = Math.round(cssH * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    draw(currentScore);
+  }
+  window.addEventListener('resize', resizeCanvas);
+
+  const PADDING = { l: 28, r: 10, t: 10, b: 24 };
+  function xScale(x) {
+    const W = (canvas.clientWidth || 720) - PADDING.l - PADDING.r;
+    return PADDING.l + (x - MIN) / (MAX - MIN) * W;
+  }
+  function yScale01(y01) {
+    const H = (canvas.clientHeight || 200) - PADDING.t - PADDING.b;
+    return PADDING.t + (1 - y01) * H;
+  }
+
+  function pdf(x, m=MEAN, sd=SD){
+    const a = 1/(sd*Math.sqrt(2*Math.PI));
+    const z2 = ((x-m)/sd)**2;
+    return a * Math.exp(-0.5*z2);
+  }
+  let maxPdf=0;
+  for (let x=MIN; x<=MAX; x+=0.01) maxPdf = Math.max(maxPdf, pdf(x));
+
+  function draw(s) {
+    const W = canvas.clientWidth || 720, H = canvas.clientHeight || 200;
+    ctx.clearRect(0,0,W,H);
+
+    // Axis
+    ctx.strokeStyle = '#000'; ctx.lineWidth = 1; ctx.setLineDash([]);
+    ctx.beginPath();
+    ctx.moveTo(PADDING.l, H - PADDING.b);
+    ctx.lineTo(W - PADDING.r, H - PADDING.b);
+    ctx.stroke();
+
+    // Ticks 0..12
+    ctx.font = '10px Georgia, "Times New Roman", serif'; ctx.fillStyle = '#000'; ctx.textAlign = 'center';
+    for (let x=MIN; x<=MAX; x++) {
+      const px = xScale(x);
+      ctx.beginPath(); ctx.moveTo(px, H - PADDING.b); ctx.lineTo(px, H - PADDING.b - 5); ctx.stroke();
+      ctx.fillText(String(x), px, H - 6);
+    }
+
+    // Curve
+    ctx.beginPath();
+    let first=true;
+    for (let x=MIN; x<=MAX; x+=0.02) {
+      const y01 = pdf(x)/maxPdf;
+      const px = xScale(x), py = yScale01(y01);
+      if (first){ ctx.moveTo(px,py); first=false; } else { ctx.lineTo(px,py); }
+    }
+    ctx.strokeStyle = '#000'; ctx.lineWidth = 1; ctx.setLineDash([]); ctx.stroke();
+
+    // Shaded area ≤ score
+    const cap = Math.max(MIN, Math.min(MAX, s));
+    ctx.beginPath();
+    let started=false;
+    for (let x=MIN; x<=cap; x+=0.02) {
+      const y01 = pdf(x)/maxPdf;
+      const px = xScale(x), py = yScale01(y01);
+      if (!started) { ctx.moveTo(xScale(MIN), yScale01(0)); ctx.lineTo(px, yScale01(0)); started=true; }
+      ctx.lineTo(px, py);
+    }
+    ctx.lineTo(xScale(cap), yScale01(0));
+    ctx.closePath();
+    ctx.save();
+    ctx.fillStyle = ctx.createPattern(hatchPattern(), 'repeat');
+    ctx.fill();
+    ctx.restore();
+    ctx.strokeStyle = '#000'; ctx.stroke();
+
+    // Mean (dotted)
+    drawVLine(MEAN, 'dot', 1, '#000');
+
+    // Screening cut-off ≥6 (dashed; reference)
+    drawVLine(SCREEN_CUTOFF, 'dash', 1, '#000');
+
+    // Your score (solid; accent if ≥ cut-off)
+    drawVLine(cap, null, 2, cap >= SCREEN_CUTOFF ? ACCENT : '#000');
+
+    // Floating label for your score
+    const label = `Your score: ${cap}`;
+    const pxS = xScale(cap), pyS = yScale01(pdf(cap)/maxPdf);
+    drawTag(pxS, Math.min(pyS, yScale01(0) - 28), label, cap >= SCREEN_CUTOFF);
+  }
+
+  function drawVLine(x, style, width, color) {
+    const W = canvas.clientWidth || 720, H = canvas.clientHeight || 200;
+    const px = xScale(Math.max(MIN, Math.min(MAX, x)));
+    ctx.beginPath();
+    ctx.moveTo(px, H - PADDING.b);
+    ctx.lineTo(px, PADDING.t);
+    ctx.setLineDash(style==='dash' ? [6,4] : style==='dot' ? [2,3] : []);
+    ctx.lineWidth = width || 1;
+    ctx.strokeStyle = color || '#000';
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.lineWidth = 1;
+  }
+
+  function hatchPattern(){
+    const p = document.createElement('canvas');
+    p.width = p.height = 8;
+    const g = p.getContext('2d');
+    g.fillStyle = '#fff'; g.fillRect(0,0,8,8);
+    g.strokeStyle = '#000'; g.lineWidth = 1;
+    g.beginPath(); g.moveTo(-2,10); g.lineTo(10,-2); g.stroke();
+    return p;
+  }
+
+  function drawTag(x, y, text, isAccent){
+    const padX=6, padY=4;
+    ctx.font = '11px Georgia, "Times New Roman", serif';
+    const w = ctx.measureText(text).width + padX*2;
+    const h = 16 + padY*2;
+    const bx = Math.min(Math.max(x - w/2, PADDING.l), (canvas.clientWidth || 720) - PADDING.r - w);
+    const by = Math.max(y - h - 6, PADDING.t);
+    // stem
+    ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(bx + w/2, by + h); ctx.strokeStyle= isAccent ? ACCENT : '#000'; ctx.stroke();
+    // box
+    ctx.fillStyle='#fff'; ctx.fillRect(bx, by, w, h);
+    ctx.strokeStyle=isAccent ? ACCENT : '#000'; ctx.strokeRect(bx, by, w, h);
+    ctx.fillStyle= isAccent ? ACCENT : '#000'; ctx.fillText(text, bx + padX, by + 12 + (padY-2));
+  }
+
+  // Hover tooltip
+  canvasEl.addEventListener('mousemove', e => {
+    const rect = canvasEl.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / (rect.width) * ((canvasEl.clientWidth || 720));
+    const score = Math.round(( (x - PADDING.l) / ((canvasEl.clientWidth || 720) - PADDING.l - PADDING.r) ) * (MAX - MIN) + MIN);
+    if (score >= MIN && score <= MAX) {
+      const pct = Math.max(0, Math.min(100, cdf(score) * 100));
+      hoverEl.textContent = `Hover: score ${score} → approx. percentile ${pct.toFixed(1)}%`;
+    }
+  });
+  canvasEl.addEventListener('mouseleave', ()=> {
+    hoverEl.textContent = 'Hover over the plot to see percentiles at each score.';
+  });
+
+  // Animate line to score
+  let animId=null, animStart=null, startScore=MEAN, targetScore=MEAN;
+  function animateMarkerTo(s) {
+    cancelAnimationFrame(animId);
+    animStart = null;
+    startScore = MEAN;
+    targetScore = s;
+    function step(ts){
+      if (!animStart) animStart = ts;
+      const t = Math.min(1, (ts - animStart)/700);
+      const ease = t<0.5 ? 2*t*t : -1+(4-2*t)*t;
+      currentScore = startScore + (targetScore - startScore) * ease;
+      draw(currentScore);
+      if (t < 1) animId = requestAnimationFrame(step);
+    }
+    animId = requestAnimationFrame(step);
+  }
+
+  // Init AFTER defining currentScore
+  resizeCanvas();
+  draw(currentScore);
+</script>
+</body>
+</html>
