@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Hebrew:wght@300;400;700&display=swap" rel="stylesheet">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CyberCatch</title>
+
+  <style>
+    body {
+      font-family: 'Noto Sans Hebrew', sans-serif !important;
+      text-align: center;
+      background-color: #d3d3d3;
+      color: black;
+      overflow: hidden;
+      padding-top: 40px;
+      direction: rtl;
+    }
+
+    .game-container {
+      position: relative;
+      width: 500px;
+      height: 400px;
+      margin: 80px auto 30px;
+    }
+
+    .player {
+      width: 80px;
+      height: 80px;
+      background-color: #808080;
+      border-radius: 50%;
+      position: absolute;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      border: 3px solid transparent;
+      color: white;
+      z-index: 2;
+      transition: top 0.3s ease;
+    }
+
+    .player.has-ball {
+      border-color: green;
+    }
+
+    .ball {
+      width: 20px;
+      height: 20px;
+      background-color: green;
+      border-radius: 50%;
+      position: absolute;
+      transition: left 0.8s ease-in-out, top 0.8s ease-in-out;
+      z-index: 3;
+      pointer-events: none;
+    }
+
+    .info {
+      margin-top: 20px;
+      font-size: 18px;
+    }
+
+    #nickname-screen, #waiting-screen {
+      display: none;
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      background: #d3d3d3;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      z-index: 10;
+    }
+
+    #nickname-screen input {
+      margin-top: 10px;
+      padding: 8px;
+      font-size: 18px;
+    }
+
+    #nickname-screen button {
+      margin-top: 20px;
+      padding: 8px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      font-family: 'Noto Sans Hebrew', sans-serif !important;
+    }
+
+    #waiting-screen img {
+      width: 100px;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- מסך ניקנֵיים -->
+  <div id="nickname-screen" style="display:flex; flex-direction:column;">
+    <h2>אנא הכנס את הכינוי שלך:</h2>
+    <input type="text" id="nickname-input" placeholder="השם שלך..." />
+    <button id="start-button">התחל</button>
+  </div>
+
+  <!-- מסך המתנה -->
+  <div id="waiting-screen">
+    <h2>ממתינים לשחקנים נוספים...</h2>
+    <img src="https://icon-library.com/images/waiting-icon-gif/waiting-icon-gif-1.jpg" alt="Waiting..." />
+  </div>
+
+  <!-- מסך המשחק -->
+  <div id="game-screen" style="display:none;">
+    <h1>CyberCatch</h1>
+    <p>לחץ על שחקן כדי למסור אליו את הכדור בתורך.</p>
+
+    <div class="game-container" id="game-container">
+      <div class="player has-ball" id="player3" style="left: 20px; top: 250px;">נעם</div>
+      <div class="player" id="player2" style="left: 120px; top: 250px;">אריאל</div>
+      <div class="player" id="player0" style="left: 220px; top: 250px;">אתה</div>
+      <div class="player" id="player4" style="left: 320px; top: 250px;">דניאל</div>
+      <div class="player" id="player1" style="left: 420px; top: 250px;">טל</div>
+      <div class="ball" id="ball"></div>
+    </div>
+
+    <div class="info" id="info">המשחק מתחיל...</div>
+  </div>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+
+  let nickname = "אתה";
+
+  const players = ["player0", "player1", "player2", "player3", "player4"];
+  let currentPlayer = "player3";
+  let totalThrows = 0;
+  const maxThrows = 60;
+  let gameEnded = false;
+  let gameLog = [];
+  let lastPlayerReceiveTime = null;
+
+  const TARGET_PLAYER_RECEIVES = 12;
+  let playerReceivesSoFar = 0;
+
+  const aiQuota = {
+    player1: 3,
+    player2: 3,
+    player3: 3,
+    player4: 3
+  };
+
+  const receiveCounts = {};
+
+  document.getElementById("start-button").addEventListener("click", function () {
+    const input = document.getElementById("nickname-input").value.trim();
+
+    if (!input) {
+      alert("אנא הכנס כינוי לפני תחילת המשחק.");
+      return;
+    }
+
+    nickname = input;
+    document.getElementById("player0").innerText = nickname;
+    document.getElementById("nickname-screen").style.display = "none";
+    document.getElementById("waiting-screen").style.display = "flex";
+
+    setTimeout(startGame, 1000);
+  });
+
+  function startGame() {
+    document.getElementById("waiting-screen").style.display = "none";
+    document.getElementById("game-screen").style.display = "block";
+
+    document.querySelectorAll(".player").forEach(player => {
+      receiveCounts[player.id] = 0;
+    });
+
+    moveBall(currentPlayer);
+    setHasBall(currentPlayer);
+
+    setTimeout(aiTurn, getSlowerReactionTime());
+
+    document.querySelectorAll(".player").forEach(player => {
+      player.addEventListener("click", function () {
+        if (gameEnded || currentPlayer !== "player0" || totalThrows >= maxThrows || this.id === "player0") return;
+
+        const selectedPlayer = this.id;
+        const receiverElement = document.getElementById(selectedPlayer);
+        if (!receiverElement) return;
+
+        updateBallHolder(selectedPlayer);
+        totalThrows++;
+
+        const rt = lastPlayerReceiveTime ? Date.now() - lastPlayerReceiveTime : null;
+        lastPlayerReceiveTime = null;
+
+        gameLog.push({
+          from: nickname,
+          to: receiverElement.innerText,
+          type: "Player",
+          rt
+        });
+
+        document.getElementById("info").innerText =
+          `מסרת את הכדור אל ${receiverElement.innerText}`;
+
+        setTimeout(aiTurn, getSlowerReactionTime());
+      });
+    });
+  }
+
+  function setHasBall(playerId) {
+    document.querySelectorAll(".player").forEach(p => p.classList.remove("has-ball"));
+    const el = document.getElementById(playerId);
+    if (el) el.classList.add("has-ball");
+  }
+
+  function updateBallHolder(newHolder) {
+    const targetElement = document.getElementById(newHolder);
+    if (!targetElement) return;
+
+    setHasBall(newHolder);
+    moveBall(newHolder);
+    currentPlayer = newHolder;
+
+    receiveCounts[newHolder]++;
+
+    const currentTop = parseInt(targetElement.style.top || "250", 10);
+    targetElement.style.top = (currentTop - 15) + "px";
+
+    if (newHolder === "player0") {
+      lastPlayerReceiveTime = Date.now();
+    }
+  }
+
+  function getSlowerReactionTime() {
+    return Math.floor(Math.random() * 701) + 2000;
+  }
+
+  function moveBall(targetPlayer) {
+    const ball = document.getElementById("ball");
+    const target = document.getElementById(targetPlayer);
+    const container = document.getElementById("game-container");
+    if (!ball || !target || !container) return;
+
+    const targetRect = target.getBoundingClientRect();
+    const containerRect = container.getBoundingClientRect();
+
+    const centerX = targetRect.left - containerRect.left + target.offsetWidth / 2 - ball.offsetWidth / 2;
+    const centerY = targetRect.top - containerRect.top + target.offsetHeight / 2 - ball.offsetHeight / 2;
+
+    ball.style.left = `${centerX}px`;
+    ball.style.top = `${centerY}px`;
+  }
+
+  function aiTurn() {
+    if (totalThrows >= maxThrows || gameEnded) {
+      endRound();
+      return;
+    }
+
+    const thrower = currentPlayer;
+    if (thrower === "player0") return;
+
+    const aiPlayers = ["player1", "player2", "player3", "player4"];
+
+    let nextPlayer = null;
+
+    const remainingTotalThrows = maxThrows - totalThrows;
+    const remainingPlayerReceives = TARGET_PLAYER_RECEIVES - playerReceivesSoFar;
+    const remainingAiThrows = Math.max(0, remainingTotalThrows - remainingPlayerReceives);
+
+    const quotaForThisAI = aiQuota[thrower] || 0;
+
+    let pToPlayer = 0;
+
+    if (quotaForThisAI > 0 && remainingAiThrows > 0) {
+      const estimatedTurnsForThisAI = remainingAiThrows / 4;
+      if (estimatedTurnsForThisAI > 0) {
+        pToPlayer = quotaForThisAI / estimatedTurnsForThisAI;
+      }
+    }
+
+    pToPlayer = Math.min(1, Math.max(0, pToPlayer));
+
+    const r = Math.random();
+
+    if (quotaForThisAI > 0 && remainingPlayerReceives > 0 && r < pToPlayer) {
+      nextPlayer = "player0";
+      aiQuota[thrower] = quotaForThisAI - 1;
+      playerReceivesSoFar++;
+    } else {
+      const aiTargets = aiPlayers.filter(p => p !== thrower);
+      let prioritized = aiTargets.filter(p => aiQuota[p] > 0);
+      let pool = prioritized.length > 0 ? prioritized : aiTargets;
+      nextPlayer = pool[Math.floor(Math.random() * pool.length)];
+    }
+
+    const throwerElement = document.getElementById(thrower);
+    const receiverElement = document.getElementById(nextPlayer);
+    if (!throwerElement || !receiverElement) return;
+
+    updateBallHolder(nextPlayer);
+    totalThrows++;
+
+    gameLog.push({
+      from: throwerElement.innerText,
+      to: receiverElement.innerText,
+      type: "AI",
+      timestamp: Date.now()
+    });
+
+    const infoElement = document.getElementById("info");
+
+    if (nextPlayer === "player0") {
+      infoElement.innerText = `${throwerElement.innerText} מסר אליך את הכדור – זה התור שלך!`;
+    } else {
+      infoElement.innerText = `${throwerElement.innerText} מסר את הכדור אל ${receiverElement.innerText}`;
+    }
+
+    if (nextPlayer !== "player0") {
+      setTimeout(aiTurn, getSlowerReactionTime());
+    }
+  }
+
+  function endRound() {
+    gameEnded = true;
+    const gameLogString = JSON.stringify(gameLog);
+
+    console.log("📤 שולח ל-Qualtrics עם תג: CyberSizeLog12e");
+    window.parent.postMessage({ type: "CyberSizeLog12e", gameLog: gameLogString }, "*");
+
+    setTimeout(() => {
+      window.parent.postMessage({ type: "CyberSizeLog12e", gameLog: gameLogString }, "*");
+    }, 500);
+
+    setTimeout(() => {
+      document.body.innerHTML = `
+        <div style="background-color: #d3d3d3; width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center;">
+          <div style="font-size: 26px; font-weight: bold; color: #2c3e50;">המשחק הסתיים!</div>
+        </div>`;
+    }, 700);
+  }
+});
+</script>
+
+</body>
+</html>
