@@ -338,10 +338,10 @@ document.addEventListener("DOMContentLoaded", () => {
     gameEnded = true;
     const gameLogString = JSON.stringify(gameLog);
 
-    window.parent.postMessage({ type: "CyberSizeLog12e", gameLog: gameLogString }, "*");
+    window.parent.postMessage({ type: "CyberSizeLog12", gameLog: gameLogString }, "*");
 
     setTimeout(() => {
-      window.parent.postMessage({ type: "CyberSizeLog12e", gameLog: gameLogString }, "*");
+      window.parent.postMessage({ type: "CyberSizeLog12", gameLog: gameLogString }, "*");
     }, 500);
 
     setTimeout(() => {
