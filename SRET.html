@@ -2,217 +2,200 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>SRET - Yes/No (Compact)</title>
+  <title>SRET DEBUG – Console Logging</title>
   <style>
-    :root{--bg:#d9d9d9;--fg:#111;--barbg:#bdbdbd;--barfg:#2b2b2b;}
-    html,body{height:100%;margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--fg);}
-    .wrap{height:100%;display:flex;align-items:center;justify-content:center;padding:24px;box-sizing:border-box;}
-    .card{width:min(900px,96vw);background:rgba(255,255,255,.5);border:2px solid rgba(0,0,0,.15);border-radius:18px;padding:34px;box-sizing:border-box;}
-    .progressOuter{width:100%;height:16px;background:var(--barbg);border-radius:999px;overflow:hidden;border:2px solid rgba(0,0,0,.15);margin-bottom:26px;}
-    .progressInner{height:100%;width:0%;background:var(--barfg);}
-    h1{margin:0 0 14px;font-size:34px;}
-    p{margin:12px 0;font-size:22px;line-height:1.4;}
-    .center{text-align:center;}
-    .prompt{font-size:34px;font-weight:700;margin:10px 0 10px;}
-    .stim{font-size:72px;font-weight:700;margin:18px 0 18px;}
-    .fix{font-size:92px;font-weight:700;margin:26px 0;}
-    .kbd{display:inline-block;padding:2px 10px;border-radius:10px;border:2px solid rgba(0,0,0,.25);background:rgba(255,255,255,.65);font-size:20px;font-weight:700;}
-    .hidden{display:none;}
-    #keyCatcher{position:fixed;left:-9999px;top:0;width:1px;height:1px;opacity:0;border:0;padding:0;outline:none;}
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: #d9d9d9;
+      color: #111;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    .card {
+      background: rgba(255,255,255,0.6);
+      padding: 40px;
+      border-radius: 16px;
+      width: 800px;
+      text-align: center;
+    }
+    .stim {
+      font-size: 72px;
+      font-weight: bold;
+      margin: 30px 0;
+    }
+    .fix {
+      font-size: 90px;
+      font-weight: bold;
+    }
+    .hidden { display: none; }
+    .hint {
+      font-size: 18px;
+      opacity: 0.8;
+    }
   </style>
 </head>
 
 <body tabindex="0">
-  <input id="keyCatcher" type="text" aria-hidden="true"/>
-
-  <div class="wrap">
-    <div class="card" id="screen-instructions">
-      <h1>Task Instructions</h1>
-      <p>You will see a series of traits. For each trait, decide if it describes you.</p>
-      <p>
-        Keyboard:
-        <span class="kbd">Enter</span> = Start,
-        <span class="kbd">V</span> = Yes,
-        <span class="kbd">N</span> = No
-      </p>
-      <p style="font-size:18px;opacity:.85;margin-top:16px;">
-        Tip: If keys don’t respond, click once inside the task frame.
-      </p>
+  <div class="card">
+    <div id="screen-instr">
+      <h1>SRET – Debug Mode</h1>
+      <p>Press <b>Enter</b> to start</p>
+      <p class="hint">V = Yes, N = No</p>
     </div>
 
-    <div class="card hidden" id="screen-task">
-      <div class="progressOuter" aria-label="progress bar">
-        <div class="progressInner" id="progress-bar"></div>
-      </div>
-
-      <div class="center">
-        <div id="trial-prompt" class="prompt hidden">Would you say you are?</div>
-        <div id="stimulus" class="stim hidden"></div>
-        <div id="fixation" class="fix hidden">+</div>
-
-        <p style="font-size:18px;opacity:.85;margin-top:10px;">
-          Press <span class="kbd">V</span> for Yes, <span class="kbd">N</span> for No
-        </p>
-      </div>
+    <div id="screen-task" class="hidden">
+      <div class="hint">Would you say you are?</div>
+      <div id="stimulus" class="stim"></div>
     </div>
 
-    <div class="card hidden" id="screen-finish">
-      <h1>You completed the Task!</h1>
-      <p>Please wait…</p>
+    <div id="screen-fix" class="hidden">
+      <div class="fix">+</div>
+    </div>
+
+    <div id="screen-end" class="hidden">
+      <h1>Done</h1>
+      <p>Open console to see full log</p>
     </div>
   </div>
 
-  <script>
-    const TRAITS = [
-      "Affectionate","Caring","Communicative","Warm","Polite","Outgoing","Open","Loyal",
-      "Sociable","Supportive","Sympathetic","Tolerant","Trustworthy","Understanding",
-      "Altruistic","Fair","Friendly","Helpful","Honest","Considerate","Moral","Reliable",
-      "Conscientious","Agreeable","Able","Ambitious","Assertive","Capable","Competent",
-      "Active","Determined","Confident","Vigorous","Intelligent","Strong","Creative",
-      "Persistent","Rational","Self-reliant","Independent","Industrious","Energetic",
-      "Prominent","Successful","Leader","Influential","Charismatic","Enthusiastic"
-    ];
+<script>
+/* =========================
+   CONFIG
+========================= */
 
-    const FIXATION_MS = 500;
+const TRAITS = [
+  "Affectionate","Caring","Communicative","Warm","Polite",
+  "Outgoing","Open","Loyal","Sociable","Supportive"
+];
 
-    function shuffleWithIndex(arr){
-      // returns [{idx: originalIndex, trait: text}, ...] shuffled
-      const a = arr.map((t,i)=>({idx:i, trait:t}));
-      for (let i=a.length-1;i>0;i--){
-        const j = Math.floor(Math.random()*(i+1));
-        [a[i],a[j]] = [a[j],a[i]];
-      }
-      return a;
-    }
-    function nowMs(){ return performance.now(); }
+const FIXATION_MS = 500;
 
-    const scrInstr = document.getElementById("screen-instructions");
-    const scrTask  = document.getElementById("screen-task");
-    const scrDone  = document.getElementById("screen-finish");
+/* =========================
+   STATE
+========================= */
 
-    const promptEl = document.getElementById("trial-prompt");
-    const stimEl   = document.getElementById("stimulus");
-    const fixEl    = document.getElementById("fixation");
-    const progBar  = document.getElementById("progress-bar");
-    const keyCatcher = document.getElementById("keyCatcher");
+let trials = [];
+let tIndex = -1;
+let accepting = false;
+let stimOnset = null;
 
-    function focusKeys(){
-      try{ keyCatcher.focus({preventScroll:true}); } catch(e){ try{ keyCatcher.focus(); }catch(_){} }
-      try{ keyCatcher.value=""; }catch(_){}
-    }
-    function focusSelf(){ try{ document.body.focus({preventScroll:true}); }catch(_){} focusKeys(); }
-    keyCatcher.addEventListener("blur", ()=>setTimeout(focusKeys,0));
-    document.addEventListener("pointerdown", focusSelf, true);
-    window.addEventListener("load", focusSelf);
+/* Full task log */
+const LOG = {
+  task: "SRET_DEBUG",
+  started: null,
+  finished: null,
+  trials: []
+};
 
-    function show(screen){
-      scrInstr.classList.add("hidden");
-      scrTask.classList.add("hidden");
-      scrDone.classList.add("hidden");
-      screen.classList.remove("hidden");
-      focusSelf();
-    }
+/* =========================
+   HELPERS
+========================= */
 
-    function renderStimulus(text){
-      promptEl.classList.remove("hidden");
-      stimEl.textContent = text;
-      stimEl.classList.remove("hidden");
-      fixEl.classList.add("hidden");
-    }
-    function renderFixation(){
-      promptEl.classList.add("hidden");
-      stimEl.classList.add("hidden");
-      fixEl.classList.remove("hidden");
-    }
-    function setProgress(cur,total){
-      const pct = total ? (cur/total)*100 : 0;
-      progBar.style.width = pct + "%";
-    }
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
 
-    const sessionId = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()));
+function show(id) {
+  ["screen-instr","screen-task","screen-fix","screen-end"]
+    .forEach(x => document.getElementById(x).classList.add("hidden"));
+  document.getElementById(id).classList.remove("hidden");
+}
 
-    let trials = [];
-    let tIndex = -1;
+function now() { return performance.now(); }
 
-    let cur = null;         // {idx, trait}
-    let stimOnset = null;
-    let accepting = false;
-    let started = false;
+/* =========================
+   TASK FLOW
+========================= */
 
-    // COMPACT accumulator: each trial => "iiRrrrr;" where:
-    // ii = trait index (00-99), R = Y/N, rrrr = RT (ms, base10)
-    // We'll store as "ii,R,rt;" (still tiny and readable)
-    let compact = ""; // e.g., "03,Y,812;17,N,540;..."
+function startTask() {
+  trials = shuffle(TRAITS);
+  tIndex = -1;
+  LOG.started = new Date().toISOString();
 
-    function startTask(){
-      started = true;
-      trials = shuffleWithIndex(TRAITS);
-      tIndex = -1;
-      compact = "";
+  console.clear();
+  console.log("🟢 TASK STARTED");
+  console.table(trials.map((t,i)=>({order:i+1, trait:t})));
 
-      show(scrTask);
-      nextTrial();
-    }
+  nextTrial();
+}
 
-    function nextTrial(){
-      tIndex += 1;
-      setProgress(tIndex, trials.length);
+function nextTrial() {
+  tIndex++;
 
-      if (tIndex >= trials.length){
-        finishTask();
-        return;
-      }
+  if (tIndex >= trials.length) {
+    finishTask();
+    return;
+  }
 
-      cur = trials[tIndex];
-      renderStimulus(cur.trait);
+  const trait = trials[tIndex];
+  document.getElementById("stimulus").textContent = trait;
 
-      stimOnset = nowMs();
-      accepting = true;
-    }
+  show("screen-task");
 
-    function handleResponse(respYN){
-      if (!accepting) return;
-      accepting = false;
+  stimOnset = now();
+  accepting = true;
 
-      const rt = Math.max(0, Math.round(nowMs() - stimOnset));
-      const idx2 = String(cur.idx).padStart(2, "0"); // 00..47
-      compact += idx2 + "," + respYN + "," + rt + ";";
+  console.log(`▶️ TRIAL ${tIndex+1} | ${trait}`);
+}
 
-      renderFixation();
-      window.setTimeout(nextTrial, FIXATION_MS);
-    }
+function respond(resp) {
+  if (!accepting) return;
 
-    function finishTask(){
-      accepting = false;
-      show(scrDone);
+  accepting = false;
+  const rt = Math.round(now() - stimOnset);
+  const trait = trials[tIndex];
 
-      // Send ONLY compact string + metadata
-      window.parent.postMessage({
-        type: "SRET_Compact_v1",
-        session_id: sessionId,
-        n_trials: trials.length,
-        data: compact
-      }, "*");
-    }
+  const trialLog = {
+    trial: tIndex + 1,
+    trait: trait,
+    response: resp,
+    rt_ms: rt
+  };
 
-    keyCatcher.addEventListener("keydown", (e)=>{
-      const key = e.key;
+  LOG.trials.push(trialLog);
 
-      if (!started && !scrInstr.classList.contains("hidden") && key === "Enter"){
-        e.preventDefault();
-        startTask();
-        return;
-      }
-      if (scrTask.classList.contains("hidden")) return;
-      if (!accepting) return;
+  // 🔴 THIS IS THE KEY PART
+  console.log("📝 RESPONSE", trialLog);
 
-      const k = key.toLowerCase();
-      if (k === "v"){ e.preventDefault(); handleResponse("Y"); }
-      else if (k === "n"){ e.preventDefault(); handleResponse("N"); }
-    }, true);
+  show("screen-fix");
+  setTimeout(nextTrial, FIXATION_MS);
+}
 
-    show(scrInstr);
-  </script>
+function finishTask() {
+  LOG.finished = new Date().toISOString();
+
+  show("screen-end");
+
+  console.log("🏁 TASK FINISHED");
+  console.log("📦 FULL LOG OBJECT:");
+  console.log(LOG);
+  console.table(LOG.trials);
+}
+
+/* =========================
+   KEYBOARD
+========================= */
+
+document.addEventListener("keydown", (e) => {
+  const k = e.key.toLowerCase();
+
+  if (k === "enter" && document.getElementById("screen-instr").classList.contains("hidden") === false) {
+    startTask();
+  }
+
+  if (!accepting) return;
+
+  if (k === "v") respond("Yes");
+  if (k === "n") respond("No");
+});
+</script>
 </body>
 </html>
