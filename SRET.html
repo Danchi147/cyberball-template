@@ -37,17 +37,30 @@
     }
 
     .hidden { display:none; }
+
+    /* Hidden focus catcher input (critical in Qualtrics iframes) */
+    #keyCatcher{
+      position: fixed;
+      left: -9999px;
+      top: 0;
+      width: 1px;
+      height: 1px;
+      opacity: 0;
+      border: 0;
+      padding: 0;
+      outline: none;
+    }
   </style>
 </head>
 
-<!-- tabindex makes the iframe document focusable -->
 <body tabindex="0">
+  <!-- Key capture input -->
+  <input id="keyCatcher" type="text" aria-hidden="true" />
+
   <div class="wrap">
     <div class="card" id="screen-instructions">
       <h1>Task Instructions</h1>
-      <p>
-        You will see a series of traits. For each trait, decide if it describes you.
-      </p>
+      <p>You will see a series of traits. For each trait, decide if it describes you.</p>
       <p>
         Keyboard:
         <span class="kbd">Enter</span> = Start,
@@ -115,10 +128,33 @@
     const fixEl    = document.getElementById("fixation");
     const progBar  = document.getElementById("progress-bar");
 
-    function focusSelf() {
-      try { document.body.focus({ preventScroll: true }); }
-      catch (e) { try { document.body.focus(); } catch(_) {} }
+    // Focus handling (critical in Qualtrics iframe)
+    const keyCatcher = document.getElementById("keyCatcher");
+
+    function focusKeys() {
+      try { keyCatcher.focus({ preventScroll: true }); }
+      catch (e) { try { keyCatcher.focus(); } catch(_) {} }
+      try { keyCatcher.value = ""; } catch(_) {}
     }
+
+    function focusSelf() {
+      try { document.body.focus({ preventScroll: true }); } catch(_) {}
+      focusKeys();
+    }
+
+    // Keep focus sticky
+    keyCatcher.addEventListener("blur", () => setTimeout(focusKeys, 0));
+    document.addEventListener("pointerdown", () => focusSelf(), true);
+    document.addEventListener("mousedown", () => focusSelf(), true);
+    document.addEventListener("touchstart", () => focusSelf(), true);
+    window.addEventListener("load", () => focusSelf());
+
+    let focusTries = 0;
+    const focusInterval = setInterval(() => {
+      focusSelf();
+      focusTries++;
+      if (focusTries > 10) clearInterval(focusInterval);
+    }, 200);
 
     function show(screen) {
       scrInstr.classList.add("hidden");
@@ -160,7 +196,7 @@
 
     const taskLog = {
       task: "SRET",
-      version: "sret_v2_keyboard_only_prompt_gate_postmessage",
+      version: "sret_v3_keyboard_only_focus_keycatcher_postmessage",
       session_id: sessionId,
       started_iso: null,
       finished_iso: null,
@@ -198,8 +234,6 @@
     }
 
     function handleResponse(resp) {
-      // 1) keyboard only handled below
-      // 2) allow response only after word is presented (accepting === true)
       if (!accepting) return;
 
       accepting = false; // CLOSE gate immediately
@@ -207,15 +241,13 @@
       const rtMs = Math.round(nowMs() - stimOnset);
 
       taskLog.trials.push({
-        trial_index: tIndex + 1,      // presentation order (1-based)
+        trial_index: tIndex + 1,
         trait: currentTrait,
         response: resp,               // "Yes"/"No"
         rt_ms: rtMs,
-        stimulus_onset_ms: Math.round(stimOnset),
         response_time_iso: new Date().toISOString()
       });
 
-      // During fixation: responses blocked
       renderFixation();
       window.setTimeout(nextTrial, FIXATION_MS);
     }
@@ -234,18 +266,16 @@
       );
     }
 
-    // KEYBOARD ONLY
-    document.addEventListener("keydown", (e) => {
+    // KEYBOARD ONLY: attach to keyCatcher
+    keyCatcher.addEventListener("keydown", (e) => {
       const key = e.key;
 
-      // Start on Enter from instruction screen
       if (!started && !scrInstr.classList.contains("hidden") && key === "Enter") {
         e.preventDefault();
         startTask();
         return;
       }
 
-      // Only accept V/N when task screen is visible AND stimulus gate is open
       if (scrTask.classList.contains("hidden")) return;
       if (!accepting) return;
 
@@ -253,8 +283,6 @@
       if (k === "v") { e.preventDefault(); handleResponse("Yes"); }
       else if (k === "n") { e.preventDefault(); handleResponse("No"); }
     }, true);
-
-    window.addEventListener("load", focusSelf);
 
     // Initial
     show(scrInstr);
