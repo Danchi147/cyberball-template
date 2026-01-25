@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>SRET - Yes/No</title>
+  <title>SRET - Yes/No (Keyboard Only)</title>
   <style>
     :root {
-      --bg: #d9d9d9;      /* gray background */
-      --fg: #111111;      /* black text */
+      --bg: #d9d9d9;
+      --fg: #111111;
       --barbg: #bdbdbd;
       --barfg: #2b2b2b;
     }
@@ -15,7 +15,6 @@
     .wrap { height:100%; display:flex; align-items:center; justify-content:center; padding:24px; box-sizing:border-box; }
     .card { width:min(900px, 96vw); background:rgba(255,255,255,0.5); border:2px solid rgba(0,0,0,0.15); border-radius:18px; padding:34px; box-sizing:border-box; }
 
-    /* Wide progress line at top (no numbers) */
     .progressOuter {
       width: 100%;
       height: 16px;
@@ -25,34 +24,13 @@
       border: 2px solid rgba(0,0,0,0.15);
       margin-bottom: 26px;
     }
-    .progressInner {
-      height: 100%;
-      width: 0%;
-      background: var(--barfg);
-    }
+    .progressInner { height: 100%; width: 0%; background: var(--barfg); }
 
     h1 { margin:0 0 14px; font-size:34px; }
     p  { margin:12px 0; font-size:22px; line-height:1.4; }
-
     .center { text-align:center; }
     .stim { font-size:72px; font-weight:700; margin:26px 0 18px; }
     .fix  { font-size:92px; font-weight:700; margin:26px 0; }
-
-    .row { display:flex; gap:18px; justify-content:center; flex-wrap:wrap; margin-top:18px; }
-    button {
-      appearance:none;
-      border: 2px solid rgba(0,0,0,0.25);
-      border-radius: 14px;
-      padding: 16px 26px;
-      font-size: 24px;
-      background: rgba(255,255,255,0.8);
-      color: var(--fg);
-      cursor: pointer;
-      min-width: 160px;
-    }
-    button:hover { border-color: rgba(0,0,0,0.55); }
-    button:disabled { opacity:0.5; cursor:not-allowed; }
-
     .kbd {
       display:inline-block;
       padding: 2px 10px;
@@ -62,7 +40,6 @@
       font-size: 20px;
       font-weight: 700;
     }
-
     .hidden { display:none; }
   </style>
 </head>
@@ -71,17 +48,14 @@
     <div class="card" id="screen-instructions">
       <h1>Task Instructions</h1>
       <p>
-        You are going to engage in a task. You will be presented with a series of traits.
-        For each trait, please make a <b>Yes</b> or <b>No</b> decision: does it describe you or not?
+        You will see a series of traits. For each trait, decide if it describes you.
       </p>
       <p>
-        You can respond using the buttons, or with the keyboard:
-        <span class="kbd">V</span> = Yes,
-        <span class="kbd">N</span> = No.
+        <span class="kbd">V</span> = Yes &nbsp;&nbsp; <span class="kbd">N</span> = No
       </p>
-      <div class="row">
-        <button id="btn-start">Start</button>
-      </div>
+      <p>
+        Press <span class="kbd">Enter</span> to start.
+      </p>
     </div>
 
     <div class="card hidden" id="screen-task">
@@ -92,20 +66,13 @@
       <div class="center">
         <div id="stimulus" class="stim"></div>
         <div id="fixation" class="fix hidden">+</div>
-
-        <div class="row" id="response-buttons">
-          <button id="btn-yes">Yes (V)</button>
-          <button id="btn-no">No (N)</button>
-        </div>
       </div>
     </div>
 
     <div class="card hidden" id="screen-finish">
       <h1>You completed the Task!</h1>
       <p>Now you will be asked to complete a short set of questionnaires.</p>
-      <p class="center" style="font-size:20px; margin-top:22px;">
-        Please wait…
-      </p>
+      <p class="center" style="font-size:20px; margin-top:22px;">Please wait…</p>
     </div>
   </div>
 
@@ -123,7 +90,7 @@
       "Prominent","Successful","Leader","Influential","Charismatic","Enthusiastic"
     ];
 
-    const FIXATION_MS = 500; // 0.5 sec gap with "+"
+    const FIXATION_MS = 500;
 
     // ----------------------------
     // Helpers
@@ -145,10 +112,6 @@
     const scrInstr = document.getElementById("screen-instructions");
     const scrTask  = document.getElementById("screen-task");
     const scrDone  = document.getElementById("screen-finish");
-
-    const btnStart = document.getElementById("btn-start");
-    const btnYes   = document.getElementById("btn-yes");
-    const btnNo    = document.getElementById("btn-no");
 
     const stimEl   = document.getElementById("stimulus");
     const fixEl    = document.getElementById("fixation");
@@ -172,11 +135,6 @@
       fixEl.classList.remove("hidden");
     }
 
-    function setButtonsEnabled(enabled) {
-      btnYes.disabled = !enabled;
-      btnNo.disabled  = !enabled;
-    }
-
     function setProgress(curIndex, total) {
       const pct = total ? (curIndex / total) * 100 : 0;
       progBar.style.width = pct + "%";
@@ -186,23 +144,26 @@
     // State / Logging
     // ----------------------------
     const sessionId = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()));
+
     let trials = [];
     let tIndex = -1;
 
     let currentTrait = null;
-    let stimOnset = null;
-    let accepting = false;
+    let stimOnsetMs = null;
 
-    // This is what we will send to Qualtrics
+    // Gate: only allow responses while stimulus is visible
+    let acceptingResponse = false;
+
     const taskLog = {
       task: "SRET",
-      version: "sret_v1_yesno_vn_progress_only",
+      version: "sret_v1_keyboard_only_enter_start_vn_yesno",
       session_id: sessionId,
       started_iso: null,
       finished_iso: null,
       n_trials: null,
       fixation_ms: FIXATION_MS,
-      trials: [] // each row appended per trial
+      // Each entry logs ORDER OF PRESENTATION via trial_index / presentation_index
+      trials: []
     };
 
     function startTask() {
@@ -217,8 +178,6 @@
 
     function nextTrial() {
       tIndex += 1;
-
-      // update progress to reflect how many completed
       setProgress(tIndex, trials.length);
 
       if (tIndex >= trials.length) {
@@ -227,29 +186,40 @@
       }
 
       currentTrait = trials[tIndex];
+
+      // Only now we allow responding
+      acceptingResponse = true;
+
       renderStimulus(currentTrait);
-      stimOnset = nowMs();
-      accepting = true;
-      setButtonsEnabled(true);
+      stimOnsetMs = nowMs();
     }
 
-    function handleResponse(resp) {
-      if (!accepting) return;
+    function recordResponse(resp) {
+      if (!acceptingResponse) return;
 
-      accepting = false;
-      setButtonsEnabled(false);
+      // close gate immediately so no double keypress
+      acceptingResponse = false;
 
-      const rtMs = Math.round(nowMs() - stimOnset);
+      const rtMs = Math.round(nowMs() - stimOnsetMs);
 
       taskLog.trials.push({
+        // order of presentation (1..N)
         trial_index: tIndex + 1,
+        presentation_index: tIndex + 1,
+
         trait: currentTrait,
         response: resp,     // "Yes" / "No"
         rt_ms: rtMs,
-        stimulus_onset_iso: new Date().toISOString()
+
+        // helpful metadata
+        trait_onset_ms: Math.round(stimOnsetMs),
+        response_time_iso: new Date().toISOString()
       });
 
+      // hide word and show fixation during ISI
       renderFixation();
+
+      // During fixation, responses are blocked (acceptingResponse = false)
       window.setTimeout(() => nextTrial(), FIXATION_MS);
     }
 
@@ -257,11 +227,9 @@
       taskLog.finished_iso = new Date().toISOString();
       taskLog.n_trials = trials.length;
 
-      // show final screen
       show(scrDone);
 
-      // Send log to parent (Qualtrics) and let Qualtrics advance
-      // IMPORTANT: you can restrict targetOrigin to your Qualtrics domain if you want
+      // Send to Qualtrics
       window.parent.postMessage(
         { type: "SRET_Log_v1", taskLog: taskLog },
         "*"
@@ -269,23 +237,41 @@
     }
 
     // ----------------------------
-    // Events
+    // Keyboard only
     // ----------------------------
-    btnStart.addEventListener("click", startTask);
-    btnYes.addEventListener("click", () => handleResponse("Yes"));
-    btnNo.addEventListener("click",  () => handleResponse("No"));
+    let hasStarted = false;
 
     window.addEventListener("keydown", (e) => {
-      if (scrTask.classList.contains("hidden")) return;
-      if (!accepting) return;
-
       const k = e.key.toLowerCase();
-      if (k === "v") handleResponse("Yes");
-      if (k === "n") handleResponse("No");
-    });
+
+      // Prevent accidental scrolling/space behavior
+      if (k === " " || k === "spacebar") e.preventDefault();
+
+      // Start only on instructions screen: Enter
+      if (!hasStarted) {
+        if (!scrInstr.classList.contains("hidden") && e.key === "Enter") {
+          hasStarted = true;
+          startTask();
+        }
+        return;
+      }
+
+      // During task: only accept while stimulus is visible
+      if (scrTask.classList.contains("hidden")) return;
+      if (!acceptingResponse) return;
+
+      if (k === "v") recordResponse("Yes");
+      else if (k === "n") recordResponse("No");
+    }, { passive: false });
 
     // Initial
     show(scrInstr);
+
+    // Extra hard block for mouse interaction (optional)
+    document.addEventListener("click", function (e) {
+      // No clicks do anything; prevents accidental focus/clicks
+      e.preventDefault();
+    }, true);
   </script>
 </body>
 </html>
