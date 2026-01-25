@@ -5,57 +5,32 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>SRET - Yes/No (Keyboard only)</title>
   <style>
-    :root {
-      --bg: #d9d9d9;
-      --fg: #111111;
-      --barbg: #bdbdbd;
-      --barfg: #2b2b2b;
+    :root{
+      --bg:#d9d9d9; --fg:#111; --barbg:#bdbdbd; --barfg:#2b2b2b;
     }
-    html, body { height:100%; margin:0; font-family: Arial, Helvetica, sans-serif; background:var(--bg); color:var(--fg); }
-    .wrap { height:100%; display:flex; align-items:center; justify-content:center; padding:24px; box-sizing:border-box; }
-    .card { width:min(900px, 96vw); background:rgba(255,255,255,0.5); border:2px solid rgba(0,0,0,0.15); border-radius:18px; padding:34px; box-sizing:border-box; }
+    html,body{height:100%;margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--fg);}
+    .wrap{height:100%;display:flex;align-items:center;justify-content:center;padding:24px;box-sizing:border-box;}
+    .card{width:min(900px,96vw);background:rgba(255,255,255,.5);border:2px solid rgba(0,0,0,.15);border-radius:18px;padding:34px;box-sizing:border-box;}
+    .progressOuter{width:100%;height:16px;background:var(--barbg);border-radius:999px;overflow:hidden;border:2px solid rgba(0,0,0,.15);margin-bottom:26px;}
+    .progressInner{height:100%;width:0%;background:var(--barfg);}
+    h1{margin:0 0 14px;font-size:34px;}
+    p{margin:12px 0;font-size:22px;line-height:1.4;}
+    .center{text-align:center;}
+    .prompt{font-size:34px;font-weight:700;margin:10px 0 10px;}
+    .stim{font-size:72px;font-weight:700;margin:18px 0 18px;}
+    .fix{font-size:92px;font-weight:700;margin:26px 0;}
+    .kbd{display:inline-block;padding:2px 10px;border-radius:10px;border:2px solid rgba(0,0,0,.25);background:rgba(255,255,255,.65);font-size:20px;font-weight:700;}
+    .hidden{display:none;}
 
-    .progressOuter { width: 100%; height: 16px; background: var(--barbg); border-radius: 999px; overflow: hidden; border: 2px solid rgba(0,0,0,0.15); margin-bottom: 26px; }
-    .progressInner { height: 100%; width: 0%; background: var(--barfg); }
-
-    h1 { margin:0 0 14px; font-size:34px; }
-    p  { margin:12px 0; font-size:22px; line-height:1.4; }
-    .center { text-align:center; }
-
-    .prompt { font-size:34px; font-weight:700; margin:10px 0 10px; }
-    .stim { font-size:72px; font-weight:700; margin:18px 0 18px; }
-    .fix  { font-size:92px; font-weight:700; margin:26px 0; }
-
-    .kbd {
-      display:inline-block;
-      padding: 2px 10px;
-      border-radius: 10px;
-      border: 2px solid rgba(0,0,0,0.25);
-      background: rgba(255,255,255,0.65);
-      font-size: 20px;
-      font-weight: 700;
-    }
-
-    .hidden { display:none; }
-
-    /* Hidden focus catcher input (critical in Qualtrics iframes) */
+    /* Critical: hidden input to reliably capture keyboard in Qualtrics iframe */
     #keyCatcher{
-      position: fixed;
-      left: -9999px;
-      top: 0;
-      width: 1px;
-      height: 1px;
-      opacity: 0;
-      border: 0;
-      padding: 0;
-      outline: none;
+      position:fixed;left:-9999px;top:0;width:1px;height:1px;opacity:0;border:0;padding:0;outline:none;
     }
   </style>
 </head>
 
 <body tabindex="0">
-  <!-- Key capture input -->
-  <input id="keyCatcher" type="text" aria-hidden="true" />
+  <input id="keyCatcher" type="text" aria-hidden="true"/>
 
   <div class="wrap">
     <div class="card" id="screen-instructions">
@@ -91,7 +66,7 @@
     <div class="card hidden" id="screen-finish">
       <h1>You completed the Task!</h1>
       <p>Now you will be asked to complete a short set of questionnaires.</p>
-      <p class="center" style="font-size:20px; margin-top:22px;">Please wait…</p>
+      <p class="center" style="font-size:20px;margin-top:22px;">Please wait…</p>
     </div>
   </div>
 
@@ -108,16 +83,15 @@
 
     const FIXATION_MS = 500;
 
-    function shuffle(arr) {
+    function shuffle(arr){
       const a = arr.slice();
-      for (let i = a.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [a[i], a[j]] = [a[j], a[i]];
+      for (let i=a.length-1;i>0;i--){
+        const j = Math.floor(Math.random()*(i+1));
+        [a[i],a[j]] = [a[j],a[i]];
       }
       return a;
     }
-
-    function nowMs() { return performance.now(); }
+    function nowMs(){ return performance.now(); }
 
     const scrInstr = document.getElementById("screen-instructions");
     const scrTask  = document.getElementById("screen-task");
@@ -128,35 +102,27 @@
     const fixEl    = document.getElementById("fixation");
     const progBar  = document.getElementById("progress-bar");
 
-    // Focus handling (critical in Qualtrics iframe)
+    // Focus capture
     const keyCatcher = document.getElementById("keyCatcher");
 
-    function focusKeys() {
-      try { keyCatcher.focus({ preventScroll: true }); }
-      catch (e) { try { keyCatcher.focus(); } catch(_) {} }
-      try { keyCatcher.value = ""; } catch(_) {}
+    function focusKeys(){
+      try{ keyCatcher.focus({preventScroll:true}); }
+      catch(e){ try{ keyCatcher.focus(); }catch(_){} }
+      try{ keyCatcher.value=""; }catch(_){}
     }
-
-    function focusSelf() {
-      try { document.body.focus({ preventScroll: true }); } catch(_) {}
+    function focusSelf(){
+      try{ document.body.focus({preventScroll:true}); }catch(_){}
       focusKeys();
     }
 
-    // Keep focus sticky
-    keyCatcher.addEventListener("blur", () => setTimeout(focusKeys, 0));
-    document.addEventListener("pointerdown", () => focusSelf(), true);
-    document.addEventListener("mousedown", () => focusSelf(), true);
-    document.addEventListener("touchstart", () => focusSelf(), true);
-    window.addEventListener("load", () => focusSelf());
+    // Sticky focus
+    keyCatcher.addEventListener("blur", ()=>setTimeout(focusKeys,0));
+    document.addEventListener("pointerdown", ()=>focusSelf(), true);
+    document.addEventListener("mousedown", ()=>focusSelf(), true);
+    document.addEventListener("touchstart", ()=>focusSelf(), true);
+    window.addEventListener("load", ()=>focusSelf());
 
-    let focusTries = 0;
-    const focusInterval = setInterval(() => {
-      focusSelf();
-      focusTries++;
-      if (focusTries > 10) clearInterval(focusInterval);
-    }, 200);
-
-    function show(screen) {
+    function show(screen){
       scrInstr.classList.add("hidden");
       scrTask.classList.add("hidden");
       scrDone.classList.add("hidden");
@@ -164,21 +130,21 @@
       focusSelf();
     }
 
-    function renderStimulus(text) {
+    function renderStimulus(text){
       promptEl.classList.remove("hidden");
       stimEl.textContent = text;
       stimEl.classList.remove("hidden");
       fixEl.classList.add("hidden");
     }
 
-    function renderFixation() {
+    function renderFixation(){
       promptEl.classList.add("hidden");
       stimEl.classList.add("hidden");
       fixEl.classList.remove("hidden");
     }
 
-    function setProgress(curIndex, total) {
-      const pct = total ? (curIndex / total) * 100 : 0;
+    function setProgress(curIndex,total){
+      const pct = total ? (curIndex/total)*100 : 0;
       progBar.style.width = pct + "%";
     }
 
@@ -186,17 +152,15 @@
 
     let trials = [];
     let tIndex = -1;
-
     let currentTrait = null;
     let stimOnset = null;
 
-    // Gate: ONLY true while stimulus is shown (responses allowed)
-    let accepting = false;
+    let accepting = false;   // gate
     let started = false;
 
     const taskLog = {
       task: "SRET",
-      version: "sret_v3_keyboard_only_focus_keycatcher_postmessage",
+      version: "sret_keyboard_only_gate_prompt_v1",
       session_id: sessionId,
       started_iso: null,
       finished_iso: null,
@@ -205,7 +169,7 @@
       trials: []
     };
 
-    function startTask() {
+    function startTask(){
       started = true;
       trials = shuffle(TRAITS);
       tIndex = -1;
@@ -217,11 +181,11 @@
       nextTrial();
     }
 
-    function nextTrial() {
+    function nextTrial(){
       tIndex += 1;
       setProgress(tIndex, trials.length);
 
-      if (tIndex >= trials.length) {
+      if (tIndex >= trials.length){
         finishTask();
         return;
       }
@@ -230,20 +194,19 @@
       renderStimulus(currentTrait);
 
       stimOnset = nowMs();
-      accepting = true;  // OPEN gate only now
+      accepting = true; // OPEN gate only now
     }
 
-    function handleResponse(resp) {
-      if (!accepting) return;
-
-      accepting = false; // CLOSE gate immediately
+    function handleResponse(resp){
+      if (!accepting) return;       // only after word presented
+      accepting = false;            // CLOSE gate immediately
 
       const rtMs = Math.round(nowMs() - stimOnset);
 
       taskLog.trials.push({
         trial_index: tIndex + 1,
         trait: currentTrait,
-        response: resp,               // "Yes"/"No"
+        response: resp,
         rt_ms: rtMs,
         response_time_iso: new Date().toISOString()
       });
@@ -252,25 +215,22 @@
       window.setTimeout(nextTrial, FIXATION_MS);
     }
 
-    function finishTask() {
+    function finishTask(){
       accepting = false;
       taskLog.finished_iso = new Date().toISOString();
       taskLog.n_trials = trials.length;
 
       show(scrDone);
 
-      // Send to Qualtrics parent for saving to Embedded Data
-      window.parent.postMessage(
-        { type: "SRET_Log_v1", taskLog: taskLog },
-        "*"
-      );
+      // Send to parent (Qualtrics)
+      window.parent.postMessage({ type: "SRET_Log_v1", taskLog: taskLog }, "*");
     }
 
-    // KEYBOARD ONLY: attach to keyCatcher
-    keyCatcher.addEventListener("keydown", (e) => {
+    // Keyboard only
+    keyCatcher.addEventListener("keydown", (e)=>{
       const key = e.key;
 
-      if (!started && !scrInstr.classList.contains("hidden") && key === "Enter") {
+      if (!started && !scrInstr.classList.contains("hidden") && key === "Enter"){
         e.preventDefault();
         startTask();
         return;
@@ -280,11 +240,11 @@
       if (!accepting) return;
 
       const k = key.toLowerCase();
-      if (k === "v") { e.preventDefault(); handleResponse("Yes"); }
-      else if (k === "n") { e.preventDefault(); handleResponse("No"); }
+      if (k === "v"){ e.preventDefault(); handleResponse("Yes"); }
+      else if (k === "n"){ e.preventDefault(); handleResponse("No"); }
     }, true);
 
-    // Initial
+    // Init
     show(scrInstr);
   </script>
 </body>
