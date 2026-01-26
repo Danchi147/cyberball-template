@@ -255,15 +255,21 @@
       const traitToIndex = new Map(TRAITS.map((t, i) => [t, i]));
       let compact = "";
 
-      for (let i = 0; i < taskLog.trials.length; i++) {
-        const t = taskLog.trials[i];
-        const order = i + 1;
-        const traitIdx = traitToIndex.get(t.trait);
-        const resp = (t.response === "Yes") ? "Y" : "N";
-        const rt = t.rt_ms;
-        compact += `${order},${traitIdx},${resp},${rt};`;
-      }
+  for (let i = 0; i < taskLog.trials.length; i++) {
+  const t = taskLog.trials[i];
+  const order = i + 1;
 
+  const traitName = t.trait;
+  const traitIdx  = traitToIndex.get(traitName);
+
+  const resp = (t.response === "Yes") ? "Y" : "N";
+  const rt   = t.rt_ms;
+
+  // If a trait could contain commas in the future, wrap it in quotes + escape quotes
+  const safeTrait = `"${String(traitName).replace(/"/g, '""')}"`;
+
+  compact += `${order},${safeTrait},${traitIdx},${resp},${rt};`;
+}
       console.log("🧪 SRET_Log_v1 compact length:", compact.length);
       console.log("🧪 SRET_Log_v1 compact:", compact);
 
