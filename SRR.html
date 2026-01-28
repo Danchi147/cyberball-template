@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>SRET - Yes/No (Qualtrics compact log)</title>
+  <title>SRET - Yes/No (Qualtrics log)</title>
   <style>
     :root {
       --bg: #d9d9d9;
@@ -38,7 +38,6 @@
 
     .hidden { display:none; }
 
-    /* Focus helper for iframes */
     #keyCatcher {
       position: fixed;
       left: -9999px;
@@ -50,11 +49,28 @@
       padding: 0;
       outline: none;
     }
+
+    /* Visible error box if JS crashes */
+    #fatalError {
+      display:none;
+      position: fixed;
+      left: 12px;
+      right: 12px;
+      bottom: 12px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 2px solid rgba(0,0,0,0.2);
+      background: rgba(255,255,255,0.85);
+      font-size: 14px;
+      white-space: pre-wrap;
+      z-index: 99999;
+    }
   </style>
 </head>
 
 <body tabindex="0">
   <input id="keyCatcher" type="text" aria-hidden="true" />
+  <div id="fatalError"></div>
 
   <div class="wrap">
     <div class="card" id="screen-instructions">
@@ -95,209 +111,188 @@
   </div>
 
   <script>
-    const TRAITS = [
-      "Affectionate","Caring","Communicative","Warm","Polite","Outgoing","Open","Loyal",
-      "Sociable","Supportive","Sympathetic","Tolerant","Trustworthy","Understanding",
-      "Altruistic","Fair","Friendly","Helpful","Honest","Considerate","Moral","Reliable",
-      "Conscientious","Agreeable","Able","Ambitious","Assertive","Capable","Competent",
-      "Active","Determined","Confident","Vigorous","Intelligent","Strong","Creative",
-      "Persistent","Rational","Self-reliant","Independent","Industrious","Energetic",
-      "Prominent","Successful","Leader","Influential","Charismatic","Enthusiastic"
-    ];
+  (function () {
+    const fatalBox = document.getElementById("fatalError");
+    function showFatal(err) {
+      try {
+        fatalBox.style.display = "block";
+        fatalBox.textContent = "JS Error:\n" + (err && err.stack ? err.stack : String(err));
+      } catch (_) {}
+    }
 
-    const FIXATION_MS = 500;
+    try {
+      const TRAITS = [
+        "Affectionate","Caring","Communicative","Warm","Polite","Outgoing","Open","Loyal",
+        "Sociable","Supportive","Sympathetic","Tolerant","Trustworthy","Understanding",
+        "Altruistic","Fair","Friendly","Helpful","Honest","Considerate","Moral","Reliable",
+        "Conscientious","Agreeable","Able","Ambitious","Assertive","Capable","Competent",
+        "Active","Determined","Confident","Vigorous","Intelligent","Strong","Creative",
+        "Persistent","Rational","Self-reliant","Independent","Industrious","Energetic",
+        "Prominent","Successful","Leader","Influential","Charismatic","Enthusiastic"
+      ];
 
-    function shuffle(arr) {
-      const a = arr.slice();
-      for (let i = a.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [a[i], a[j]] = [a[j], a[i]];
+      const FIXATION_MS = 500;
+
+      function shuffle(arr) {
+        const a = arr.slice();
+        for (let i = a.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [a[i], a[j]] = [a[j], a[i]];
+        }
+        return a;
       }
-      return a;
-    }
+      function nowMs() { return performance.now(); }
 
-    function nowMs() { return performance.now(); }
+      const scrInstr = document.getElementById("screen-instructions");
+      const scrTask  = document.getElementById("screen-task");
+      const scrDone  = document.getElementById("screen-finish");
 
-    const scrInstr = document.getElementById("screen-instructions");
-    const scrTask  = document.getElementById("screen-task");
-    const scrDone  = document.getElementById("screen-finish");
+      const promptEl = document.getElementById("trial-prompt");
+      const stimEl   = document.getElementById("stimulus");
+      const fixEl    = document.getElementById("fixation");
+      const progBar  = document.getElementById("progress-bar");
+      const keyCatcher = document.getElementById("keyCatcher");
 
-    const promptEl = document.getElementById("trial-prompt");
-    const stimEl   = document.getElementById("stimulus");
-    const fixEl    = document.getElementById("fixation");
-    const progBar  = document.getElementById("progress-bar");
-    const keyCatcher = document.getElementById("keyCatcher");
-
-    function focusKeys() {
-      try { keyCatcher.focus({ preventScroll: true }); }
-      catch (e) { try { keyCatcher.focus(); } catch(_) {} }
-      try { keyCatcher.value = ""; } catch(_) {}
-    }
-    function focusSelf() {
-      try { document.body.focus({ preventScroll: true }); } catch (_) {}
-      focusKeys();
-    }
-
-    // Keep focus in iframe
-    keyCatcher.addEventListener("blur", () => setTimeout(focusKeys, 0));
-    document.addEventListener("pointerdown", focusSelf, true);
-    window.addEventListener("load", focusSelf);
-
-    function show(screen) {
-      scrInstr.classList.add("hidden");
-      scrTask.classList.add("hidden");
-      scrDone.classList.add("hidden");
-      screen.classList.remove("hidden");
-      focusSelf();
-    }
-
-    function renderStimulus(text) {
-      promptEl.classList.remove("hidden");
-      stimEl.textContent = text;
-      stimEl.classList.remove("hidden");
-      fixEl.classList.add("hidden");
-    }
-
-    function renderFixation() {
-      promptEl.classList.add("hidden");
-      stimEl.classList.add("hidden");
-      fixEl.classList.remove("hidden");
-    }
-
-    function setProgress(curIndex, total) {
-      const pct = total ? (curIndex / total) * 100 : 0;
-      progBar.style.width = pct + "%";
-    }
-
-    const sessionId = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()));
-    let trials = [];
-    let tIndex = -1;
-    let currentTrait = null;
-    let stimOnset = null;
-
-    // Gate: ONLY true while stimulus is shown
-    let accepting = false;
-    let started = false;
-
-    // One-shot finish guard (prevents double postMessage)
-    let finishedOnce = false;
-
-    const taskLog = {
-      task: "SRET",
-      version: "sret_v3_qualtrics_compact_log",
-      session_id: sessionId,
-      started_iso: null,
-      finished_iso: null,
-      n_trials: null,
-      fixation_ms: FIXATION_MS,
-      trials: []
-    };
-
-    function startTask() {
-      if (started) return;
-      started = true;
-
-      trials = shuffle(TRAITS);
-      tIndex = -1;
-
-      taskLog.started_iso = new Date().toISOString();
-      taskLog.trials = [];
-
-      show(scrTask);
-      nextTrial();
-    }
-
-    function nextTrial() {
-      tIndex += 1;
-      setProgress(tIndex, trials.length);
-
-      if (tIndex >= trials.length) {
-        finishTask();
-        return;
+      function focusKeys() {
+        try { keyCatcher.focus({ preventScroll: true }); }
+        catch (e) { try { keyCatcher.focus(); } catch(_) {} }
+        try { keyCatcher.value = ""; } catch(_) {}
+      }
+      function focusSelf() {
+        try { document.body.focus({ preventScroll: true }); } catch (_) {}
+        focusKeys();
       }
 
-      currentTrait = trials[tIndex];
-      renderStimulus(currentTrait);
+      keyCatcher.addEventListener("blur", () => setTimeout(focusKeys, 0));
+      document.addEventListener("pointerdown", focusSelf, true);
+      window.addEventListener("load", focusSelf);
 
-      stimOnset = nowMs();
-      accepting = true;  // OPEN gate only now
-    }
-
-    function handleResponse(resp) {
-      if (!accepting) return;
-      accepting = false;
-
-      const rtMs = Math.round(nowMs() - stimOnset);
-
-      taskLog.trials.push({
-        trial_index: tIndex + 1,
-        trait: currentTrait,
-        response: resp,      // "Yes"/"No"
-        rt_ms: rtMs
-      });
-
-      renderFixation();
-      window.setTimeout(nextTrial, FIXATION_MS);
-    }
-
-    function finishTask() {
-      if (finishedOnce) return;
-      finishedOnce = true;
-
-      accepting = false;
-      taskLog.finished_iso = new Date().toISOString();
-      taskLog.n_trials = trials.length;
-
-      show(scrDone);
-
-      // Compact string:
-      // order,"traitName",traitIdx,Y/N,rt;
-      const traitToIndex = new Map(TRAITS.map((t, i) => [t, i]));
-      let compact = "";
-
-      for (let i = 0; i < taskLog.trials.length; i++) {
-        const t = taskLog.trials[i];
-        const order = i + 1;
-
-        const traitName = t.trait;
-        const traitIdx  = traitToIndex.get(traitName);
-
-        const resp = (t.response === "Yes") ? "Y" : "N";
-        const rt   = t.rt_ms;
-
-        const safeTrait = `"${String(traitName).replace(/"/g, '""')}"`;
-        compact += `${order},${safeTrait},${traitIdx},${resp},${rt};`;
+      function show(screen) {
+        scrInstr.classList.add("hidden");
+        scrTask.classList.add("hidden");
+        scrDone.classList.add("hidden");
+        screen.classList.remove("hidden");
+        focusSelf();
       }
 
-      console.log("🧪 SRET_Log_v1 compact length:", compact.length);
-
-      // Send to parent (Qualtrics page)
-      window.parent.postMessage(
-        { type: "SRET_Log_v1", log: compact, session_id: sessionId },
-        "*"
-      );
-    }
-
-    // Keyboard handling
-    document.addEventListener("keydown", (e) => {
-      const k = (e.key || "").toLowerCase();
-
-      // Enter to start
-      if (!started && (k === "enter")) {
-        e.preventDefault();
-        startTask();
-        return;
+      function renderStimulus(text) {
+        promptEl.classList.remove("hidden");
+        stimEl.textContent = text;
+        stimEl.classList.remove("hidden");
+        fixEl.classList.add("hidden");
       }
 
-      // Only accept V/N when task started and stimulus is on screen
-      if (!started || !accepting) return;
+      function renderFixation() {
+        promptEl.classList.add("hidden");
+        stimEl.classList.add("hidden");
+        fixEl.classList.remove("hidden");
+      }
 
-      if (k === "v") { e.preventDefault(); handleResponse("Yes"); }
-      if (k === "n") { e.preventDefault(); handleResponse("No"); }
-    });
+      function setProgress(curIndex, total) {
+        const pct = total ? (curIndex / total) * 100 : 0;
+        progBar.style.width = pct + "%";
+      }
 
-    // Initial screen
-    show(scrInstr);
+      const sessionId = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()));
+
+      let trials = [];
+      let tIndex = -1;
+      let currentTrait = null;
+      let stimOnset = null;
+      let accepting = false;
+      let started = false;
+
+      const taskLog = { trials: [] };
+
+      function startTask() {
+        started = true;
+        trials = shuffle(TRAITS);
+        tIndex = -1;
+        taskLog.trials = [];
+        show(scrTask);
+        nextTrial();
+      }
+
+      function nextTrial() {
+        tIndex += 1;
+        setProgress(tIndex, trials.length);
+
+        if (tIndex >= trials.length) {
+          finishTask();
+          return;
+        }
+
+        currentTrait = trials[tIndex];
+        renderStimulus(currentTrait);
+        stimOnset = nowMs();
+        accepting = true;
+      }
+
+      function handleResponse(resp) {
+        if (!accepting) return;
+        accepting = false;
+
+        const rtMs = Math.round(nowMs() - stimOnset);
+
+        taskLog.trials.push({
+          trait: currentTrait,
+          decision: (resp === "Yes") ? "Y" : "N",
+          rt_ms: rtMs
+        });
+
+        renderFixation();
+        window.setTimeout(nextTrial, FIXATION_MS);
+      }
+
+      function finishTask() {
+        if (window.__SRET_SENT__) return;
+        window.__SRET_SENT__ = true;
+
+        accepting = false;
+        show(scrDone);
+
+        // EXACT OUTPUT: trait|Y|rt;trait|N|rt;...
+        function esc(s) { return String(s).replace(/\|/g, "\\|").replace(/;/g, "\\;"); }
+
+        let compact = "";
+        for (let i = 0; i < taskLog.trials.length; i++) {
+          const t = taskLog.trials[i];
+          compact += esc(t.trait) + "|" + t.decision + "|" + t.rt_ms + ";";
+        }
+
+        console.log("🧪 SRET_Log_v1:", compact);
+
+        window.parent.postMessage(
+          { type: "SRET_Log_v1", log: compact, session_id: sessionId },
+          "*"
+        );
+      }
+
+      keyCatcher.addEventListener("keydown", (e) => {
+        const key = e.key;
+
+        if (!started && !scrInstr.classList.contains("hidden") && key === "Enter") {
+          e.preventDefault();
+          startTask();
+          return;
+        }
+
+        if (scrTask.classList.contains("hidden")) return;
+        if (!accepting) return;
+
+        const k = key.toLowerCase();
+        if (k === "v") { e.preventDefault(); handleResponse("Yes"); }
+        else if (k === "n") { e.preventDefault(); handleResponse("No"); }
+      }, true);
+
+      // Start screen
+      show(scrInstr);
+
+    } catch (err) {
+      console.error(err);
+      showFatal(err);
+    }
+  })();
   </script>
 </body>
 </html>
