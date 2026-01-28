@@ -58,6 +58,7 @@
     </div>
   </div>
 
+
   <script>
     const TRAITS = [
       "Affectionate","Caring","Communicative","Warm","Polite","Outgoing","Open","Loyal",
@@ -76,8 +77,7 @@
       "Indecisive","Inferior","Inefficient","Ridiculous","Incompetent","Unskilled",
       "Hesitant","Nobody"
     ];
-
-    const FIXATION_MS = 500;
+  const FIXATION_MS = 500;
 
     function shuffle(arr){ const a=arr.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
     function nowMs(){ return performance.now(); }
@@ -161,7 +161,7 @@
       console.log("🧪 SRET_Log_v1:", compact);
 
       window.parent.postMessage(
-        { type: "SRET_Log_v1", gameLog: compact, session_id: sessionId },
+        { type: "SRET_Log_v1", sretLog: compact, session_id: sessionId },
         "*"
       );
     }
