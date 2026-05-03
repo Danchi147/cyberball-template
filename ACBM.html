@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Cyberball Final Demo</title>
+
+<style>
+body {
+  font-family: Georgia, serif;
+  background: white;
+  color: #222;
+  margin: 0;
+  padding: 35px;
+  text-align: center;
+}
+
+.page { display:none; }
+.active { display:block; }
+
+.block, button {
+  font-family: Georgia, serif;
+  border-radius: 14px;
+  border: 1px solid #bbb;
+  background: white;
+  cursor: pointer;
+  box-shadow: 0 5px 15px rgba(0,0,0,.10);
+}
+
+.block {
+  display:inline-block;
+  width:195px;
+  padding:22px;
+  margin:10px;
+  transition:.2s;
+}
+
+.block:hover { transform: translateY(-4px); }
+
+.exclusion { background:#ffe2e2; border:2px solid #d66; }
+.inclusion { background:#e4f6e9; border:2px solid #6bbf7a; }
+.over { background:#e6efff; border:2px solid #6c8fdc; }
+
+.arrow { font-size:30px; color:#555; }
+
+button {
+  padding:11px 18px;
+  margin:10px;
+  font-size:16px;
+}
+
+.bottomButtons {
+  position: fixed;
+  right: 30px;
+  bottom: 25px;
+}
+
+/* Layout */
+#demoLayout {
+  display:grid;
+  grid-template-columns: 270px 580px 300px;
+  gap:25px;
+  max-width:1220px;
+  margin:25px auto;
+  align-items:start;
+}
+
+#blockLayout {
+  display:grid;
+  grid-template-columns: 310px 600px;
+  gap:30px;
+  max-width:1000px;
+  margin:25px auto;
+  align-items:start;
+}
+
+.panel {
+  background:#f8f8f8;
+  border:1px solid #ddd;
+  border-radius:20px;
+  padding:18px;
+  text-align:left;
+  box-shadow:0 6px 18px rgba(0,0,0,.08);
+}
+
+#arena, #blockArena {
+  position:relative;
+  width:580px;
+  height:580px;
+  background:#fbfbfb;
+  border:1px solid #ddd;
+  border-radius:28px;
+  box-shadow: inset 0 0 20px rgba(0,0,0,.04);
+}
+
+.playerWrap {
+  position:absolute;
+  width:145px;
+  text-align:center;
+  z-index:3;
+}
+
+.player {
+  width:86px;
+  height:86px;
+  margin:auto;
+  border-radius:50%;
+  color:white;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:bold;
+  cursor:pointer;
+  box-shadow:0 5px 14px rgba(0,0,0,.18);
+}
+
+#you .player, #byou .player { background:#222; }
+#p1 .player, #bp1 .player { background:#e76f51; }
+#p2 .player, #bp2 .player { background:#2a9d8f; }
+#p3 .player, #bp3 .player { background:#457b9d; }
+
+.stats {
+  margin-top:8px;
+  font-size:13px;
+  line-height:1.35;
+}
+
+#you, #byou { left:218px; top:420px; }
+#p1, #bp1 { left:45px; top:220px; }
+#p2, #bp2 { left:390px; top:220px; }
+#p3, #bp3 { left:218px; top:60px; }
+
+#ball, #blockBall {
+  position:absolute;
+  width:26px;
+  height:26px;
+  background:#4caf50;
+  border-radius:50%;
+  left:277px;
+  top:461px;
+  transition:left .8s ease, top .8s ease;
+  z-index:5;
+  box-shadow:0 3px 10px rgba(0,0,0,.25);
+}
+
+svg {
+  position:absolute;
+  left:0;
+  top:0;
+  width:100%;
+  height:100%;
+  pointer-events:none;
+  z-index:1;
+}
+
+.barRow { margin:14px 0; }
+
+.barLabel {
+  display:flex;
+  justify-content:space-between;
+  font-size:14px;
+}
+
+.barOuter {
+  height:24px;
+  background:#eee;
+  border-radius:15px;
+  overflow:hidden;
+  border:1px solid #ddd;
+  margin-top:5px;
+}
+
+.barInner {
+  height:100%;
+  border-radius:15px;
+}
+
+.cYou { background:#222; }
+.cA { background:#e76f51; }
+.cB { background:#2a9d8f; }
+.cC { background:#457b9d; }
+
+.small {
+  font-size:14px;
+  line-height:1.45;
+}
+
+.recipBlock { margin-bottom:22px; }
+
+.recipBar {
+  display:flex;
+  height:22px;
+  margin-top:8px;
+  border-radius:12px;
+  overflow:hidden;
+  background:#eee;
+  border:1px solid #ddd;
+}
+
+.redPart { background:#d62828; }
+.bluePart { background:#1d4ed8; }
+</style>
+</head>
+
+<body>
+
+<!-- PAGE 1 -->
+<div id="overviewPage" class="page active">
+  <h1>Cyberball Design Overview</h1>
+
+  <h2>Increasing Transition</h2>
+  <div class="block exclusion" onclick="startBlockDemo('Exclusion')">
+    <h3>Block 1</h3><b>Exclusion</b><br>17.6%
+  </div>
+  <span class="arrow">→</span>
+  <div class="block inclusion" onclick="startBlockDemo('Inclusion')">
+    <h3>Block 2</h3><b>Inclusion</b><br>37.0%
+  </div>
+  <span class="arrow">→</span>
+  <div class="block over" onclick="startBlockDemo('Overinclusion')">
+    <h3>Block 3</h3><b>Overinclusion</b><br>56.2%
+  </div>
+
+  <h2 style="margin-top:45px;">Decreasing Transition</h2>
+  <div class="block over" onclick="startBlockDemo('Overinclusion')">
+    <h3>Block 1</h3><b>Overinclusion</b><br>56.2%
+  </div>
+  <span class="arrow">→</span>
+  <div class="block inclusion" onclick="startBlockDemo('Inclusion')">
+    <h3>Block 2</h3><b>Inclusion</b><br>37.0%
+  </div>
+  <span class="arrow">→</span>
+  <div class="block exclusion" onclick="startBlockDemo('Exclusion')">
+    <h3>Block 3</h3><b>Exclusion</b><br>17.6%
+  </div>
+
+  <div class="bottomButtons">
+    <button onclick="startFreeGame()">Open calculation demo</button>
+  </div>
+</div>
+
+<!-- BLOCK DEMO PAGE -->
+<div id="blockDemoPage" class="page">
+  <h1 id="blockTitle">Block Demo</h1>
+  <h2 id="blockTotal">Total throws: 0 / 10</h2>
+  <p id="blockMessage">Watch the block simulation.</p>
+
+  <div id="blockLayout">
+    <div class="panel">
+      <h3>Block rules</h3>
+      <p id="blockRules"></p>
+      <p><b>Your role:</b> when the ball reaches you, click another player to throw.</p>
+    </div>
+
+    <div id="blockArena">
+      <div id="bp1" class="playerWrap"><div class="player">Player A</div><div class="stats" id="bs_p1"></div></div>
+      <div id="bp2" class="playerWrap"><div class="player">Player B</div><div class="stats" id="bs_p2"></div></div>
+      <div id="bp3" class="playerWrap"><div class="player">Player C</div><div class="stats" id="bs_p3"></div></div>
+      <div id="byou" class="playerWrap"><div class="player">You</div><div class="stats" id="bs_you"></div></div>
+      <div id="blockBall"></div>
+    </div>
+  </div>
+
+  <button onclick="restartBlockDemo()">Replay block</button>
+  <button onclick="backToOverview()">Back to overview</button>
+</div>
+
+<!-- FREE CALCULATION DEMO -->
+<div id="freeGamePage" class="page">
+  <h1>Free Cyberball Calculation Demo</h1>
+  <h2 id="totalText">Total throws: 0</h2>
+  <p id="message">Click any player to pass the ball.</p>
+
+  <div id="demoLayout">
+
+    <div class="panel">
+      <h3>Status calculation</h3>
+      <p class="small"><b>Status</b> = received throws by player / total throws so far</p>
+      <div id="statusBars"></div>
+    </div>
+
+    <div id="arena">
+      <svg id="lineSvg"></svg>
+
+      <div id="p1" class="playerWrap" onclick="throwTo('p1')">
+        <div class="player">Player A</div>
+        <div class="stats" id="s_p1"></div>
+      </div>
+
+      <div id="p2" class="playerWrap" onclick="throwTo('p2')">
+        <div class="player">Player B</div>
+        <div class="stats" id="s_p2"></div>
+      </div>
+
+      <div id="p3" class="playerWrap" onclick="throwTo('p3')">
+        <div class="player">Player C</div>
+        <div class="stats" id="s_p3"></div>
+      </div>
+
+      <div id="you" class="playerWrap" onclick="throwTo('you')">
+        <div class="player">You</div>
+        <div class="stats" id="s_you"></div>
+      </div>
+
+      <div id="ball"></div>
+    </div>
+
+    <div class="panel">
+      <h3>Reciprocity calculation</h3>
+      <p class="small">
+        <span style="color:#d62828;"><b>Red</b></span> = You → Player = -1 direction<br>
+        <span style="color:#1d4ed8;"><b>Blue</b></span> = Player → You = +1 direction
+      </p>
+      <p class="small">
+        <b>Reciprocity</b> = (Player→You − You→Player) / (Player→You + You→Player)
+      </p>
+      <div id="recipText"></div>
+    </div>
+
+  </div>
+
+  <button onclick="resetFreeGame()">Reset</button>
+  <button onclick="backToOverview()">Back to overview</button>
+</div>
+
+<script>
+/* Shared */
+const pos = {
+  you:[277,461],
+  p1:[104,261],
+  p2:[449,261],
+  p3:[277,101]
+};
+
+function showPage(id){
+  document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+}
+
+function label(id){
+  if(id === "you" || id === "byou") return "You";
+  if(id === "p1" || id === "bp1") return "Player A";
+  if(id === "p2" || id === "bp2") return "Player B";
+  if(id === "p3" || id === "bp3") return "Player C";
+}
+
+function backToOverview(){
+  clearTimeout(blockTimer);
+  showPage("overviewPage");
+}
+
+/* Block demo */
+let blockCondition = "Inclusion";
+let blockCurrent = "p3";
+let blockThrows = 0;
+let blockMax = 10;
+let blockTimer;
+let blockQuota = {};
+
+let blockStats = {
+  you:{received:0, threw:0},
+  p1:{received:0, threw:0},
+  p2:{received:0, threw:0},
+  p3:{received:0, threw:0}
+};
+
+const originalRules = {
+  Exclusion: {
+    total: "15 / 85 = 17.6%",
+    A: "9 / 85 = 10.6%",
+    B: "3 / 85 = 3.5%",
+    C: "3 / 85 = 3.5%"
+  },
+  Inclusion: {
+    total: "27 / 73 = 37.0%",
+    A: "9 / 73 = 12.3%",
+    B: "9 / 73 = 12.3%",
+    C: "9 / 73 = 12.3%"
+  },
+  Overinclusion: {
+    total: "36 / 64 = 56.2%",
+    A: "18 / 64 = 28.1%",
+    B: "9 / 64 = 14.1%",
+    C: "9 / 64 = 14.1%"
+  }
+};
+
+function startBlockDemo(name){
+  blockCondition = name;
+  showPage("blockDemoPage");
+  restartBlockDemo();
+}
+
+function setBlockQuota(){
+  if(blockCondition === "Exclusion") blockQuota = {p1:1, p2:0, p3:1};
+  if(blockCondition === "Inclusion") blockQuota = {p1:1, p2:1, p3:2};
+  if(blockCondition === "Overinclusion") blockQuota = {p1:3, p2:1, p3:2};
+}
+
+function restartBlockDemo(){
+  clearTimeout(blockTimer);
+  blockThrows = 0;
+  blockCurrent = "p3";
+
+  blockStats = {
+    you:{received:0, threw:0},
+    p1:{received:0, threw:0},
+    p2:{received:0, threw:0},
+    p3:{received:0, threw:0}
+  };
+
+  setBlockQuota();
+
+  const r = originalRules[blockCondition];
+  document.getElementById("blockTitle").innerText = blockCondition + " Block";
+  document.getElementById("blockRules").innerHTML =
+    "<b>Original block:</b><br>" +
+    "Total throws to participant: <b>" + r.total + "</b><br><br>" +
+    "Player A → You: " + r.A + "<br>" +
+    "Player B → You: " + r.B + "<br>" +
+    "Player C → You: " + r.C + "<br><br>" +
+    "<b>Mini demo:</b><br>10 throws approximating this distribution.";
+
+  moveBlockBall("p3");
+  updateBlockDisplay();
+
+  document.getElementById("blockMessage").innerText = "The simulation starts.";
+  blockTimer = setTimeout(blockAiTurn, 1000);
+}
+
+function moveBlockBall(p){
+  document.getElementById("blockBall").style.left = pos[p][0] + "px";
+  document.getElementById("blockBall").style.top = pos[p][1] + "px";
+}
+
+function updateBlockDisplay(){
+  document.getElementById("blockTotal").innerText =
+    "Total throws: " + blockThrows + " / " + blockMax;
+
+  ["you","p1","p2","p3"].forEach(p => {
+    document.getElementById("bs_" + p).innerHTML =
+      "Received: " + blockStats[p].received + "<br>Threw: " + blockStats[p].threw;
+  });
+}
+
+function blockAiTurn(){
+  if(blockThrows >= blockMax){
+    document.getElementById("blockMessage").innerText = "Block ended.";
+    return;
+  }
+
+  if(blockCurrent === "you") return;
+
+  let next;
+  let players = ["p1","p2","p3"];
+
+  if(blockQuota[blockCurrent] > 0){
+    next = "you";
+    blockQuota[blockCurrent]--;
+  } else {
+    let options = players.filter(p => p !== blockCurrent);
+    next = options[Math.floor(Math.random() * options.length)];
+  }
+
+  makeBlockThrow(blockCurrent, next);
+
+  if(next !== "you"){
+    blockTimer = setTimeout(blockAiTurn, 1400);
+  } else {
+    document.getElementById("blockMessage").innerText =
+      "Your turn — click Player A, Player B, or Player C.";
+  }
+}
+
+function makeBlockThrow(from, to){
+  blockStats[from].threw++;
+  blockStats[to].received++;
+  blockThrows++;
+  blockCurrent = to;
+
+  moveBlockBall(to);
+  updateBlockDisplay();
+
+  document.getElementById("blockMessage").innerText =
+    label(from) + " threw the ball to " + label(to) + ".";
+}
+
+["bp1","bp2","bp3","byou"].forEach(id => {
+  document.addEventListener("click", function(e){
+    if(!e.target.closest("#" + id)) return;
+    if(blockCurrent !== "you") return;
+    if(id === "byou") return;
+    if(blockThrows >= blockMax) return;
+
+    let target = id.replace("b", "");
+    makeBlockThrow("you", target);
+    blockTimer = setTimeout(blockAiTurn, 1400);
+  });
+});
+
+/* Free calculation demo */
+let currentHolder = "you";
+let totalThrows = 0;
+let log = [];
+
+let stats = {
+  you:{received:0, threw:0},
+  p1:{received:0, threw:0},
+  p2:{received:0, threw:0},
+  p3:{received:0, threw:0}
+};
+
+function startFreeGame(){
+  clearTimeout(blockTimer);
+  showPage("freeGamePage");
+  resetFreeGame();
+}
+
+function resetFreeGame(){
+  currentHolder = "you";
+  totalThrows = 0;
+  log = [];
+
+  stats = {
+    you:{received:0, threw:0},
+    p1:{received:0, threw:0},
+    p2:{received:0, threw:0},
+    p3:{received:0, threw:0}
+  };
+
+  moveBall("you");
+  updateAll();
+  document.getElementById("message").innerText = "Click any player to pass the ball.";
+}
+
+function moveBall(p){
+  document.getElementById("ball").style.left = pos[p][0] + "px";
+  document.getElementById("ball").style.top = pos[p][1] + "px";
+}
+
+function throwTo(target){
+  if(target === currentHolder) return;
+
+  let from = currentHolder;
+  let to = target;
+
+  stats[from].threw++;
+  stats[to].received++;
+  totalThrows++;
+
+  log.push({from, to});
+  currentHolder = to;
+
+  moveBall(to);
+
+  document.getElementById("message").innerText =
+    label(from) + " threw the ball to " + label(to) + ".";
+
+  updateAll();
+}
+
+function updateAll(){
+  document.getElementById("totalText").innerText = "Total throws: " + totalThrows;
+
+  ["you","p1","p2","p3"].forEach(p => {
+    document.getElementById("s_" + p).innerHTML =
+      "Received: " + stats[p].received + "<br>Threw: " + stats[p].threw;
+  });
+
+  updateStatusBars();
+  updateLines();
+  updateReciprocity();
+}
+
+function updateStatusBars(){
+  let players = [
+    ["You","you","cYou"],
+    ["Player A","p1","cA"],
+    ["Player B","p2","cB"],
+    ["Player C","p3","cC"]
+  ];
+
+  let html = "";
+
+  players.forEach(([name,id,cls]) => {
+    let pct = totalThrows > 0 ? (stats[id].received / totalThrows) * 100 : 0;
+
+    html += `
+      <div class="barRow">
+        <div class="barLabel">
+          <b>${name}</b>
+          <span>${stats[id].received}/${totalThrows}</span>
+        </div>
+        <div class="barOuter">
+          <div class="barInner ${cls}" style="width:${pct}%"></div>
+        </div>
+      </div>`;
+  });
+
+  document.getElementById("statusBars").innerHTML = html;
+}
+
+function updateLines(){
+  let svg = document.getElementById("lineSvg");
+  svg.innerHTML = "";
+
+  ["p1","p2","p3"].forEach(p => {
+    let fromMe = log.filter(d => d.from === "you" && d.to === p).length;
+    let toMe = log.filter(d => d.from === p && d.to === "you").length;
+
+    if(fromMe > 0) drawLine("you", p, "#d62828", 2 + fromMe * 3);
+    if(toMe > 0) drawLine(p, "you", "#1d4ed8", 2 + toMe * 3);
+  });
+}
+
+function drawLine(from,to,color,width){
+  let [x1,y1] = pos[from];
+  let [x2,y2] = pos[to];
+
+  let line = document.createElementNS("http://www.w3.org/2000/svg","line");
+  line.setAttribute("x1", x1 + 13);
+  line.setAttribute("y1", y1 + 13);
+  line.setAttribute("x2", x2 + 13);
+  line.setAttribute("y2", y2 + 13);
+  line.setAttribute("stroke", color);
+  line.setAttribute("stroke-width", width);
+  line.setAttribute("stroke-opacity", ".70");
+  line.setAttribute("stroke-linecap", "round");
+
+  document.getElementById("lineSvg").appendChild(line);
+}
+
+function updateReciprocity(){
+  let html = "";
+
+  ["p1","p2","p3"].forEach(p => {
+    let fromMe = log.filter(d => d.from === "you" && d.to === p).length;
+    let toMe = log.filter(d => d.from === p && d.to === "you").length;
+    let total = fromMe + toMe;
+
+    let recip = total > 0
+      ? ((toMe - fromMe) / total).toFixed(2)
+      : "NA";
+
+    let redWidth = total > 0 ? (fromMe / total) * 100 : 0;
+    let blueWidth = total > 0 ? (toMe / total) * 100 : 0;
+
+    html += `
+      <div class="recipBlock">
+        <b>${label(p)}</b>
+
+        <div class="small" style="margin-top:6px;">
+          You → ${label(p)}:
+          <b style="color:#d62828">${fromMe}</b> × -1<br>
+
+          ${label(p)} → You:
+          <b style="color:#1d4ed8">${toMe}</b> × +1<br>
+
+          Reciprocity:
+          <b>${recip}</b>
+        </div>
+
+        <div class="recipBar">
+          <div class="redPart" style="width:${redWidth}%"></div>
+          <div class="bluePart" style="width:${blueWidth}%"></div>
+        </div>
+      </div>`;
+  });
+
+  document.getElementById("recipText").innerHTML = html;
+}
+</script>
+
+</body>
+</html>
