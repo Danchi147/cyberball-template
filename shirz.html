@@ -1,0 +1,1186 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ImageTracker AI System</title>
+
+  <style>
+    :root {
+      --bg1: #08111f;
+      --bg2: #10243f;
+      --card: rgba(255,255,255,0.94);
+      --text: #142033;
+      --muted: #596579;
+      --aqua: #2fb7d9;
+      --terra: #71b45a;
+      --accent: #635bff;
+      --border: rgba(20,32,51,0.12);
+      --track: #d8dee9;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: Arial, "Noto Sans Hebrew", sans-serif;
+      background: radial-gradient(circle at top left, #1c6a82 0, transparent 32%),
+                  radial-gradient(circle at bottom right, #385f26 0, transparent 34%),
+                  linear-gradient(135deg, var(--bg1), var(--bg2));
+      color: var(--text);
+    }
+
+    #imagetracker-task {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      overflow: hidden;
+    }
+
+    .it-card {
+      width: min(920px, 96vw);
+      max-height: 94vh;
+      background: var(--card);
+      border: 1px solid rgba(255,255,255,0.4);
+      border-radius: 28px;
+      box-shadow: 0 28px 80px rgba(0,0,0,0.28);
+      padding: clamp(22px, 4vw, 46px);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .it-card::before {
+      content: "";
+      position: absolute;
+      inset: 0 0 auto 0;
+      height: 8px;
+      background: linear-gradient(90deg, var(--aqua), var(--terra));
+    }
+
+    .screen {
+      display: none;
+      min-height: min(620px, calc(94vh - 150px));
+      animation: fadeIn 260ms ease;
+    }
+
+    .screen.active {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    h1, h2, h3, p { margin-top: 0; }
+
+    h1 {
+      direction: ltr;
+      text-align: center;
+      font-size: clamp(34px, 5.5vw, 56px);
+      letter-spacing: -0.03em;
+      margin-bottom: 24px;
+      color: #10192b;
+    }
+
+    h2 {
+      font-size: clamp(26px, 3.6vw, 40px);
+      margin-bottom: 22px;
+      color: #10192b;
+      text-align: center;
+    }
+
+    .subtitle-en {
+      direction: ltr;
+      text-align: center;
+      color: var(--muted);
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      font-size: 15px;
+      margin-bottom: 12px;
+    }
+
+    .text-block {
+      font-size: clamp(18px, 2.05vw, 23px);
+      line-height: 1.65;
+      color: #21304a;
+      max-width: 790px;
+      margin: 0 auto 18px;
+      text-align: center;
+    }
+
+    .systems {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 20px;
+      margin: 24px 0 30px;
+      direction: ltr;
+    }
+
+    .system-badge {
+      border-radius: 24px;
+      padding: 30px 24px;
+      text-align: center;
+      color: white;
+      font-size: clamp(30px, 5vw, 52px);
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      box-shadow: 0 18px 40px rgba(0,0,0,0.18);
+    }
+
+    .aqua { background: linear-gradient(135deg, #1596c6, #4ed1e6); }
+    .terra { background: linear-gradient(135deg, #477c35, #8ecf6d); }
+
+    .phase-box {
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 30px;
+      background: rgba(255,255,255,0.7);
+      max-width: 650px;
+      margin: 0 auto 20px;
+      text-align: center;
+    }
+
+    .phase-title {
+      direction: ltr;
+      font-size: 34px;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      margin-bottom: 10px;
+    }
+
+    .phase-title.aqua-text { color: #138fb9; }
+    .phase-title.terra-text { color: #559344; }
+
+    .phase-box h3 {
+      font-size: 24px;
+      margin: 0 0 14px;
+      color: #10192b;
+    }
+
+    .question-title {
+      text-align: center;
+      font-size: clamp(24px, 3.2vw, 34px);
+      line-height: 1.35;
+      margin-bottom: 16px;
+    }
+
+    .trait-list {
+      display: grid;
+      gap: 12px;
+      margin-top: 10px;
+    }
+
+    .trait-row {
+      display: grid;
+      grid-template-columns: 150px 1fr 64px;
+      gap: 14px;
+      align-items: center;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.72);
+      border-radius: 18px;
+      padding: 12px 16px;
+    }
+
+    .trait-name {
+      font-size: 21px;
+      font-weight: 900;
+      color: #17243a;
+      text-align: center;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: #aeb7c5;
+    }
+
+    input[type="range"].touched {
+      accent-color: var(--accent);
+    }
+
+    .number-input {
+      width: 64px;
+      text-align: center;
+      font-weight: 900;
+      font-size: 17px;
+      background: #eef1f7;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 7px 4px;
+      color: #1b2942;
+      direction: ltr;
+    }
+
+    .number-input:focus {
+      outline: 2px solid rgba(99,91,255,0.35);
+      background: white;
+    }
+
+    .rating-value {
+      text-align: center;
+      font-weight: 900;
+      font-size: 18px;
+      background: #eef1f7;
+      border-radius: 12px;
+      padding: 7px 4px;
+      color: #1b2942;
+    }
+
+    .scale-labels {
+      display: flex;
+      justify-content: space-between;
+      color: var(--muted);
+      font-size: 14px;
+      margin: 4px 170px 4px 82px;
+      direction: ltr;
+    }
+
+    .feedback-card {
+      border: 1px solid var(--border);
+      border-radius: 26px;
+      background: rgba(255,255,255,0.72);
+      padding: 28px;
+      max-width: 760px;
+      margin: 0 auto;
+    }
+
+    .feedback-system {
+      direction: ltr;
+      text-align: center;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      font-size: 20px;
+      margin-bottom: 8px;
+    }
+
+    .feedback-system.aqua-text { color: #138fb9; }
+    .feedback-system.terra-text { color: #559344; }
+
+    .feedback-trait-large {
+      text-align: center;
+      font-size: clamp(46px, 7vw, 74px);
+      font-weight: 950;
+      margin-bottom: 22px;
+      color: #10192b;
+      line-height: 1.05;
+    }
+
+    .bar-section {
+      margin: 18px 0 24px;
+    }
+
+    .bar-title {
+      font-weight: 900;
+      margin-bottom: 8px;
+      color: #17243a;
+      text-align: center;
+    }
+
+    .bar-track {
+      position: relative;
+      height: 18px;
+      background: var(--track);
+      border-radius: 999px;
+      overflow: hidden;
+      direction: ltr;
+    }
+
+    .bar-fill {
+      position: absolute;
+      height: 100%;
+      left: 0;
+      top: 0;
+      border-radius: 999px;
+      background: var(--accent);
+    }
+
+    .bar-fill.aqua-fill { background: var(--aqua); }
+    .bar-fill.terra-fill { background: var(--terra); }
+
+    .bar-value {
+      text-align: center;
+      font-size: 20px;
+      font-weight: 900;
+      margin-top: 6px;
+      direction: ltr;
+    }
+
+    .feedback-question {
+      margin-top: 18px;
+      font-size: 18px;
+      font-weight: 900;
+      text-align: center;
+      color: #17243a;
+    }
+
+    .feedback-options {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+      margin-top: 14px;
+      direction: rtl;
+    }
+
+    .feedback-option input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .feedback-option span {
+      min-height: 58px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 8px;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      background: #f1f4f8;
+      color: #17243a;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: 120ms ease;
+    }
+
+    .feedback-option input:checked + span {
+      background: #10192b;
+      color: white;
+      transform: translateY(-1px);
+    }
+
+    .nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 22px;
+      gap: 16px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 999px;
+      padding: 14px 28px;
+      font-size: 18px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform 120ms ease, opacity 120ms ease;
+    }
+
+    button:hover { transform: translateY(-1px); }
+    button:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+    .btn-primary { background: #10192b; color: white; }
+    .btn-secondary { background: #e8edf5; color: #1c2a44; }
+
+    .progress {
+      direction: ltr;
+      color: var(--muted);
+      font-weight: 700;
+      text-align: center;
+    }
+
+    .warning {
+      color: #9b2c2c;
+      font-weight: 800;
+      margin-top: 12px;
+      display: none;
+      text-align: center;
+    }
+
+    .center { text-align: center; }
+    .ltr { direction: ltr; }
+
+    @media (max-width: 720px) {
+      #imagetracker-task { padding: 10px; }
+      .it-card { border-radius: 20px; padding: 22px 16px; }
+      .screen { min-height: calc(94vh - 145px); }
+      .systems { grid-template-columns: 1fr; gap: 12px; }
+      .system-badge { padding: 20px 18px; }
+      .trait-row { grid-template-columns: 1fr; gap: 7px; padding: 10px 12px; }
+      .trait-name { text-align: center; }
+      .scale-labels { margin: 0; }
+      .feedback-card { padding: 18px; }
+      .feedback-options { grid-template-columns: 1fr; gap: 6px; }
+      .feedback-option span { min-height: 42px; }
+      .nav { flex-direction: column-reverse; margin-top: 14px; }
+      button { width: 100%; padding: 12px 22px; }
+      .text-block { font-size: 17px; line-height: 1.5; }
+      h1 { font-size: 34px; }
+      h2 { font-size: 26px; }
+    }
+
+    @media (max-height: 760px) {
+      .it-card { padding: 22px 34px; }
+      .screen { min-height: calc(94vh - 125px); }
+      .text-block { font-size: 18px; line-height: 1.5; }
+      .trait-row { padding: 9px 14px; }
+      .trait-list { gap: 9px; }
+      h1 { margin-bottom: 16px; }
+      h2 { margin-bottom: 14px; }
+      .feedback-card { padding: 18px 24px; }
+      .feedback-trait-large { font-size: 46px; margin-bottom: 10px; }
+      .bar-section { margin: 10px 0 14px; }
+      .feedback-question { margin-top: 10px; }
+      .feedback-option span { min-height: 48px; font-size: 13px; }
+      .nav { margin-top: 14px; }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="imagetracker-task">
+    <div class="it-card">
+
+      <section class="screen active" data-screen="1">
+        <h1>ImageTracker AI System</h1>
+        <div class="text-block">
+          <p>להבין איך אחרים תופסים אותנו — זה לא תמיד פשוט.</p>
+          <p>איננו יכולים לראות את עצמנו דרך העיניים של אנשים אחרים, ולכן קשה לדעת כיצד אנחנו באמת נתפסים בסביבה החברתית שלנו.</p>
+        </div>
+      </section>
+
+      <section class="screen" data-screen="2">
+        <h1>ImageTracker AI System</h1>
+        <div class="text-block">
+          <p>לכן הצוות שלנו השקיע מאמץ ומשאבים רבים בפיתוח ImageTracker — מערכת מבוססת בינה מלאכותית שנועדה לנתח דפוסים בתיאורי עצמי ולספק תובנות לגבי האופן שבו אדם עשוי להיתפס בעיני אחרים.</p>
+        </div>
+      </section>
+
+      <section class="screen" data-screen="3">
+        <h2>הטכנולוגיה שלנו</h2>
+        <div class="text-block">
+          <p>ImageTracker שואף לבנות פרופיל פסיכולוגי מקיף של האופן שבו אנשים נתפסים בעיני אחרים.</p>
+          <p>כדי לעשות זאת, הטכנולוגיה שלנו מבוססת על למידת מכונה מתקדמת.</p>
+        </div>
+      </section>
+
+      <section class="screen" data-screen="4">
+        <h2>הטכנולוגיה שלנו</h2>
+        <div class="text-block">
+          <p>האלגוריתמים מנתחים טקסטים קצרים של תיאור עצמי שאנשים מספקים, ובמקביל משווים אותם למאגר רחב של פרופילים, כדי לזהות דפוסים ודמיון לפרופיל הנבדק.</p>
+          <p>בזמן שענית על השאלות, האלגוריתם שלנו ניתח את הטקסט שכתבת וביצע התאמה לדפוסים שנמצאו במאגר הנתונים של המערכת.</p>
+        </div>
+      </section>
+
+      <section class="screen" data-screen="5">
+        <div class="systems">
+          <div class="system-badge aqua">AQUA</div>
+          <div class="system-badge terra">TERRA</div>
+        </div>
+        <h2 class="center">שימ/י לב</h2>
+        <div class="text-block center">
+          <p>המערכת שלנו מורכבת משתי מערכות פידבק נפרדות — Aqua ו־Terra.</p>
+          <p>כל מערכת מנתחת את הנתונים באופן עצמאי ומספקת הערכה המבוססת על דפוסים שונים שנמצאו במאגר הנתונים של המערכת.</p>
+        </div>
+      </section>
+
+      <section class="screen" data-screen="6">
+        <div class="subtitle-en">IMAGETRACKER EXPERIENCE</div>
+        <h2 class="center">רגע לפני שמתחילים</h2>
+        <div class="text-block center">
+          <p>ה־ImageTracker מורכב משני שלבים.</p>
+          <p>אין תשובות נכונות או לא נכונות — פשוט נסו לענות באופן טבעי ואותנטי 😊</p>
+        </div>
+      </section>
+
+      <section class="screen" data-screen="7">
+        <div class="phase-box">
+          <div class="phase-title aqua-text">AQUA</div>
+          <h3>שלב ראשון</h3>
+          <p>תדרג/י את עצמך במספר תכונות אישיות וחברתיות.</p>
+          <p>לאחר מכן מערכת Aqua תנתח את המידע ותציג הערכה המבוססת על דפוסים שנמצאו במערכת.</p>
+        </div>
+      </section>
+
+      <section class="screen" data-screen="8">
+        <div class="phase-box">
+          <div class="phase-title terra-text">TERRA</div>
+          <h3>שלב שני</h3>
+          <p>בהמשך תתבקש/י לדרג שוב את עצמך, ולאחר מכן תעבור/י להערכת Terra.</p>
+          <p>גם מערכת זו תבצע ניתוח עצמאי משלה, כדי לבחון כיצד מערכות שונות מנתחות את אותו מידע.</p>
+        </div>
+      </section>
+
+      <section class="screen" data-screen="9">
+        <h2 class="question-title">כיצד לדעתך את/ה נתפס/ת בעיני אחרים?</h2>
+        <div class="scale-labels"><span>0 = כלל לא</span><span>100 = במידה רבה מאוד</span></div>
+        <div id="trait-list-1" class="trait-list"></div>
+        <div id="rating-warning-1" class="warning">יש להשיב על כל התכונות לפני המעבר.</div>
+      </section>
+
+      <section class="screen" data-screen="10">
+        <h2 class="question-title">כיצד לדעתך את/ה נתפס/ת בעיני אחרים?</h2>
+        <div class="scale-labels"><span>0 = כלל לא</span><span>100 = במידה רבה מאוד</span></div>
+        <div id="trait-list-2" class="trait-list"></div>
+        <div id="rating-warning-2" class="warning">יש להשיב על כל התכונות לפני המעבר.</div>
+      </section>
+
+      <section class="screen" data-screen="11">
+        <h2 class="center">התגובות נשמרו</h2>
+        <div class="text-block center">
+          <p>כעת נעבור להערכות של ImageTracker.</p>
+        </div>
+      </section>
+
+      <div id="dynamic-screens"></div>
+
+      <section class="screen" id="final-screen">
+        <h2 class="center">תודה</h2>
+        <div class="text-block center">
+          <p>התגובות נשמרו. ניתן להמשיך לשלב הבא.</p>
+        </div>
+      </section>
+
+      <div class="nav">
+        <button type="button" id="backBtn" class="btn-secondary">חזרה</button>
+        <div id="progress" class="progress">1</div>
+        <button type="button" id="nextBtn" class="btn-primary">המשך</button>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const traits = [
+        { id: "smart", he: "חכם/ה" },
+        { id: "caring", he: "אכפתי/ת" },
+        { id: "successful", he: "מצליח/ה" },
+        { id: "supportive", he: "תומכ/ת" },
+        { id: "talented", he: "מוכשר/ת" },
+        { id: "considerate", he: "מתחשב/ת" },
+        { id: "charismatic_1", he: "כריזמטי/ת" },
+        { id: "patient", he: "סבלני/ת" },
+        { id: "influential", he: "משפיע/ה" },
+        { id: "sociable", he: "חברותי/ת" },
+        { id: "professional", he: "מקצועי/ת" },
+        { id: "loyal", he: "נאמן/ה" },
+        { id: "charismatic_2", he: "כריזמטי/ת" },
+        { id: "generous", he: "נדיב/ה" }
+      ];
+
+      const feedbackOptions = [
+        { value: "very_negative", label: "שלילית מאוד" },
+        { value: "somewhat_negative", label: "שלילית במידה מסוימת" },
+        { value: "accurate", label: "מדויקת" },
+        { value: "somewhat_positive", label: "חיובית במידה מסוימת" },
+        { value: "very_positive", label: "חיובית מאוד" }
+      ];
+
+      function shuffle(array) {
+        const copy = array.slice();
+        for (let i = copy.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [copy[i], copy[j]] = [copy[j], copy[i]];
+        }
+        return copy;
+      }
+
+      const randomizedTraitsInitial = shuffle(traits);
+      const firstHalf = randomizedTraitsInitial.slice(0, 7);
+      const secondHalf = randomizedTraitsInitial.slice(7);
+
+      const systemOrder = shuffle([
+        { key: "aqua", label: "aqua" },
+        { key: "terra", label: "terra" }
+      ]);
+
+      const feedbackTraitOrder = {
+        aqua: shuffle(traits),
+        terra: shuffle(traits)
+      };
+
+      const updateTraitOrder = {
+        aqua: shuffle(traits),
+        terra: shuffle(traits)
+      };
+
+      let TOTAL_SCREENS = 12;
+      let currentScreen = 1;
+      const startTime = Date.now();
+      const screenEntryTimes = { 1: startTime };
+      const screenDurations = {};
+      const initialRatings = {};
+      const touchedInitialRatings = {};
+      const aquaFeedback = {};
+      const terraFeedback = {};
+      const aquaFeedbackEvaluation = {};
+      const terraFeedbackEvaluation = {};
+      const aquaUpdateRatings = {};
+      const terraUpdateRatings = {};
+      const touchedAquaUpdateRatings = {};
+      const touchedTerraUpdateRatings = {};
+      let dynamicBuilt = false;
+      const eventLog = [];
+
+      const backBtn = document.getElementById("backBtn");
+      const nextBtn = document.getElementById("nextBtn");
+      const progress = document.getElementById("progress");
+      const warning1 = document.getElementById("rating-warning-1");
+      const warning2 = document.getElementById("rating-warning-2");
+      const dynamicScreens = document.getElementById("dynamic-screens");
+      const finalScreen = document.getElementById("final-screen");
+
+      function getScreens() {
+        return Array.from(document.querySelectorAll(".screen"));
+      }
+
+      function setEmbeddedData(name, value) {
+        const stringValue = typeof value === "string" ? value : JSON.stringify(value);
+
+        try {
+          if (window.Qualtrics &&
+              Qualtrics.SurveyEngine &&
+              typeof Qualtrics.SurveyEngine.setEmbeddedData === "function") {
+            Qualtrics.SurveyEngine.setEmbeddedData(name, stringValue);
+            console.log("[ImageTracker] Saved to Qualtrics Embedded Data:", name, stringValue);
+          }
+        } catch (e) {
+          console.warn("[ImageTracker] Direct Qualtrics save failed:", name, e);
+        }
+
+        try {
+          if (window.parent && window.parent !== window) {
+            window.parent.postMessage({
+              source: "ImageTracker",
+              type: "embeddedData",
+              name: name,
+              value: stringValue
+            }, "*");
+          }
+        } catch (e) {
+          console.warn("[ImageTracker] postMessage save failed:", name, e);
+        }
+
+        let input = document.querySelector('input[name="' + name + '"]');
+        if (!input) {
+          input = document.createElement("input");
+          input.type = "hidden";
+          input.name = name;
+          document.body.appendChild(input);
+        }
+        input.value = stringValue;
+      }
+
+      function logEvent(type, details) {
+        eventLog.push({
+          type,
+          details: details || {},
+          screen: currentScreen,
+          timeFromStartMs: Date.now() - startTime,
+          iso: new Date().toISOString()
+        });
+      }
+
+      function randomInt(min, max) {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+      }
+
+      function clampScore(value) {
+        return Math.max(0, Math.min(100, Math.round(Number(value))));
+      }
+
+      function makeAquaScore(originalValue) {
+        const original = Number(originalValue);
+        if (original > 95) return randomInt(95, 100);
+        return clampScore(original + randomInt(3, 7));
+      }
+
+      function makeTerraScore(originalValue) {
+        const original = Number(originalValue);
+        if (original > 80) return randomInt(95, 100);
+        return clampScore(original + randomInt(16, 20));
+      }
+
+      function buildTraitList(containerId, traitSubset, ratingObject, touchedObject, phaseKey) {
+        const container = document.getElementById(containerId);
+
+        traitSubset.forEach((trait) => {
+          const orderIndex = traitSubset.findIndex(t => t.id === trait.id) + 1;
+
+          const row = document.createElement("div");
+          row.className = "trait-row";
+
+          row.innerHTML = `
+            <div class="trait-name">${trait.he}</div>
+            <input
+              type="range"
+              min="0"
+              max="100"
+              step="1"
+              value="0"
+              data-trait="${trait.id}"
+              aria-label="${trait.he}"
+            />
+            <input
+              class="number-input"
+              id="${phaseKey}-value-${trait.id}"
+              type="number"
+              inputmode="numeric"
+              min="0"
+              max="100"
+              step="1"
+              value="0"
+              aria-label="הזנת מספר עבור ${trait.he}"
+            />
+          `;
+
+          container.appendChild(row);
+
+          const slider = row.querySelector("input[type='range']");
+          const numberInput = row.querySelector(".number-input");
+
+          ratingObject[trait.id] = "";
+          touchedObject[trait.id] = false;
+
+          function markTouchedAndSave(value, source) {
+            const cleanValue = Math.max(0, Math.min(100, Math.round(Number(value))));
+            slider.value = cleanValue;
+            numberInput.value = cleanValue;
+            slider.classList.add("touched");
+            ratingObject[trait.id] = String(cleanValue);
+            touchedObject[trait.id] = true;
+
+            warning1.style.display = "none";
+            warning2.style.display = "none";
+
+            const activeWarning = getCurrentScreenElement()?.querySelector(".warning");
+            if (activeWarning) activeWarning.style.display = "none";
+
+            logEvent("rating_change", {
+              phase: phaseKey,
+              trait: trait.id,
+              traitHebrew: trait.he,
+              value: String(cleanValue),
+              source: source,
+              orderInDisplayedPage: orderIndex
+            });
+
+            saveAllData();
+          }
+
+          slider.addEventListener("input", function () {
+            markTouchedAndSave(slider.value, "slider");
+          });
+
+          numberInput.addEventListener("input", function () {
+            const raw = numberInput.value;
+            if (raw === "") return;
+
+            const cleaned = raw.replace(/[^0-9]/g, "");
+            numberInput.value = cleaned;
+
+            if (cleaned === "") return;
+            markTouchedAndSave(cleaned, "number_input");
+          });
+
+          numberInput.addEventListener("blur", function () {
+            if (numberInput.value === "") {
+              numberInput.value = "0";
+              return;
+            }
+            markTouchedAndSave(numberInput.value, "number_input_blur");
+          });
+        });
+      }
+
+      function allRatingsComplete(traitSubset, touchedObject) {
+        return traitSubset.every((trait) => touchedObject[trait.id] === true);
+      }
+
+      function traitOrderPayload(orderArray) {
+        return orderArray.map((trait, index) => ({
+          order: index + 1,
+          id: trait.id,
+          hebrew: trait.he
+        }));
+      }
+
+      function buildDynamicScreensIfNeeded() {
+        if (dynamicBuilt) return;
+
+        randomizedTraitsInitial.forEach((trait, index) => {
+          const original = initialRatings[trait.id];
+          aquaFeedback[trait.id] = makeAquaScore(original);
+          terraFeedback[trait.id] = makeTerraScore(original);
+
+          logEvent("feedback_generated", {
+            trait: trait.id,
+            traitHebrew: trait.he,
+            initialOrder: index + 1,
+            originalRating: original,
+            aquaFeedback: aquaFeedback[trait.id],
+            terraFeedback: terraFeedback[trait.id]
+          });
+        });
+
+        dynamicScreens.innerHTML = "";
+        let screenNumber = 12;
+
+        systemOrder.forEach((system, systemIndex) => {
+          const feedbackOrderForSystem = feedbackTraitOrder[system.key];
+          const updateOrderForSystem = updateTraitOrder[system.key];
+
+          feedbackOrderForSystem.forEach((trait, traitIndex) => {
+            dynamicScreens.appendChild(
+              createFeedbackScreen(screenNumber, system, trait, traitIndex + 1, systemIndex + 1)
+            );
+            screenNumber++;
+          });
+
+          const firstUpdateHalf = updateOrderForSystem.slice(0, 7);
+          const secondUpdateHalf = updateOrderForSystem.slice(7);
+
+          dynamicScreens.appendChild(
+            createUpdateScreen(screenNumber, system, firstUpdateHalf, 1, systemIndex + 1)
+          );
+          screenNumber++;
+
+          dynamicScreens.appendChild(
+            createUpdateScreen(screenNumber, system, secondUpdateHalf, 2, systemIndex + 1)
+          );
+          screenNumber++;
+        });
+
+        finalScreen.dataset.screen = String(screenNumber);
+        TOTAL_SCREENS = screenNumber;
+        dynamicBuilt = true;
+        saveAllData();
+      }
+
+      function createFeedbackScreen(screenNumber, system, trait, traitOrder, systemOrderIndex) {
+        const systemKey = system.key;
+        const systemLabel = system.label;
+        const score = systemKey === "aqua" ? aquaFeedback[trait.id] : terraFeedback[trait.id];
+        const systemTextClass = systemKey === "aqua" ? "aqua-text" : "terra-text";
+        const fillClass = systemKey === "aqua" ? "aqua-fill" : "terra-fill";
+        const original = Number(initialRatings[trait.id]);
+        const section = document.createElement("section");
+
+        section.className = "screen feedback-screen";
+        section.dataset.screen = String(screenNumber);
+        section.dataset.system = systemKey;
+        section.dataset.trait = trait.id;
+
+        const optionsHtml = feedbackOptions.map((option) => `
+          <label class="feedback-option">
+            <input
+              type="radio"
+              name="feedback_eval_${systemKey}_${trait.id}"
+              value="${option.value}"
+              data-system="${systemKey}"
+              data-trait="${trait.id}"
+            />
+            <span>${option.label}</span>
+          </label>
+        `).join("");
+
+        section.innerHTML = `
+          <div class="feedback-card">
+            <div class="feedback-system ${systemTextClass}">ImageTracker ${systemLabel}</div>
+            <div class="question-title">כך ImageTracker ${systemLabel} מעריך כיצד אנשים אחרים תופסים אותך:</div>
+            <div class="feedback-trait-large">${trait.he}</div>
+
+            <div class="bar-section">
+              <div class="bar-title">הדירוג הראשוני שלך</div>
+              <div class="bar-track">
+                <div class="bar-fill" style="width:${original}%"></div>
+              </div>
+              <div class="bar-value">${original}</div>
+            </div>
+
+            <div class="bar-section">
+              <div class="bar-title">הערכת ImageTracker ${systemLabel}</div>
+              <div class="bar-track">
+                <div class="bar-fill ${fillClass}" style="width:${score}%"></div>
+              </div>
+              <div class="bar-value">${score}</div>
+            </div>
+
+            <div class="feedback-question">עד כמה הערכה זו תואמת את האופן שבו את/ה רואה את עצמך?</div>
+            <div class="feedback-options">${optionsHtml}</div>
+            <div class="warning feedback-warning">יש לבחור תשובה לפני המעבר.</div>
+          </div>
+        `;
+
+        section.querySelectorAll("input[type='radio']").forEach((radio) => {
+          radio.addEventListener("change", function () {
+            const targetObject = systemKey === "aqua" ? aquaFeedbackEvaluation : terraFeedbackEvaluation;
+            targetObject[trait.id] = radio.value;
+
+            const warn = section.querySelector(".feedback-warning");
+            if (warn) warn.style.display = "none";
+
+            logEvent("feedback_evaluation", {
+              system: systemKey,
+              systemOrder: systemOrderIndex,
+              trait: trait.id,
+              traitHebrew: trait.he,
+              value: radio.value,
+              initialRating: initialRatings[trait.id],
+              feedbackScore: score,
+              feedbackTraitOrder: traitOrder
+            });
+
+            saveAllData();
+          });
+        });
+
+        return section;
+      }
+
+      function createUpdateScreen(screenNumber, system, traitSubset, pagePart, systemOrderIndex) {
+        const systemKey = system.key;
+        const systemLabel = system.label;
+        const systemTextClass = systemKey === "aqua" ? "aqua-text" : "terra-text";
+        const section = document.createElement("section");
+        section.className = "screen update-screen";
+        section.dataset.screen = String(screenNumber);
+        section.dataset.system = systemKey;
+        section.dataset.updatePart = String(pagePart);
+
+        const listId = `update-list-${systemKey}-${pagePart}`;
+        const warningId = `update-warning-${systemKey}-${pagePart}`;
+
+        section.innerHTML = `
+          <div class="feedback-system ${systemTextClass}">ImageTracker ${systemLabel}</div>
+          <h2 class="question-title">כעת, דרג/י שוב כיצד לדעתך את/ה נתפס/ת בעיני אחרים</h2>
+          <div class="scale-labels"><span>0 = כלל לא</span><span>100 = במידה רבה מאוד</span></div>
+          <div id="${listId}" class="trait-list"></div>
+          <div id="${warningId}" class="warning">יש להשיב על כל התכונות לפני המעבר.</div>
+        `;
+
+        dynamicScreens.appendChild(section);
+
+        const ratingObject = systemKey === "aqua" ? aquaUpdateRatings : terraUpdateRatings;
+        const touchedObject = systemKey === "aqua" ? touchedAquaUpdateRatings : touchedTerraUpdateRatings;
+
+        setTimeout(() => {
+          buildTraitList(listId, traitSubset, ratingObject, touchedObject, `${systemKey}_update`);
+        }, 0);
+
+        return section;
+      }
+
+      function getCurrentScreenElement() {
+        return document.querySelector('.screen[data-screen="' + currentScreen + '"]');
+      }
+
+      function currentFeedbackAnswered() {
+        const screen = getCurrentScreenElement();
+        if (!screen || !screen.classList.contains("feedback-screen")) return true;
+
+        const system = screen.dataset.system;
+        const trait = screen.dataset.trait;
+        const targetObject = system === "aqua" ? aquaFeedbackEvaluation : terraFeedbackEvaluation;
+
+        return Boolean(targetObject[trait]);
+      }
+
+      function currentUpdateAnswered() {
+        const screen = getCurrentScreenElement();
+        if (!screen || !screen.classList.contains("update-screen")) return true;
+
+        const system = screen.dataset.system;
+        const part = Number(screen.dataset.updatePart);
+        const order = updateTraitOrder[system];
+        const subset = part === 1 ? order.slice(0, 7) : order.slice(7);
+        const touchedObject = system === "aqua" ? touchedAquaUpdateRatings : touchedTerraUpdateRatings;
+
+        return allRatingsComplete(subset, touchedObject);
+      }
+
+      function showCurrentWarning() {
+        const screen = getCurrentScreenElement();
+        if (!screen) return;
+        const warn = screen.querySelector(".warning");
+        if (warn) warn.style.display = "block";
+      }
+
+      function recordScreenExit(screenNumber) {
+        const entered = screenEntryTimes[screenNumber] || Date.now();
+        const duration = Date.now() - entered;
+        screenDurations["screen_" + screenNumber] =
+          (screenDurations["screen_" + screenNumber] || 0) + duration;
+      }
+
+      function showScreen(screenNumber) {
+        recordScreenExit(currentScreen);
+
+        currentScreen = screenNumber;
+        screenEntryTimes[currentScreen] = Date.now();
+
+        getScreens().forEach((screen) => {
+          screen.classList.toggle("active", Number(screen.dataset.screen) === currentScreen);
+        });
+
+        backBtn.disabled = currentScreen === 1;
+        nextBtn.textContent = currentScreen === TOTAL_SCREENS ? "סיום" : "המשך";
+        progress.textContent = currentScreen + " / " + TOTAL_SCREENS;
+
+        warning1.style.display = "none";
+        warning2.style.display = "none";
+        const activeWarning = getCurrentScreenElement()?.querySelector(".warning");
+        if (activeWarning) activeWarning.style.display = "none";
+
+        logEvent("screen_view", { screen: currentScreen });
+        saveAllData();
+      }
+
+      function saveAllData() {
+        const now = Date.now();
+
+        const fullPayload = {
+          task: "ImageTracker",
+          currentScreen,
+          startedAtISO: new Date(startTime).toISOString(),
+          lastSavedAtISO: new Date(now).toISOString(),
+          totalDurationMs: now - startTime,
+          screenDurationsMs: screenDurations,
+          systemOrder: systemOrder.map((s, i) => ({ order: i + 1, key: s.key, label: s.label })),
+          initialTraitOrder: traitOrderPayload(randomizedTraitsInitial),
+          aquaFeedbackTraitOrder: traitOrderPayload(feedbackTraitOrder.aqua),
+          terraFeedbackTraitOrder: traitOrderPayload(feedbackTraitOrder.terra),
+          aquaUpdateTraitOrder: traitOrderPayload(updateTraitOrder.aqua),
+          terraUpdateTraitOrder: traitOrderPayload(updateTraitOrder.terra),
+          initialRatings,
+          initialRatingsTouched: touchedInitialRatings,
+          aquaFeedback,
+          terraFeedback,
+          aquaFeedbackEvaluation,
+          terraFeedbackEvaluation,
+          aquaUpdateRatings,
+          terraUpdateRatings,
+          aquaUpdateRatingsTouched: touchedAquaUpdateRatings,
+          terraUpdateRatingsTouched: touchedTerraUpdateRatings,
+          eventLog
+        };
+
+        setEmbeddedData("ImageTracker_CurrentScreen", currentScreen);
+        setEmbeddedData("ImageTracker_StartedAt", fullPayload.startedAtISO);
+        setEmbeddedData("ImageTracker_LastSavedAt", fullPayload.lastSavedAtISO);
+        setEmbeddedData("ImageTracker_TotalDurationMs", fullPayload.totalDurationMs);
+        setEmbeddedData("ImageTracker_ScreenDurationsMs", JSON.stringify(screenDurations));
+
+        setEmbeddedData("ImageTracker_SystemOrder_JSON", JSON.stringify(fullPayload.systemOrder));
+        setEmbeddedData("ImageTracker_InitialTraitOrder_JSON", JSON.stringify(fullPayload.initialTraitOrder));
+        setEmbeddedData("ImageTracker_AquaFeedbackTraitOrder_JSON", JSON.stringify(fullPayload.aquaFeedbackTraitOrder));
+        setEmbeddedData("ImageTracker_TerraFeedbackTraitOrder_JSON", JSON.stringify(fullPayload.terraFeedbackTraitOrder));
+        setEmbeddedData("ImageTracker_AquaUpdateTraitOrder_JSON", JSON.stringify(fullPayload.aquaUpdateTraitOrder));
+        setEmbeddedData("ImageTracker_TerraUpdateTraitOrder_JSON", JSON.stringify(fullPayload.terraUpdateTraitOrder));
+
+        setEmbeddedData("ImageTracker_InitialRatings_JSON", JSON.stringify(initialRatings));
+        setEmbeddedData("ImageTracker_AquaFeedback_JSON", JSON.stringify(aquaFeedback));
+        setEmbeddedData("ImageTracker_TerraFeedback_JSON", JSON.stringify(terraFeedback));
+        setEmbeddedData("ImageTracker_AquaFeedbackEvaluation_JSON", JSON.stringify(aquaFeedbackEvaluation));
+        setEmbeddedData("ImageTracker_TerraFeedbackEvaluation_JSON", JSON.stringify(terraFeedbackEvaluation));
+        setEmbeddedData("ImageTracker_AquaUpdateRatings_JSON", JSON.stringify(aquaUpdateRatings));
+        setEmbeddedData("ImageTracker_TerraUpdateRatings_JSON", JSON.stringify(terraUpdateRatings));
+        setEmbeddedData("ImageTracker_EventLog_JSON", JSON.stringify(eventLog));
+        setEmbeddedData("ImageTracker_FullPayload_JSON", JSON.stringify(fullPayload));
+
+        traits.forEach((trait) => {
+          setEmbeddedData("IT_Initial_" + trait.id, initialRatings[trait.id] || "");
+          setEmbeddedData("IT_Aqua_Feedback_" + trait.id, aquaFeedback[trait.id] || "");
+          setEmbeddedData("IT_Terra_Feedback_" + trait.id, terraFeedback[trait.id] || "");
+          setEmbeddedData("IT_Aqua_Eval_" + trait.id, aquaFeedbackEvaluation[trait.id] || "");
+          setEmbeddedData("IT_Terra_Eval_" + trait.id, terraFeedbackEvaluation[trait.id] || "");
+          setEmbeddedData("IT_Aqua_Update_" + trait.id, aquaUpdateRatings[trait.id] || "");
+          setEmbeddedData("IT_Terra_Update_" + trait.id, terraUpdateRatings[trait.id] || "");
+
+          setEmbeddedData("IT_Order_Initial_" + trait.id, randomizedTraitsInitial.findIndex(t => t.id === trait.id) + 1);
+          setEmbeddedData("IT_Order_AquaFeedback_" + trait.id, feedbackTraitOrder.aqua.findIndex(t => t.id === trait.id) + 1);
+          setEmbeddedData("IT_Order_TerraFeedback_" + trait.id, feedbackTraitOrder.terra.findIndex(t => t.id === trait.id) + 1);
+          setEmbeddedData("IT_Order_AquaUpdate_" + trait.id, updateTraitOrder.aqua.findIndex(t => t.id === trait.id) + 1);
+          setEmbeddedData("IT_Order_TerraUpdate_" + trait.id, updateTraitOrder.terra.findIndex(t => t.id === trait.id) + 1);
+        });
+
+        setEmbeddedData("IT_SystemOrder_1", systemOrder[0].key);
+        setEmbeddedData("IT_SystemOrder_2", systemOrder[1].key);
+
+        console.log("[ImageTracker] Full data saved", fullPayload);
+      }
+
+      nextBtn.addEventListener("click", function () {
+        if (currentScreen === 9 && !allRatingsComplete(firstHalf, touchedInitialRatings)) {
+          warning1.style.display = "block";
+          logEvent("validation_failed", { reason: "missing_initial_ratings_page_1" });
+          saveAllData();
+          return;
+        }
+
+        if (currentScreen === 10 && !allRatingsComplete(secondHalf, touchedInitialRatings)) {
+          warning2.style.display = "block";
+          logEvent("validation_failed", { reason: "missing_initial_ratings_page_2" });
+          saveAllData();
+          return;
+        }
+
+        if (currentScreen === 11) {
+          buildDynamicScreensIfNeeded();
+          progress.textContent = currentScreen + " / " + TOTAL_SCREENS;
+        }
+
+        if (!currentFeedbackAnswered()) {
+          showCurrentWarning();
+          logEvent("validation_failed", { reason: "missing_feedback_evaluation" });
+          saveAllData();
+          return;
+        }
+
+        if (!currentUpdateAnswered()) {
+          showCurrentWarning();
+          logEvent("validation_failed", { reason: "missing_update_ratings" });
+          saveAllData();
+          return;
+        }
+
+        if (currentScreen < TOTAL_SCREENS) {
+          showScreen(currentScreen + 1);
+        } else {
+          recordScreenExit(currentScreen);
+          logEvent("task_complete", {});
+          setEmbeddedData("ImageTracker_Completed", "1");
+          saveAllData();
+
+          try {
+            if (window.parent && window.parent !== window) {
+              window.parent.postMessage({
+                source: "ImageTracker",
+                type: "taskComplete",
+                completed: "1"
+              }, "*");
+            }
+            const qNext = document.getElementById("NextButton");
+            if (qNext) qNext.click();
+          } catch (e) {}
+        }
+      });
+
+      backBtn.addEventListener("click", function () {
+        if (currentScreen > 1) showScreen(currentScreen - 1);
+      });
+
+      buildTraitList("trait-list-1", firstHalf, initialRatings, touchedInitialRatings, "initial");
+      buildTraitList("trait-list-2", secondHalf, initialRatings, touchedInitialRatings, "initial");
+
+      finalScreen.dataset.screen = String(TOTAL_SCREENS);
+
+      backBtn.disabled = true;
+      progress.textContent = "1 / " + TOTAL_SCREENS;
+      logEvent("task_start", {});
+      saveAllData();
+    })();
+  </script>
+</body>
+</html>
