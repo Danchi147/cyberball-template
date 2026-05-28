@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ImageTracker</title>
+
+<style>
+:root{
+  --bg1:#08111f; --bg2:#10243f; --card:rgba(255,255,255,.95);
+  --text:#142033; --muted:#647083; --aqua:#2fb7d9; --terra:#71b45a;
+  --accent:#635bff; --border:rgba(20,32,51,.13); --track:#d8dee9;
+}
+*{box-sizing:border-box}
+html,body{
+  margin:0;width:100%;height:100%;overflow:hidden;
+  font-family:Arial,"Noto Sans Hebrew",sans-serif;
+  background:radial-gradient(circle at top left,#1c6a82 0,transparent 32%),
+             radial-gradient(circle at bottom right,#385f26 0,transparent 34%),
+             linear-gradient(135deg,var(--bg1),var(--bg2));
+  color:var(--text);
+}
+#task{width:100vw;height:100vh;display:flex;align-items:center;justify-content:center;padding:18px;overflow:hidden}
+.card{
+  width:min(920px,96vw);max-height:94vh;background:var(--card);
+  border-radius:28px;box-shadow:0 28px 80px rgba(0,0,0,.28);
+  padding:clamp(22px,4vw,46px);position:relative;overflow:hidden;
+}
+.card:before{content:"";position:absolute;inset:0 0 auto 0;height:8px;background:linear-gradient(90deg,var(--aqua),var(--terra))}
+.screen{display:none;min-height:min(620px,calc(94vh - 150px));animation:fadeIn .22s ease}
+.screen.active{display:flex;flex-direction:column;justify-content:center}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+.logo{
+  direction:ltr;text-align:center;font-size:clamp(42px,7vw,72px);
+  font-weight:950;letter-spacing:-.04em;color:#10192b;margin-bottom:12px
+}
+.logo-sub{direction:ltr;text-align:center;color:var(--muted);font-weight:800;letter-spacing:.18em;margin-bottom:34px}
+h2{font-size:clamp(25px,3.2vw,36px);line-height:1.35;margin:0 0 18px;text-align:center;color:#10192b}
+.text{font-size:clamp(18px,2vw,23px);line-height:1.65;text-align:center;color:#21304a;margin:0 auto 20px;max-width:760px}
+
+.trait-list{display:grid;gap:12px;margin-top:10px}
+.trait-row{
+  display:grid;grid-template-columns:150px 1fr 72px;gap:14px;align-items:center;
+  border:1px solid var(--border);background:rgba(255,255,255,.72);
+  border-radius:18px;padding:12px 16px
+}
+.trait-name{font-size:22px;font-weight:950;color:#17243a;text-align:center}
+input[type=range]{width:100%;accent-color:#aeb7c5}
+input[type=range].touched{accent-color:var(--accent)}
+.num{
+  width:70px;text-align:center;font-weight:900;font-size:17px;background:#eef1f7;
+  border:1px solid var(--border);border-radius:12px;padding:7px 4px;color:#1b2942;direction:ltr
+}
+.num:focus{outline:2px solid rgba(99,91,255,.35);background:white}
+.scale-labels{
+  display:flex;justify-content:space-between;color:var(--muted);font-size:14px;
+  margin:4px 170px 4px 88px;direction:ltr
+}
+
+.feedback-card{
+  border:1px solid var(--border);border-radius:26px;background:rgba(255,255,255,.72);
+  padding:28px;max-width:760px;margin:0 auto
+}
+.system{direction:ltr;text-align:center;font-weight:950;letter-spacing:.1em;font-size:22px;margin-bottom:8px}
+.system.aqua{color:#138fb9;background:none}.system.terra{color:#559344;background:none}
+.big-word{text-align:center;font-size:clamp(50px,8vw,82px);font-weight:950;margin:8px 0 24px;color:#10192b;line-height:1.05}
+.bar-section{margin:16px 0 22px}.bar-title{text-align:center;font-weight:900;margin-bottom:8px}
+.bar-track{position:relative;height:18px;background:var(--track);border-radius:999px;overflow:hidden;direction:ltr}
+.bar-fill{position:absolute;left:0;top:0;height:100%;border-radius:999px;background:var(--accent)}
+.bar-fill.aqua-fill{background:var(--aqua)}.bar-fill.terra-fill{background:var(--terra)}
+.bar-value{text-align:center;font-size:20px;font-weight:950;margin-top:6px;direction:ltr}
+.feedback-q{text-align:center;font-size:18px;font-weight:950;margin-top:14px}
+.options{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:14px;direction:rtl}
+.opt input{position:absolute;opacity:0;pointer-events:none}
+.opt span{
+  min-height:58px;display:flex;align-items:center;justify-content:center;text-align:center;
+  padding:8px;border-radius:16px;border:1px solid var(--border);background:#f1f4f8;
+  color:#17243a;font-size:14px;font-weight:850;cursor:pointer;transition:.12s ease
+}
+.opt input:checked+span{background:#10192b;color:white;transform:translateY(-1px)}
+
+.nav{display:flex;justify-content:space-between;align-items:center;margin-top:22px;gap:16px}
+button{border:0;border-radius:999px;padding:14px 28px;font-size:18px;font-weight:850;cursor:pointer;transition:.12s ease}
+button:hover{transform:translateY(-1px)}button:disabled{opacity:.45;cursor:not-allowed;transform:none}
+.primary{background:#10192b;color:white}.secondary{background:#e8edf5;color:#1c2a44}
+.warning{color:#9b2c2c;font-weight:850;margin-top:12px;display:none;text-align:center}
+
+@media(max-width:720px){
+  #task{padding:10px}.card{border-radius:20px;padding:22px 16px}.screen{min-height:calc(94vh - 145px)}
+  .trait-row{grid-template-columns:1fr;gap:7px;padding:10px 12px}.scale-labels{margin:0}
+  .options{grid-template-columns:1fr;gap:6px}.opt span{min-height:42px}
+  .nav{flex-direction:column-reverse;margin-top:14px}button{width:100%}
+}
+@media(max-height:760px){
+  .card{padding:22px 34px}.screen{min-height:calc(94vh - 125px)}
+  .trait-row{padding:9px 14px}.trait-list{gap:9px}.big-word{font-size:48px;margin-bottom:10px}
+  .bar-section{margin:10px 0 14px}.opt span{min-height:46px;font-size:13px}.nav{margin-top:14px}
+}
+</style>
+</head>
+
+<body>
+<div id="task">
+  <div class="card">
+    <section class="screen active" data-screen="1">
+      <div class="logo">ImageTracker</div>
+      <div class="logo-sub">AI SYSTEM</div>
+      <div class="text">כעת נתחיל בדירוג הראשוני.</div>
+    </section>
+
+    <section class="screen" data-screen="2">
+      <h2>כיצד לדעתך את/ה נתפס/ת בעיני אחרים?</h2>
+      <div class="scale-labels"><span>0 = כלל לא</span><span>100 = במידה רבה מאוד</span></div>
+      <div id="initial-list-1" class="trait-list"></div>
+      <div class="warning">יש להשיב על כל התכונות לפני המעבר.</div>
+    </section>
+
+    <section class="screen" data-screen="3">
+      <h2>כיצד לדעתך את/ה נתפס/ת בעיני אחרים?</h2>
+      <div class="scale-labels"><span>0 = כלל לא</span><span>100 = במידה רבה מאוד</span></div>
+      <div id="initial-list-2" class="trait-list"></div>
+      <div class="warning">יש להשיב על כל התכונות לפני המעבר.</div>
+    </section>
+
+    <section class="screen" data-screen="4">
+      <h2>התגובות נשמרו</h2>
+      <div class="text">כעת נעבור להערכות של ImageTracker.</div>
+    </section>
+
+    <div id="dynamic"></div>
+
+    <section class="screen" id="final-screen">
+      <h2>תודה</h2>
+      <div class="text">התגובות נשמרו. ניתן להמשיך לשלב הבא.</div>
+    </section>
+
+    <div class="nav">
+      <button type="button" id="backBtn" class="secondary">חזרה</button>
+      <button type="button" id="nextBtn" class="primary">המשך</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const traits=[
+    {id:"smart",he:"חכם/ה"},
+    {id:"caring",he:"אכפתי/ת"},
+    {id:"successful",he:"מצליח/ה"},
+    {id:"supportive",he:"תומכ/ת"},
+    {id:"talented",he:"מוכשר/ת"},
+    {id:"considerate",he:"מתחשב/ת"},
+    {id:"charismatic_1",he:"כריזמטי/ת"},
+    {id:"patient",he:"סבלני/ת"},
+    {id:"influential",he:"משפיע/ה"},
+    {id:"sociable",he:"חברותי/ת"},
+    {id:"professional",he:"מקצועי/ת"},
+    {id:"loyal",he:"נאמן/ה"},
+    {id:"charismatic_2",he:"כריזמטי/ת"},
+    {id:"generous",he:"נדיב/ה"}
+  ];
+
+  const accOptions=[
+    {value:"very_negative",label:"שלילית מאוד"},
+    {value:"somewhat_negative",label:"שלילית במידה מסוימת"},
+    {value:"accurate",label:"מדויקת"},
+    {value:"somewhat_positive",label:"חיובית במידה מסוימת"},
+    {value:"very_positive",label:"חיובית מאוד"}
+  ];
+
+  function shuffle(arr){const a=arr.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+  function rint(min,max){return Math.floor(Math.random()*(max-min+1))+min}
+  function clamp(x){return Math.max(0,Math.min(100,Math.round(Number(x))))}
+  function aquaScore(x){x=Number(x);return x>95?rint(95,100):clamp(x+rint(3,7))}
+  function terraScore(x){x=Number(x);return x>80?rint(95,100):clamp(x+rint(16,20))}
+
+  const initialOrder=shuffle(traits);
+  const systemOrder=shuffle([{key:"aqua",label:"AQUA"},{key:"terra",label:"TERRA"}]);
+  const feedbackOrder={aqua:shuffle(traits),terra:shuffle(traits)};
+  const updateOrder={aqua:shuffle(traits),terra:shuffle(traits)};
+
+  const initial={}, initialTouched={};
+  const feedback={aqua:{},terra:{}};
+  const accuracy={aqua:{},terra:{}};
+  const update={aqua:{},terra:{}};
+  const updateTouched={aqua:{},terra:{}};
+
+  let current=1, total=5, built=false;
+  const start=Date.now();
+  const dynamic=document.getElementById("dynamic");
+  const final=document.getElementById("final-screen");
+  const nextBtn=document.getElementById("nextBtn");
+  const backBtn=document.getElementById("backBtn");
+
+  function screens(){return Array.from(document.querySelectorAll(".screen"))}
+  function active(){return document.querySelector('.screen[data-screen="'+current+'"]')}
+  function orderString(orderArr){return orderArr.map((t,i)=>(i+1)+":"+t.id).join("|")}
+  function objString(obj){return traits.map(t=>t.id+"="+(obj[t.id] ?? "")).join("|")}
+
+  function ratingsString(){
+    return [
+      "initial:"+objString(initial),
+      "aqua_feedback:"+objString(feedback.aqua),
+      "aqua_accuracy:"+objString(accuracy.aqua),
+      "aqua_update:"+objString(update.aqua),
+      "terra_feedback:"+objString(feedback.terra),
+      "terra_accuracy:"+objString(accuracy.terra),
+      "terra_update:"+objString(update.terra)
+    ].join(";");
+  }
+
+  function blockOrderString(){return systemOrder.map(s=>s.key).join("_then_")}
+  function presentationOrderString(){
+    return [
+      "initial:"+orderString(initialOrder),
+      "aqua_feedback:"+orderString(feedbackOrder.aqua),
+      "aqua_update:"+orderString(updateOrder.aqua),
+      "terra_feedback:"+orderString(feedbackOrder.terra),
+      "terra_update:"+orderString(updateOrder.terra)
+    ].join(";");
+  }
+
+  function setED(name,value){
+    const v=String(value ?? "");
+    try{
+      if(window.Qualtrics && Qualtrics.SurveyEngine && Qualtrics.SurveyEngine.setEmbeddedData){
+        Qualtrics.SurveyEngine.setEmbeddedData(name,v);
+      }
+    }catch(e){}
+    try{
+      if(window.parent && window.parent!==window){
+        window.parent.postMessage({source:"ImageTracker",type:"embeddedData",name:name,value:v},"*");
+      }
+    }catch(e){}
+    let input=document.querySelector('input[name="'+name+'"]');
+    if(!input){input=document.createElement("input");input.type="hidden";input.name=name;document.body.appendChild(input)}
+    input.value=v;
+    console.log("[ImageTracker save]",name,v);
+  }
+
+  function save(){
+    setED("IT_Ratings",ratingsString());
+    setED("IT_BlockOrder",blockOrderString());
+    setED("IT_PresentationOrder",presentationOrderString());
+    setED("IT_Completed", current===total ? "1" : "0");
+  }
+
+  function buildRatingRows(containerId, order, obj, touched, phase){
+    const container=document.getElementById(containerId);
+    order.forEach((trait,idx)=>{
+      obj[trait.id]=""; touched[trait.id]=false;
+      const row=document.createElement("div");
+      row.className="trait-row";
+      row.innerHTML=`
+        <div class="trait-name">${trait.he}</div>
+        <input type="range" min="0" max="100" step="1" value="0" aria-label="${trait.he}">
+        <input class="num" type="number" inputmode="numeric" min="0" max="100" step="1" value="0" aria-label="מספר עבור ${trait.he}">
+      `;
+      container.appendChild(row);
+      const slider=row.querySelector('input[type="range"]');
+      const num=row.querySelector(".num");
+      function setVal(raw,source){
+        if(raw==="") return;
+        const clean=clamp(String(raw).replace(/[^0-9]/g,""));
+        slider.value=clean; num.value=clean; slider.classList.add("touched");
+        obj[trait.id]=String(clean); touched[trait.id]=true;
+        const warn=active()?.querySelector(".warning"); if(warn) warn.style.display="none";
+        save();
+      }
+      slider.addEventListener("input",()=>setVal(slider.value,"slider"));
+      num.addEventListener("input",()=>setVal(num.value,"number"));
+      num.addEventListener("blur",()=>{if(num.value==="")num.value="0"; setVal(num.value,"number_blur")});
+    });
+  }
+
+  function complete(order,touched){return order.every(t=>touched[t.id]===true)}
+
+  function buildDynamic(){
+    if(built) return;
+
+    traits.forEach(t=>{
+      feedback.aqua[t.id]=aquaScore(initial[t.id]);
+      feedback.terra[t.id]=terraScore(initial[t.id]);
+    });
+
+    dynamic.innerHTML="";
+    let n=5;
+
+    systemOrder.forEach(system=>{
+      feedbackOrder[system.key].forEach((trait,idx)=>{
+        dynamic.appendChild(createFeedbackScreen(n++,system,trait,idx+1));
+      });
+      const upd=updateOrder[system.key];
+      dynamic.appendChild(createUpdateScreen(n++,system,upd.slice(0,7),1));
+      dynamic.appendChild(createUpdateScreen(n++,system,upd.slice(7),2));
+    });
+
+    final.dataset.screen=String(n);
+    total=n;
+    built=true;
+    save();
+  }
+
+  function createFeedbackScreen(num,system,trait,ord){
+    const sec=document.createElement("section");
+    sec.className="screen feedback-screen";
+    sec.dataset.screen=String(num);
+    sec.dataset.system=system.key;
+    sec.dataset.trait=trait.id;
+
+    const score=feedback[system.key][trait.id];
+    const fill=system.key==="aqua"?"aqua-fill":"terra-fill";
+    const systemClass=system.key==="aqua"?"aqua":"terra";
+    const opts=accOptions.map(o=>`
+      <label class="opt">
+        <input type="radio" name="acc_${system.key}_${trait.id}" value="${o.value}">
+        <span>${o.label}</span>
+      </label>
+    `).join("");
+
+    sec.innerHTML=`
+      <div class="feedback-card">
+        <div class="system ${systemClass}">ImageTracker ${system.label}</div>
+        <h2>כך ImageTracker ${system.label} מעריך כיצד אנשים אחרים תופסים אותך:</h2>
+        <div class="big-word">${trait.he}</div>
+
+        <div class="bar-section">
+          <div class="bar-title">הדירוג הראשוני שלך</div>
+          <div class="bar-track"><div class="bar-fill" style="width:${initial[trait.id]}%"></div></div>
+          <div class="bar-value">${initial[trait.id]}</div>
+        </div>
+
+        <div class="bar-section">
+          <div class="bar-title">הערכת ImageTracker ${system.label}</div>
+          <div class="bar-track"><div class="bar-fill ${fill}" style="width:${score}%"></div></div>
+          <div class="bar-value">${score}</div>
+        </div>
+
+        <div class="feedback-q">עד כמה הערכה זו תואמת את האופן שבו את/ה רואה את עצמך?</div>
+        <div class="options">${opts}</div>
+        <div class="warning">יש לבחור תשובה לפני המעבר.</div>
+      </div>
+    `;
+    sec.querySelectorAll("input[type=radio]").forEach(r=>{
+      r.addEventListener("change",()=>{
+        accuracy[system.key][trait.id]=r.value;
+        const w=sec.querySelector(".warning"); if(w) w.style.display="none";
+        save();
+      });
+    });
+    return sec;
+  }
+
+  function createUpdateScreen(num,system,subset,part){
+    const sec=document.createElement("section");
+    sec.className="screen update-screen";
+    sec.dataset.screen=String(num);
+    sec.dataset.system=system.key;
+    sec.dataset.part=String(part);
+    const id="upd_"+system.key+"_"+part;
+    const systemClass=system.key==="aqua"?"aqua":"terra";
+    sec.innerHTML=`
+      <div class="system ${systemClass}">ImageTracker ${system.label}</div>
+      <h2>כעת, דרג/י שוב כיצד לדעתך את/ה נתפס/ת בעיני אחרים</h2>
+      <div class="scale-labels"><span>0 = כלל לא</span><span>100 = במידה רבה מאוד</span></div>
+      <div id="${id}" class="trait-list"></div>
+      <div class="warning">יש להשיב על כל התכונות לפני המעבר.</div>
+    `;
+    dynamic.appendChild(sec);
+    setTimeout(()=>buildRatingRows(id,subset,update[system.key],updateTouched[system.key],system.key+"_update"),0);
+    return sec;
+  }
+
+  function show(n){
+    current=n;
+    screens().forEach(s=>s.classList.toggle("active",Number(s.dataset.screen)===current));
+    backBtn.disabled=current===1;
+    nextBtn.textContent=current===total?"סיום":"המשך";
+    const w=active()?.querySelector(".warning"); if(w) w.style.display="none";
+    save();
+  }
+
+  function currentOk(){
+    if(current===2) return complete(initialOrder.slice(0,7),initialTouched);
+    if(current===3) return complete(initialOrder.slice(7),initialTouched);
+
+    const s=active();
+    if(!s) return true;
+    if(s.classList.contains("feedback-screen")){
+      return Boolean(accuracy[s.dataset.system][s.dataset.trait]);
+    }
+    if(s.classList.contains("update-screen")){
+      const sys=s.dataset.system;
+      const part=Number(s.dataset.part);
+      const subset=part===1?updateOrder[sys].slice(0,7):updateOrder[sys].slice(7);
+      return complete(subset,updateTouched[sys]);
+    }
+    return true;
+  }
+
+  function showWarn(){const w=active()?.querySelector(".warning"); if(w) w.style.display="block"}
+
+  nextBtn.addEventListener("click",()=>{
+    if(!currentOk()){showWarn();save();return}
+    if(current===4) buildDynamic();
+
+    if(current<total){
+      show(current+1);
+    }else{
+      setED("IT_Completed","1");
+      save();
+      try{
+        if(window.parent && window.parent!==window){
+          window.parent.postMessage({source:"ImageTracker",type:"taskComplete",completed:"1"},"*");
+        }
+      }catch(e){}
+      try{const qNext=document.getElementById("NextButton"); if(qNext) qNext.click()}catch(e){}
+    }
+  });
+
+  backBtn.addEventListener("click",()=>{if(current>1)show(current-1)});
+
+  buildRatingRows("initial-list-1",initialOrder.slice(0,7),initial,initialTouched,"initial");
+  buildRatingRows("initial-list-2",initialOrder.slice(7),initial,initialTouched,"initial");
+  final.dataset.screen=String(total);
+  backBtn.disabled=true;
+  save();
+})();
+</script>
+</body>
+</html>
