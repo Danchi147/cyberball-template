@@ -591,8 +591,8 @@
       const secondHalf = randomizedTraitsInitial.slice(7);
 
       const systemOrder = shuffle([
-        { key: "aqua", label: "aqua" },
-        { key: "terra", label: "terra" }
+        { key: "aqua", label: "AQUA" },
+        { key: "terra", label: "TERRA" }
       ]);
 
       const feedbackTraitOrder = {
@@ -670,6 +670,25 @@
           document.body.appendChild(input);
         }
         input.value = stringValue;
+      }
+
+      function utf8ToBase64(str) {
+        try {
+          return btoa(unescape(encodeURIComponent(str)));
+        } catch (e) {
+          console.warn("[ImageTracker] Base64 encoding failed", e);
+          return "";
+        }
+      }
+
+      function setEmbeddedJSON(name, objectValue) {
+        const json = JSON.stringify(objectValue);
+
+        // Plain JSON is kept for convenient debugging.
+        setEmbeddedData(name, json);
+
+        // Base64 is the stable export-safe version.
+        setEmbeddedData(name + "_B64", utf8ToBase64(json));
       }
 
       function logEvent(type, details) {
@@ -760,8 +779,7 @@
             logEvent("rating_change", {
               phase: phaseKey,
               trait: trait.id,
-              traitHebrew: trait.he,
-              value: String(cleanValue),
+value: String(cleanValue),
               source: source,
               orderInDisplayedPage: orderIndex
             });
@@ -801,8 +819,7 @@
       function traitOrderPayload(orderArray) {
         return orderArray.map((trait, index) => ({
           order: index + 1,
-          id: trait.id,
-          hebrew: trait.he
+          id: trait.id
         }));
       }
 
@@ -816,8 +833,7 @@
 
           logEvent("feedback_generated", {
             trait: trait.id,
-            traitHebrew: trait.he,
-            initialOrder: index + 1,
+initialOrder: index + 1,
             originalRating: original,
             aquaFeedback: aquaFeedback[trait.id],
             terraFeedback: terraFeedback[trait.id]
@@ -925,8 +941,7 @@
               system: systemKey,
               systemOrder: systemOrderIndex,
               trait: trait.id,
-              traitHebrew: trait.he,
-              value: radio.value,
+value: radio.value,
               initialRating: initialRatings[trait.id],
               feedbackScore: score,
               feedbackTraitOrder: traitOrder
@@ -1070,24 +1085,24 @@
         setEmbeddedData("ImageTracker_StartedAt", fullPayload.startedAtISO);
         setEmbeddedData("ImageTracker_LastSavedAt", fullPayload.lastSavedAtISO);
         setEmbeddedData("ImageTracker_TotalDurationMs", fullPayload.totalDurationMs);
-        setEmbeddedData("ImageTracker_ScreenDurationsMs", JSON.stringify(screenDurations));
+        setEmbeddedJSON("ImageTracker_ScreenDurationsMs", screenDurations);
 
-        setEmbeddedData("ImageTracker_SystemOrder_JSON", JSON.stringify(fullPayload.systemOrder));
-        setEmbeddedData("ImageTracker_InitialTraitOrder_JSON", JSON.stringify(fullPayload.initialTraitOrder));
-        setEmbeddedData("ImageTracker_AquaFeedbackTraitOrder_JSON", JSON.stringify(fullPayload.aquaFeedbackTraitOrder));
-        setEmbeddedData("ImageTracker_TerraFeedbackTraitOrder_JSON", JSON.stringify(fullPayload.terraFeedbackTraitOrder));
-        setEmbeddedData("ImageTracker_AquaUpdateTraitOrder_JSON", JSON.stringify(fullPayload.aquaUpdateTraitOrder));
-        setEmbeddedData("ImageTracker_TerraUpdateTraitOrder_JSON", JSON.stringify(fullPayload.terraUpdateTraitOrder));
+        setEmbeddedJSON("ImageTracker_SystemOrder_JSON", fullPayload.systemOrder);
+        setEmbeddedJSON("ImageTracker_InitialTraitOrder_JSON", fullPayload.initialTraitOrder);
+        setEmbeddedJSON("ImageTracker_AquaFeedbackTraitOrder_JSON", fullPayload.aquaFeedbackTraitOrder);
+        setEmbeddedJSON("ImageTracker_TerraFeedbackTraitOrder_JSON", fullPayload.terraFeedbackTraitOrder);
+        setEmbeddedJSON("ImageTracker_AquaUpdateTraitOrder_JSON", fullPayload.aquaUpdateTraitOrder);
+        setEmbeddedJSON("ImageTracker_TerraUpdateTraitOrder_JSON", fullPayload.terraUpdateTraitOrder);
 
-        setEmbeddedData("ImageTracker_InitialRatings_JSON", JSON.stringify(initialRatings));
-        setEmbeddedData("ImageTracker_AquaFeedback_JSON", JSON.stringify(aquaFeedback));
-        setEmbeddedData("ImageTracker_TerraFeedback_JSON", JSON.stringify(terraFeedback));
-        setEmbeddedData("ImageTracker_AquaFeedbackEvaluation_JSON", JSON.stringify(aquaFeedbackEvaluation));
-        setEmbeddedData("ImageTracker_TerraFeedbackEvaluation_JSON", JSON.stringify(terraFeedbackEvaluation));
-        setEmbeddedData("ImageTracker_AquaUpdateRatings_JSON", JSON.stringify(aquaUpdateRatings));
-        setEmbeddedData("ImageTracker_TerraUpdateRatings_JSON", JSON.stringify(terraUpdateRatings));
-        setEmbeddedData("ImageTracker_EventLog_JSON", JSON.stringify(eventLog));
-        setEmbeddedData("ImageTracker_FullPayload_JSON", JSON.stringify(fullPayload));
+        setEmbeddedJSON("ImageTracker_InitialRatings_JSON", initialRatings);
+        setEmbeddedJSON("ImageTracker_AquaFeedback_JSON", aquaFeedback);
+        setEmbeddedJSON("ImageTracker_TerraFeedback_JSON", terraFeedback);
+        setEmbeddedJSON("ImageTracker_AquaFeedbackEvaluation_JSON", aquaFeedbackEvaluation);
+        setEmbeddedJSON("ImageTracker_TerraFeedbackEvaluation_JSON", terraFeedbackEvaluation);
+        setEmbeddedJSON("ImageTracker_AquaUpdateRatings_JSON", aquaUpdateRatings);
+        setEmbeddedJSON("ImageTracker_TerraUpdateRatings_JSON", terraUpdateRatings);
+        setEmbeddedJSON("ImageTracker_EventLog_JSON", eventLog);
+        setEmbeddedJSON("ImageTracker_FullPayload_JSON", fullPayload);
 
         traits.forEach((trait) => {
           setEmbeddedData("IT_Initial_" + trait.id, initialRatings[trait.id] || "");
