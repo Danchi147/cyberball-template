@@ -2,7 +2,7 @@
 <html lang="he" dir="rtl">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>ImageTracker</title>
 
 <style>
@@ -12,6 +12,7 @@
   --accent:#635bff; --border:rgba(20,32,51,.13); --track:#d8dee9;
 }
 *{box-sizing:border-box}
+button,input,label{touch-action:manipulation}
 html,body{
   margin:0;width:100%;height:100%;overflow:hidden;
   font-family:Arial,"Noto Sans Hebrew",sans-serif;
@@ -31,11 +32,13 @@ html,body{
 .screen.active{display:flex;flex-direction:column;justify-content:center}
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 
-.logo{
-  direction:ltr;text-align:center;font-size:clamp(42px,7vw,72px);
-  font-weight:950;letter-spacing:-.04em;color:#10192b;margin-bottom:12px
+.brand{
+  direction:ltr;text-align:center;font-size:clamp(46px,7vw,76px);
+  font-weight:950;letter-spacing:-.04em;color:#10192b;margin-bottom:10px
 }
-.logo-sub{direction:ltr;text-align:center;color:var(--muted);font-weight:800;letter-spacing:.18em;margin-bottom:34px}
+.brand span:first-child{color:#2fb7d9}
+.brand span:last-child{color:#71b45a}
+.subtitle{direction:ltr;text-align:center;color:var(--muted);font-weight:850;letter-spacing:.2em;margin-bottom:34px}
 h2{font-size:clamp(25px,3.2vw,36px);line-height:1.35;margin:0 0 18px;text-align:center;color:#10192b}
 .text{font-size:clamp(18px,2vw,23px);line-height:1.65;text-align:center;color:#21304a;margin:0 auto 20px;max-width:760px}
 
@@ -55,14 +58,14 @@ input[type=range].touched{accent-color:var(--accent)}
 .num:focus{outline:2px solid rgba(99,91,255,.35);background:white}
 .scale-labels{
   display:flex;justify-content:space-between;color:var(--muted);font-size:14px;
-  margin:4px 170px 4px 88px;direction:ltr
+  margin:4px 170px 4px 88px;direction:rtl
 }
 
 .feedback-card{
   border:1px solid var(--border);border-radius:26px;background:rgba(255,255,255,.72);
   padding:28px;max-width:760px;margin:0 auto
 }
-.system{direction:ltr;text-align:center;font-weight:950;letter-spacing:.1em;font-size:22px;margin-bottom:8px}
+.system{direction:ltr;text-align:center;font-weight:950;letter-spacing:.1em;font-size:28px;margin-bottom:10px}
 .system.aqua{color:#138fb9;background:none}.system.terra{color:#559344;background:none}
 .big-word{text-align:center;font-size:clamp(50px,8vw,82px);font-weight:950;margin:8px 0 24px;color:#10192b;line-height:1.05}
 .bar-section{margin:16px 0 22px}.bar-title{text-align:center;font-weight:900;margin-bottom:8px}
@@ -87,15 +90,179 @@ button:hover{transform:translateY(-1px)}button:disabled{opacity:.45;cursor:not-a
 .warning{color:#9b2c2c;font-weight:850;margin-top:12px;display:none;text-align:center}
 
 @media(max-width:720px){
-  #task{padding:10px}.card{border-radius:20px;padding:22px 16px}.screen{min-height:calc(94vh - 145px)}
-  .trait-row{grid-template-columns:1fr;gap:7px;padding:10px 12px}.scale-labels{margin:0}
-  .options{grid-template-columns:1fr;gap:6px}.opt span{min-height:42px}
-  .nav{flex-direction:column-reverse;margin-top:14px}button{width:100%}
+  html,body{
+    overflow:hidden;
+    height:100%;
+  }
+
+  #task{
+    padding:8px;
+    height:100svh;
+    align-items:center;
+    justify-content:center;
+  }
+
+  .card{
+    width:100%;
+    max-height:calc(100svh - 16px);
+    border-radius:20px;
+    padding:20px 16px;
+    overflow:hidden;
+  }
+
+  .screen{
+    min-height:0;
+    height:calc(100svh - 116px);
+    overflow-y:auto;
+    overflow-x:hidden;
+    -webkit-overflow-scrolling:touch;
+    padding:6px 2px;
+    justify-content:flex-start !important;
+  }
+
+  .brand{
+    font-size:42px;
+    margin-top:28px;
+  }
+
+  .subtitle{
+    font-size:12px;
+    margin-bottom:24px;
+  }
+
+  h2{
+    font-size:22px;
+    line-height:1.35;
+    margin-bottom:14px;
+  }
+
+  .text{
+    font-size:18px;
+    line-height:1.45;
+  }
+
+  .trait-list{
+    gap:9px;
+  }
+
+  .trait-row{
+    grid-template-columns:1fr;
+    gap:7px;
+    padding:10px 12px;
+    border-radius:16px;
+  }
+
+  .trait-name{
+    text-align:center;
+    font-size:20px;
+  }
+
+  input[type=range]{
+    height:30px;
+  }
+
+  .num{
+    width:100%;
+    max-width:130px;
+    margin:0 auto;
+    font-size:18px;
+    padding:8px 4px;
+  }
+
+  .scale-labels{
+    margin:0 4px 8px;
+    font-size:13px;
+  }
+
+  .feedback-card{
+    padding:16px 12px;
+    border-radius:20px;
+  }
+
+  .system{
+    font-size:22px;
+    margin-bottom:8px;
+  }
+
+  .big-word{
+    font-size:44px;
+    margin:4px 0 14px;
+  }
+
+  .bar-section{
+    margin:10px 0 14px;
+  }
+
+  .bar-title{
+    font-size:15px;
+  }
+
+  .bar-track{
+    height:16px;
+  }
+
+  .bar-value{
+    font-size:18px;
+  }
+
+  .feedback-q{
+    font-size:16px;
+    line-height:1.35;
+    margin-top:12px;
+  }
+
+  .options{
+    grid-template-columns:1fr;
+    gap:7px;
+    margin-top:10px;
+  }
+
+  .opt span{
+    min-height:42px;
+    font-size:14px;
+    padding:7px;
+    border-radius:14px;
+  }
+
+  .nav{
+    height:58px;
+    flex-direction:row;
+    margin-top:10px;
+    gap:10px;
+  }
+
+  button{
+    width:100%;
+    padding:12px 16px;
+    font-size:16px;
+  }
+
+  #backBtn{
+    max-width:36%;
+  }
+
+  #nextBtn{
+    flex:1;
+  }
 }
-@media(max-height:760px){
-  .card{padding:22px 34px}.screen{min-height:calc(94vh - 125px)}
-  .trait-row{padding:9px 14px}.trait-list{gap:9px}.big-word{font-size:48px;margin-bottom:10px}
-  .bar-section{margin:10px 0 14px}.opt span{min-height:46px;font-size:13px}.nav{margin-top:14px}
+
+@media(max-width:380px){
+  .brand{font-size:36px}
+  h2{font-size:20px}
+  .trait-name{font-size:18px}
+  .big-word{font-size:38px}
+  .opt span{font-size:13px}
+}
+
+@media(min-width:721px) and (max-height:760px){
+  .card{padding:22px 34px}
+  .screen{min-height:calc(94vh - 125px)}
+  .trait-row{padding:9px 14px}
+  .trait-list{gap:9px}
+  .big-word{font-size:48px;margin-bottom:10px}
+  .bar-section{margin:10px 0 14px}
+  .opt span{min-height:46px;font-size:13px}
+  .nav{margin-top:14px}
 }
 </style>
 </head>
@@ -104,8 +271,8 @@ button:hover{transform:translateY(-1px)}button:disabled{opacity:.45;cursor:not-a
 <div id="task">
   <div class="card">
     <section class="screen active" data-screen="1">
-      <div class="logo">ImageTracker</div>
-      <div class="logo-sub">AI SYSTEM</div>
+      <div class="brand"><span>Image</span>Tracker</div>
+      <div class="subtitle">AI SYSTEM</div>
       <div class="text">כעת נתחיל בדירוג הראשוני.</div>
     </section>
 
@@ -146,18 +313,18 @@ button:hover{transform:translateY(-1px)}button:disabled{opacity:.45;cursor:not-a
 (function(){
   const traits=[
     {id:"smart",he:"חכם/ה"},
-    {id:"caring",he:"אכפתי/ת"},
     {id:"successful",he:"מצליח/ה"},
-    {id:"supportive",he:"תומכ/ת"},
     {id:"talented",he:"מוכשר/ת"},
-    {id:"considerate",he:"מתחשב/ת"},
-    {id:"charismatic_1",he:"כריזמטי/ת"},
-    {id:"patient",he:"סבלני/ת"},
+    {id:"charismatic",he:"כריזמטי/ת"},
     {id:"influential",he:"משפיע/ה"},
-    {id:"sociable",he:"חברותי/ת"},
     {id:"professional",he:"מקצועי/ת"},
+    {id:"impressive",he:"מרשימ/ה"},
+    {id:"caring",he:"אכפתי/ת"},
+    {id:"supportive",he:"תומכ/ת"},
+    {id:"considerate",he:"מתחשב/ת"},
+    {id:"patient",he:"סבלני/ת"},
+    {id:"sociable",he:"חברותי/ת"},
     {id:"loyal",he:"נאמן/ה"},
-    {id:"charismatic_2",he:"כריזמטי/ת"},
     {id:"generous",he:"נדיב/ה"}
   ];
 
@@ -187,7 +354,6 @@ button:hover{transform:translateY(-1px)}button:disabled{opacity:.45;cursor:not-a
   const updateTouched={aqua:{},terra:{}};
 
   let current=1, total=5, built=false;
-  const start=Date.now();
   const dynamic=document.getElementById("dynamic");
   const final=document.getElementById("final-screen");
   const nextBtn=document.getElementById("nextBtn");
@@ -246,9 +412,9 @@ button:hover{transform:translateY(-1px)}button:disabled{opacity:.45;cursor:not-a
     setED("IT_Completed", current===total ? "1" : "0");
   }
 
-  function buildRatingRows(containerId, order, obj, touched, phase){
+  function buildRatingRows(containerId, order, obj, touched){
     const container=document.getElementById(containerId);
-    order.forEach((trait,idx)=>{
+    order.forEach((trait)=>{
       obj[trait.id]=""; touched[trait.id]=false;
       const row=document.createElement("div");
       row.className="trait-row";
@@ -260,7 +426,7 @@ button:hover{transform:translateY(-1px)}button:disabled{opacity:.45;cursor:not-a
       container.appendChild(row);
       const slider=row.querySelector('input[type="range"]');
       const num=row.querySelector(".num");
-      function setVal(raw,source){
+      function setVal(raw){
         if(raw==="") return;
         const clean=clamp(String(raw).replace(/[^0-9]/g,""));
         slider.value=clean; num.value=clean; slider.classList.add("touched");
@@ -268,9 +434,9 @@ button:hover{transform:translateY(-1px)}button:disabled{opacity:.45;cursor:not-a
         const warn=active()?.querySelector(".warning"); if(warn) warn.style.display="none";
         save();
       }
-      slider.addEventListener("input",()=>setVal(slider.value,"slider"));
-      num.addEventListener("input",()=>setVal(num.value,"number"));
-      num.addEventListener("blur",()=>{if(num.value==="")num.value="0"; setVal(num.value,"number_blur")});
+      slider.addEventListener("input",()=>setVal(slider.value));
+      num.addEventListener("input",()=>setVal(num.value));
+      num.addEventListener("blur",()=>{if(num.value==="")num.value="0"; setVal(num.value)});
     });
   }
 
@@ -289,7 +455,7 @@ button:hover{transform:translateY(-1px)}button:disabled{opacity:.45;cursor:not-a
 
     systemOrder.forEach(system=>{
       feedbackOrder[system.key].forEach((trait,idx)=>{
-        dynamic.appendChild(createFeedbackScreen(n++,system,trait,idx+1));
+        dynamic.appendChild(createFeedbackScreen(n++,system,trait));
       });
       const upd=updateOrder[system.key];
       dynamic.appendChild(createUpdateScreen(n++,system,upd.slice(0,7),1));
@@ -302,7 +468,7 @@ button:hover{transform:translateY(-1px)}button:disabled{opacity:.45;cursor:not-a
     save();
   }
 
-  function createFeedbackScreen(num,system,trait,ord){
+  function createFeedbackScreen(num,system,trait){
     const sec=document.createElement("section");
     sec.className="screen feedback-screen";
     sec.dataset.screen=String(num);
@@ -347,6 +513,12 @@ button:hover{transform:translateY(-1px)}button:disabled{opacity:.45;cursor:not-a
         accuracy[system.key][trait.id]=r.value;
         const w=sec.querySelector(".warning"); if(w) w.style.display="none";
         save();
+
+        setTimeout(()=>{
+          if(current < total){
+            show(current + 1);
+          }
+        },180);
       });
     });
     return sec;
@@ -368,7 +540,7 @@ button:hover{transform:translateY(-1px)}button:disabled{opacity:.45;cursor:not-a
       <div class="warning">יש להשיב על כל התכונות לפני המעבר.</div>
     `;
     dynamic.appendChild(sec);
-    setTimeout(()=>buildRatingRows(id,subset,update[system.key],updateTouched[system.key],system.key+"_update"),0);
+    setTimeout(()=>buildRatingRows(id,subset,update[system.key],updateTouched[system.key]),0);
     return sec;
   }
 
@@ -376,7 +548,12 @@ button:hover{transform:translateY(-1px)}button:disabled{opacity:.45;cursor:not-a
     current=n;
     screens().forEach(s=>s.classList.toggle("active",Number(s.dataset.screen)===current));
     backBtn.disabled=current===1;
-    nextBtn.textContent=current===total?"סיום":"המשך";
+
+    const s=active();
+    const isFeedback=s && s.classList.contains("feedback-screen");
+    nextBtn.style.display=isFeedback ? "none" : "inline-block";
+    nextBtn.textContent=current===total ? "סיום" : "המשך";
+
     const w=active()?.querySelector(".warning"); if(w) w.style.display="none";
     save();
   }
@@ -387,15 +564,18 @@ button:hover{transform:translateY(-1px)}button:disabled{opacity:.45;cursor:not-a
 
     const s=active();
     if(!s) return true;
+
     if(s.classList.contains("feedback-screen")){
       return Boolean(accuracy[s.dataset.system][s.dataset.trait]);
     }
+
     if(s.classList.contains("update-screen")){
       const sys=s.dataset.system;
       const part=Number(s.dataset.part);
-      const subset=part===1?updateOrder[sys].slice(0,7):updateOrder[sys].slice(7);
+      const subset=part===1 ? updateOrder[sys].slice(0,7) : updateOrder[sys].slice(7);
       return complete(subset,updateTouched[sys]);
     }
+
     return true;
   }
 
@@ -421,10 +601,11 @@ button:hover{transform:translateY(-1px)}button:disabled{opacity:.45;cursor:not-a
 
   backBtn.addEventListener("click",()=>{if(current>1)show(current-1)});
 
-  buildRatingRows("initial-list-1",initialOrder.slice(0,7),initial,initialTouched,"initial");
-  buildRatingRows("initial-list-2",initialOrder.slice(7),initial,initialTouched,"initial");
+  buildRatingRows("initial-list-1",initialOrder.slice(0,7),initial,initialTouched);
+  buildRatingRows("initial-list-2",initialOrder.slice(7),initial,initialTouched);
   final.dataset.screen=String(total);
   backBtn.disabled=true;
+  nextBtn.style.display="inline-block";
   save();
 })();
 </script>
