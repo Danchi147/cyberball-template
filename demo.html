@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Cyberball Hidden Social Dynamics</title>
+<style>
+  :root {
+    --bg: #f7f5ef;
+    --card: rgba(255,255,255,.94);
+    --primary: #18181b;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --border: #d6d3ca;
+    --text: #262626;
+    --text-light: #57534e;
+    --muted: #f3f0e8;
+    --good: #16a34a;
+    --warn: #d97706;
+    --c-you: #1a1a1a;
+    --c-a: #dc2626;
+    --c-n: #059669;
+    --c-l: #d97706;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    font-family: "EB Garamond", "Garamond", serif;
+    background:
+      radial-gradient(circle at 18% 0%, rgba(37,99,235,.12), transparent 30%),
+      radial-gradient(circle at 82% 8%, rgba(217,119,6,.12), transparent 26%),
+      linear-gradient(180deg, #ffffff 0%, var(--bg) 78%);
+    color: var(--text);
+    margin: 0;
+    min-height: 100vh;
+    padding: 28px 20px 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  header { text-align: center; margin-bottom: 20px; position: relative; }
+  h1 { font-size: 2.35rem; font-weight: 800; margin: 0; color: var(--primary); letter-spacing: .2px; }
+  .stats-summary { font-size: 1.15rem; color: var(--text-light); margin-top: 8px; font-style: italic; }
+
+  .global-eye {
+    position: fixed;
+    top: 18px;
+    right: 22px;
+    z-index: 80;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: rgba(255,255,255,.92);
+    backdrop-filter: blur(8px);
+    box-shadow: 0 12px 30px rgba(0,0,0,.10);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 1.04rem;
+    font-weight: 800;
+  }
+  .global-eye .eye-icon { font-size: 1.22rem; }
+  .global-eye.on { background: #0f172a; color: #fff; border-color: #0f172a; }
+  .global-eye.on .mode-label:after { content: " ON"; color: #93c5fd; }
+  .global-eye:not(.on) .mode-label:after { content: " OFF"; color: var(--text-light); }
+
+  .dashboard {
+    display: grid;
+    grid-template-columns: 320px 540px 320px;
+    gap: 28px;
+    max-width: 1240px;
+    width: 100%;
+    align-items: start;
+    justify-content: center;
+  }
+
+  .panel {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 22px;
+    box-shadow: 0 16px 36px rgba(30, 30, 30, 0.07);
+    transition: opacity .28s ease, transform .28s ease, filter .28s ease;
+  }
+
+  .analytics-panel {
+    opacity: 0;
+    transform: translateY(12px) scale(.98);
+    pointer-events: none;
+    filter: blur(4px);
+  }
+  body.eye-mode .analytics-panel {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+    filter: blur(0);
+  }
+
+  .code-panel {
+    background:
+      linear-gradient(180deg, rgba(15,23,42,.97), rgba(30,41,59,.96));
+    border-color: rgba(147,197,253,.35);
+    color: #e5e7eb;
+    box-shadow: 0 18px 48px rgba(15,23,42,.20);
+  }
+  .code-panel h3, .code-panel .metric-title { color: #fff; }
+  .code-panel .hint, .code-panel .metric-body { color: #cbd5e1; }
+  .code-panel .metric-card, .code-panel .calc-example {
+    background: rgba(15,23,42,.72);
+    border-color: rgba(147,197,253,.25);
+  }
+  .code-panel .mini-row { border-bottom-color: rgba(203,213,225,.16); }
+
+  .panel-title-row { display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid rgba(214,211,202,.7); padding-bottom:10px; margin-bottom:18px; }
+  h3 { font-size: 1.25rem; font-weight: 900; margin: 0; }
+  .hint { margin: -4px 0 16px; font-size: .95rem; color: var(--text-light); font-style: italic; line-height: 1.35; }
+
+  #arena {
+    position: relative;
+    width: 540px;
+    height: 540px;
+    background: radial-gradient(circle at center, #ffffff 0%, #fbfaf7 70%);
+    border: 1px solid var(--border);
+    border-radius: 26px;
+    box-shadow: inset 0 0 0 8px rgba(243,240,232,.72), 0 22px 48px rgba(0,0,0,.09);
+    overflow: hidden;
+  }
+  #arena:before {
+    content:"";
+    position:absolute; inset:70px;
+    border:1px dashed rgba(87,83,78,.18);
+    border-radius:50%;
+  }
+  body.eye-mode #arena {
+    box-shadow: inset 0 0 0 8px rgba(219,234,254,.78), 0 22px 56px rgba(37,99,235,.14);
+  }
+
+  .player-wrap {
+    position: absolute;
+    width: 140px;
+    text-align: center;
+    z-index: 10;
+    cursor: pointer;
+    transition: transform .18s ease, opacity .18s ease;
+  }
+  .player-wrap:hover { transform: translateY(-3px); }
+  .player-wrap.active .avatar { outline: 5px solid rgba(37, 99, 235, .20); transform: scale(1.10); }
+  .player-wrap.active .player-name { color: var(--accent); }
+
+  .avatar {
+    width: 72px;
+    height: 72px;
+    margin: 0 auto 8px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 900;
+    font-size: 1.05rem;
+    border: 4px solid #fff;
+    box-shadow: 0 8px 18px rgba(0,0,0,0.17);
+    transition: transform .18s ease, outline .18s ease;
+  }
+
+  #you .avatar { background: var(--c-you); }
+  #p1 .avatar { background: var(--c-a); }
+  #p2 .avatar { background: var(--c-n); }
+  #p3 .avatar { background: var(--c-l); }
+
+  .player-name { font-size: 1.04rem; font-weight: 900; display: block; }
+  .player-stats { font-size: 0.9rem; color: var(--text-light); font-style: italic; opacity: 0; max-height: 0; overflow: hidden; transition: .2s ease; }
+  body.eye-mode .player-stats { opacity: 1; max-height: 42px; margin-top: 2px; }
+
+  .floating-tags {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(4px);
+    transition: .2s ease;
+    margin-top: 6px;
+    font-size: .82rem;
+    line-height: 1.25;
+  }
+  body.eye-mode .floating-tags { opacity: 1; transform: translateY(0); }
+  .tag-pop, .tag-soc {
+    display: inline-block;
+    padding: 2px 6px;
+    margin: 1px;
+    border-radius: 999px;
+    background: rgba(255,255,255,.88);
+    border: 1px solid rgba(214,211,202,.7);
+    box-shadow: 0 3px 8px rgba(0,0,0,.05);
+  }
+
+  #ball {
+    position: absolute;
+    width: 24px;
+    height: 24px;
+    background: radial-gradient(circle at 35% 35%, #ffffff 0%, #222 20%, #000 75%);
+    border-radius: 50%;
+    z-index: 20;
+    transition: all 0.55s cubic-bezier(0.25, 1, 0.5, 1);
+    box-shadow: 0 5px 10px rgba(0,0,0,0.42);
+  }
+
+  .metric-card { margin-top: 16px; padding: 14px; border: 1px solid var(--border); border-radius: 14px; background: var(--muted); }
+  .metric-title { font-size: 0.95rem; font-weight: 900; display: block; margin-bottom: 4px; }
+  .metric-body { font-size: 1rem; color: var(--text-light); line-height: 1.35; }
+  .metric-score { font-weight: 900; color: #60a5fa; }
+
+  .graph-container { display: flex; align-items: flex-end; justify-content: space-between; height: 160px; margin: 18px 0 4px; }
+  .graph-column { display: flex; flex-direction: column; align-items: center; flex: 1; }
+  .graph-bar-outer { width: 36px; height: 120px; background: rgba(247,247,246,.92); border: 1px solid rgba(214,211,202,.72); border-radius: 999px; overflow: hidden; position: relative; display: flex; align-items: flex-end; }
+  .graph-bar-inner { width: 100%; transition: height 0.45s ease-out; }
+  .graph-label { font-size: 0.9rem; margin-top: 8px; font-weight: 900; color: #e5e7eb; }
+
+  .soc-row { margin-bottom: 17px; }
+  .soc-header { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 1rem; }
+  .soc-bar-track { height: 14px; background: rgba(247,247,246,.92); border: 1px solid rgba(214,211,202,.72); border-radius: 999px; overflow: hidden; display: flex; }
+  .bar-from-me { background: #ef4444; height: 100%; transition: width 0.3s; }
+  .bar-to-me { background: #3b82f6; height: 100%; transition: width 0.3s; }
+
+  .legend { display:flex; gap:12px; margin-top:10px; font-size:.9rem; color:#cbd5e1; flex-wrap: wrap; }
+  .dot { width:10px; height:10px; border-radius:50%; display:inline-block; margin-right:4px; }
+
+  .btn-reset { margin-top: 18px; padding: 10px 22px; background: var(--primary); color: white; border: 1px solid var(--primary); border-radius: 999px; font-family: "EB Garamond", serif; font-size: 1.1rem; cursor: pointer; transition: 0.2s; box-shadow: 0 8px 18px rgba(0,0,0,.12); }
+  .btn-reset:hover { transform: translateY(-1px); box-shadow: 0 10px 22px rgba(0,0,0,.16); }
+  .turn-note { margin-top: 12px; color: var(--text-light); font-size: 1rem; font-style: italic; text-align:center; }
+
+  .calc-example { margin-top:10px; padding:10px; background:#fff; border:1px solid #dbeafe; border-radius:10px; }
+  .mini-row { display:flex; justify-content:space-between; gap:8px; padding:4px 0; border-bottom:1px dotted rgba(0,0,0,.12); }
+  .mini-row:last-child { border-bottom:0; }
+
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(15,23,42,.42);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index: 100;
+    padding: 20px;
+  }
+  .modal-backdrop.show { display:flex; }
+  .choice-modal {
+    width: min(820px, 96vw);
+    background:
+      linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    border-radius:26px;
+    border:1px solid var(--border);
+    box-shadow: 0 28px 90px rgba(0,0,0,.25);
+    padding:24px;
+  }
+  .choice-modal h2 { margin:0 0 6px; font-size:1.65rem; }
+  .choice-modal p { margin:0 0 18px; color:var(--text-light); font-size:1.05rem; }
+  .option-grid { display:grid; grid-template-columns: repeat(3, 1fr); gap:14px; }
+  .option-card { border:1px solid var(--border); border-radius:18px; padding:16px; background:#fbfaf7; position:relative; overflow:hidden; }
+  .option-card.chosen { border-color:#111827; box-shadow: inset 0 0 0 3px rgba(17,24,39,.10); }
+  .badge { display:inline-block; margin: 6px 4px 0 0; padding:4px 8px; border-radius:999px; font-size:.78rem; font-weight:900; background:#e5e7eb; }
+  .badge.pop { background:#fef3c7; color:#92400e; }
+  .badge.soc { background:#dbeafe; color:#1d4ed8; }
+  .badge.chosen { background:#111827; color:white; }
+  .decision-summary { display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-top:16px; }
+  .summary-box { border-radius:16px; padding:14px; background:#f1f5f9; border:1px solid #e2e8f0; }
+  .summary-box b { display:block; margin-bottom:4px; }
+  .modal-actions { display:flex; justify-content:flex-end; margin-top:18px; }
+  .modal-btn { border:none; background:var(--primary); color:white; border-radius:999px; padding:10px 18px; font-family:"EB Garamond",serif; font-size:1.05rem; cursor:pointer; }
+
+  .natural-msg {
+    max-width: 540px;
+    margin-top: 12px;
+    padding: 12px 16px;
+    border-radius: 16px;
+    background: rgba(255,255,255,.78);
+    border: 1px solid var(--border);
+    color: var(--text-light);
+    font-size: 1.02rem;
+    text-align: center;
+    box-shadow: 0 8px 20px rgba(0,0,0,.05);
+  }
+  body.eye-mode .natural-msg { display:none; }
+
+
+
+  .research-log-panel {
+    max-width: 1240px;
+    width: 100%;
+    margin-top: 24px;
+    opacity: 0;
+    transform: translateY(12px) scale(.98);
+    pointer-events: none;
+    filter: blur(4px);
+    transition: opacity .28s ease, transform .28s ease, filter .28s ease;
+  }
+  body.eye-mode .research-log-panel {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+    filter: blur(0);
+  }
+  .log-table-wrap {
+    overflow-x: auto;
+    border: 1px solid rgba(147,197,253,.25);
+    border-radius: 14px;
+    background: rgba(15,23,42,.55);
+  }
+  .research-log-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .92rem;
+    min-width: 820px;
+  }
+  .research-log-table th, .research-log-table td {
+    padding: 9px 10px;
+    border-bottom: 1px solid rgba(203,213,225,.14);
+    text-align: left;
+    vertical-align: top;
+  }
+  .research-log-table th {
+    color: #fff;
+    font-weight: 900;
+    background: rgba(15,23,42,.8);
+    position: sticky;
+    top: 0;
+  }
+  .research-log-table td { color: #cbd5e1; }
+  .research-log-table tr.chosen-row td {
+    color: #fff;
+    background: rgba(37,99,235,.18);
+    font-weight: 800;
+  }
+  .empty-log {
+    padding: 14px;
+    color: #cbd5e1;
+    font-style: italic;
+  }
+
+  @media (max-width: 1100px) {
+    .dashboard { grid-template-columns: 1fr; max-width: 620px; }
+    .analytics-panel { display: none; }
+    body.eye-mode .analytics-panel { display: block; }
+    .panel { width: 100%; }
+    #arena { width: min(540px, 94vw); height: min(540px, 94vw); }
+    .option-grid, .decision-summary { grid-template-columns: 1fr; }
+  }
+</style>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400..800;1,400..800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<button class="global-eye" id="eyeModeBtn" onclick="toggleEyeMode()" title="Reveal hidden social calculations">
+  <span class="eye-icon">👁️</span><span class="mode-label">Researcher mode</span>
+</button>
+
+<header>
+  <h1>Cyberball Experimental Paradigm</h1>
+  <div class="stats-summary" id="totalText">Total Throws: 0</div>
+</header>
+
+<div class="dashboard">
+  <div class="panel analytics-panel code-panel">
+    <div class="panel-title-row"><h3>🤝 Partner Inclusion Engine</h3><span>hidden code</span></div>
+    <div class="hint">Partner's Inclusion = how much inclusion this partner receives from the group.</div>
+    <div class="graph-container" id="popularityBars"></div>
+    <div class="metric-card preference-box">
+      <span class="metric-title">Partner's Inclusion Choice Preference</span>
+      <div class="metric-body" id="popularityPreferenceText">Waiting until you receive the ball once.</div>
+    </div>
+    <div class="calc-example" id="popCalcExample">No user choice yet.</div>
+  </div>
+
+  <div style="display:flex; flex-direction:column; align-items:center;">
+    <div id="arena">
+      <div id="p3" class="player-wrap" style="top:40px; left:200px;" onclick="throwTo('p3')">
+        <div class="avatar">L</div><span class="player-name">Alice</span><div class="player-stats" id="s_p3">Received: 0<br>Passed: 0</div><div class="floating-tags" id="tag_p3"></div>
+      </div>
+      <div id="p1" class="player-wrap" style="top:210px; left:30px;" onclick="throwTo('p1')">
+        <div class="avatar">A</div><span class="player-name">Adi</span><div class="player-stats" id="s_p1">Received: 0<br>Passed: 0</div><div class="floating-tags" id="tag_p1"></div>
+      </div>
+      <div id="p2" class="player-wrap" style="top:210px; right:30px;" onclick="throwTo('p2')">
+        <div class="avatar">N</div><span class="player-name">Noam</span><div class="player-stats" id="s_p2">Received: 0<br>Passed: 0</div><div class="floating-tags" id="tag_p2"></div>
+      </div>
+      <div id="you" class="player-wrap" style="bottom:40px; left:200px;" onclick="throwTo('you')">
+        <div class="avatar">YOU</div><span class="player-name">You</span><div class="player-stats" id="s_you">Received: 0<br>Passed: 0</div><div class="floating-tags" id="tag_you"></div>
+      </div>
+      <div id="ball"></div>
+    </div>
+    <div class="turn-note" id="turnNote">Adi starts with the ball.</div>
+    <div class="natural-msg">Participant view: just choose who gets the ball. Press the eye to reveal the hidden social calculations.</div>
+    <button class="btn-reset" onclick="resetGame()">Reset Paradigm</button>
+  </div>
+
+  <div class="panel analytics-panel code-panel">
+    <div class="panel-title-row"><h3>🤝 Partner's Kindness Engine</h3><span>hidden code</span></div>
+    <div class="hint">Partner's Kindness = how much this partner sends the ball back to you, relative to how much you send it to them.</div>
+    <div id="kindnessText"></div>
+    <div class="legend"><span><i class="dot" style="background:#ef4444"></i>You → player</span><span><i class="dot" style="background:#3b82f6"></i>Player → you</span></div>
+    <div class="metric-card preference-box">
+      <span class="metric-title">Partner's Kindness Choice Preference</span>
+      <div class="metric-body" id="kindnessPreferenceText">Waiting until you receive the ball once.</div>
+    </div>
+    <div class="calc-example" id="socCalcExample">No user choice yet.</div>
+  </div>
+</div>
+
+<div class="panel code-panel research-log-panel" id="researchLogPanel">
+  <div class="panel-title-row"><h3>📋 Researcher Trial Log</h3><span>long-format choice table</span></div>
+  <div class="hint">Each time you choose, this table stores every available partner: the chosen partner and the unchosen alternatives with their indices at that exact trial.</div>
+  <div class="log-table-wrap" id="researchLogTableWrap">
+    <div class="empty-log">No participant choices yet. The table will appear after you receive the ball and choose a partner.</div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="choiceModal">
+  <div class="choice-modal">
+    <h2>👁️ Hidden calculation after your decision</h2>
+    <p id="decisionIntro">The researcher mode compares the three options you had at the moment of choice.</p>
+    <div class="option-grid" id="optionGrid"></div>
+    <div class="decision-summary" id="decisionSummary"></div>
+    <div class="modal-actions"><button class="modal-btn" onclick="closeChoiceModal()">Continue the game</button></div>
+  </div>
+</div>
+
+<script>
+const ballDiameter = 24;
+const avatarDiameter = 72;
+const wrapWidth = 140;
+const ids = ['p1','p2','p3'];
+const allIds = ['you','p1','p2','p3'];
+const pos = { you: [200, 440], p1: [30, 210], p2: [370, 210], p3: [200, 40] };
+const names = { you: 'You', p1: 'Adi', p2: 'Noam', p3: 'Alice' };
+const initials = { you: 'YOU', p1: 'A', p2: 'N', p3: 'L' };
+let stats, log, currentHolder, totalThrows, userChoiceSnapshots, researcherLog, eyeMode;
+
+function initialState() {
+  stats = { you: { r: 0, t: 0 }, p1: { r: 0, t: 0 }, p2: { r: 0, t: 0 }, p3: { r: 0, t: 0 } };
+  log = [];
+  userChoiceSnapshots = [];
+  researcherLog = [];
+  totalThrows = 0;
+  currentHolder = 'p1';
+}
+function label(id) { return names[id]; }
+function shortLabel(id) { return initials[id]; }
+function hasUserReceivedBall() { return log.some(d => d.to === 'you'); }
+function popScore(id) { return totalThrows > 0 ? stats[id].r / totalThrows : 0; }
+function socScore(id, uptoLog = log) {
+  const fromMe = uptoLog.filter(d => d.from === 'you' && d.to === id).length;
+  const toMe = uptoLog.filter(d => d.from === id && d.to === 'you').length;
+  const total = fromMe + toMe;
+  return total > 0 ? (toMe - fromMe) / total : 0;
+}
+function optionSnapshot() {
+  const popValues = Object.fromEntries(ids.map(id => [id, popScore(id)]));
+  const socValues = Object.fromEntries(ids.map(id => [id, socScore(id)]));
+  const maxPop = Math.max(...Object.values(popValues));
+  const maxSoc = Math.max(...Object.values(socValues));
+  return { popValues, socValues, maxPop, maxSoc, totalThrows };
+}
+
+function toggleEyeMode() {
+  eyeMode = !eyeMode;
+  document.body.classList.toggle('eye-mode', eyeMode);
+  document.getElementById('eyeModeBtn').classList.toggle('on', eyeMode);
+  if (!eyeMode) closeChoiceModal();
+}
+
+
+function addResearcherChoiceRows(snapshot) {
+  const trial = userChoiceSnapshots.length;
+  ids.forEach(id => {
+    researcherLog.push({
+      trial,
+      throwNumber: snapshot.throwNumber,
+      partner: id,
+      partnerName: label(id),
+      chosen: id === snapshot.chosen ? 1 : 0,
+      partnerInclusion: snapshot.before.popValues[id],
+      partnerkindness: snapshot.before.socValues[id],
+      highestInclusionAvailable: snapshot.before.maxPop,
+      highestkindnessAvailable: snapshot.before.maxSoc
+    });
+  });
+}
+
+function updateResearcherLogTable() {
+  const wrap = document.getElementById('researchLogTableWrap');
+  if (!wrap) return;
+  if (!researcherLog || researcherLog.length === 0) {
+    wrap.innerHTML = '<div class="empty-log">No participant choices yet. The table will appear after you receive the ball and choose a partner.</div>';
+    return;
+  }
+
+  const fmt = value => Number(value).toFixed(2);
+  const rows = researcherLog.map(row => `
+    <tr class="${row.chosen ? 'chosen-row' : ''}">
+      <td>${row.trial}</td>
+      <td>${row.throwNumber}</td>
+      <td>${row.partnerName}</td>
+      <td>${row.chosen ? 'Chosen by me' : 'Not chosen'}</td>
+      <td>${fmt(row.partnerInclusion)}</td>
+      <td>${fmt(row.partnerkindness)}</td>
+      <td>${fmt(row.highestInclusionAvailable)}</td>
+      <td>${fmt(row.highestkindnessAvailable)}</td>
+    </tr>`).join('');
+
+  wrap.innerHTML = `
+    <table class="research-log-table">
+      <thead>
+        <tr>
+          <th>Choice trial</th>
+          <th>Throw #</th>
+          <th>Partner option</th>
+          <th>Decision</th>
+          <th>Partner's inclusion</th>
+          <th>Partner's kindness</th>
+          <th>Highest inclusion available</th>
+          <th>Highest kindness available</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+}
+
+function throwTo(target) {
+  if (target === currentHolder) return;
+  if (currentHolder !== 'you') {
+    stats[currentHolder].t++;
+    stats[target].r++;
+    totalThrows++;
+    log.push({ from: currentHolder, to: target });
+    currentHolder = target;
+    updateUI();
+    return;
+  }
+
+  if (target !== 'you' && hasUserReceivedBall()) {
+    const snapshot = { chosen: target, before: optionSnapshot(), throwNumber: totalThrows + 1 };
+    userChoiceSnapshots.push(snapshot);
+    addResearcherChoiceRows(snapshot);
+    stats[currentHolder].t++;
+    stats[target].r++;
+    totalThrows++;
+    log.push({ from: currentHolder, to: target });
+    currentHolder = target;
+    updateUI();
+    if (eyeMode) showDecisionModal(snapshot);
+    return;
+  }
+}
+
+function updateUI() {
+  const ball = document.getElementById('ball');
+  const playerPos = pos[currentHolder];
+  const centerX = playerPos[0] + (wrapWidth / 2) - (ballDiameter / 2);
+  const centerY = playerPos[1] + (avatarDiameter / 2) - (ballDiameter / 2);
+  ball.style.left = centerX + 'px';
+  ball.style.top = centerY + 'px';
+  document.getElementById('totalText').innerText = `Total Throws: ${totalThrows}`;
+  document.getElementById('turnNote').innerText = `${label(currentHolder)} has the ball now.`;
+  Object.keys(stats).forEach(id => {
+    document.getElementById(`s_${id}`).innerHTML = `Received: ${stats[id].r}<br>Passed: ${stats[id].t}`;
+    document.getElementById(id).classList.toggle('active', id === currentHolder);
+  });
+  updatePopularity(); updatekindness(); updateChoicePreferences(); updateCalcExamples(); updateFloatingTags(); updateResearcherLogTable();
+}
+
+function updatePopularity() {
+  const labels = ['You', 'Adi', 'Noam', 'Alice'];
+  const colors = ['var(--c-you)', 'var(--c-a)', 'var(--c-n)', 'var(--c-l)'];
+  let html = '';
+  allIds.forEach((id, i) => {
+    const pct = popScore(id) * 100;
+    html += `<div class="graph-column"><span style="font-size:0.85rem; font-weight:900;">${Math.round(pct)}%</span><div class="graph-bar-outer"><div class="graph-bar-inner" style="height:${pct}%; background:${colors[i]}"></div></div><span class="graph-label">${labels[i]}</span></div>`;
+  });
+  document.getElementById('popularityBars').innerHTML = html;
+}
+
+function updatekindness() {
+  let html = '';
+  ids.forEach(id => {
+    const fromMe = log.filter(d => d.from === 'you' && d.to === id).length;
+    const toMe = log.filter(d => d.from === id && d.to === 'you').length;
+    const total = fromMe + toMe;
+    const score = total > 0 ? ((toMe - fromMe) / total).toFixed(2) : '0.00';
+    const redW = total > 0 ? (fromMe / total) * 100 : 0;
+    const blueW = total > 0 ? (toMe / total) * 100 : 0;
+    html += `<div class="soc-row"><div class="soc-header"><span style="font-weight:900">${label(id)}</span><span class="metric-score">${score}</span></div><div class="soc-bar-track"><div class="bar-from-me" style="width:${redW}%"></div><div class="bar-to-me" style="width:${blueW}%"></div></div></div>`;
+  });
+  document.getElementById('kindnessText').innerHTML = html;
+}
+
+function updateFloatingTags() {
+  allIds.forEach(id => {
+    const el = document.getElementById(`tag_${id}`);
+    if (!el) return;
+    const pop = Math.round(popScore(id) * 100);
+    const soc = id === 'you' ? '—' : socScore(id).toFixed(2);
+    el.innerHTML = `<span class="tag-pop">Incl ${pop}%</span><br><span class="tag-soc">🤝 ${soc}</span>`;
+  });
+}
+
+function updateChoicePreferences() {
+  const popEl = document.getElementById('popularityPreferenceText');
+  const socEl = document.getElementById('kindnessPreferenceText');
+  if (!hasUserReceivedBall()) { popEl.innerHTML = 'Waiting until you receive the ball once.'; socEl.innerHTML = 'Waiting until you receive the ball once.'; return; }
+  if (userChoiceSnapshots.length === 0) { popEl.innerHTML = 'You received the ball. Waiting for your first choice.'; socEl.innerHTML = 'You received the ball. Waiting for your first choice.'; return; }
+  let popSum = 0, socSum = 0;
+  userChoiceSnapshots.forEach(s => {
+    const chosenPop = s.before.popValues[s.chosen];
+    const avgOtherPop = ids.filter(id => id !== s.chosen).reduce((a,id)=>a+s.before.popValues[id],0)/2;
+    popSum += chosenPop - avgOtherPop;
+    const chosenSoc = s.before.socValues[s.chosen];
+    const avgOtherSoc = ids.filter(id => id !== s.chosen).reduce((a,id)=>a+s.before.socValues[id],0)/2;
+    socSum += chosenSoc - avgOtherSoc;
+  });
+  const pp = popSum / userChoiceSnapshots.length;
+  const sp = socSum / userChoiceSnapshots.length;
+  const popLabel = pp > 0.02 ? 'Prefers partners with higher inclusion' : pp < -0.02 ? 'Prefers partners with lower inclusion' : 'No clear partner-inclusion preference';
+  const socLabel = sp > 0.05 ? 'Prefers partners with higher kindness' : sp < -0.05 ? 'Prefers partners with lower kindness' : 'No clear partner-kindness preference';
+  popEl.innerHTML = `${popLabel} (<span class="metric-score">${pp.toFixed(2)}</span>)<br><span style="font-size:.92rem">Across ${userChoiceSnapshots.length} choice(s).</span>`;
+  socEl.innerHTML = `${socLabel} (<span class="metric-score">${sp.toFixed(2)}</span>)<br><span style="font-size:.92rem">Across ${userChoiceSnapshots.length} choice(s).</span>`;
+}
+
+function updateCalcExamples() {
+  const popBox = document.getElementById('popCalcExample');
+  const socBox = document.getElementById('socCalcExample');
+  if (!userChoiceSnapshots.length) { popBox.innerHTML = 'No user choice yet.'; socBox.innerHTML = 'No user choice yet.'; return; }
+  const s = userChoiceSnapshots[userChoiceSnapshots.length - 1];
+  const chosenPop = s.before.popValues[s.chosen];
+  const avgPop = ids.filter(id=>id!==s.chosen).reduce((a,id)=>a+s.before.popValues[id],0)/2;
+  const chosenSoc = s.before.socValues[s.chosen];
+  const avgSoc = ids.filter(id=>id!==s.chosen).reduce((a,id)=>a+s.before.socValues[id],0)/2;
+  popBox.innerHTML = `<b>Last decision:</b> You chose ${label(s.chosen)}.<br><b>Partner's inclusion score:</b> chosen − average alternatives = ${(chosenPop*100).toFixed(0)}% − ${(avgPop*100).toFixed(0)}% = <span class="metric-score">${(chosenPop-avgPop).toFixed(2)}</span>`;
+  socBox.innerHTML = `<b>Last decision:</b> You chose ${label(s.chosen)}.<br><b>Partner's kindness score:</b> chosen − average alternatives = ${chosenSoc.toFixed(2)} − ${avgSoc.toFixed(2)} = <span class="metric-score">${(chosenSoc-avgSoc).toFixed(2)}</span>`;
+}
+
+function showDecisionModal(s) {
+  const grid = document.getElementById('optionGrid');
+  const maxPop = Math.max(...Object.values(s.before.popValues));
+  const maxSoc = Math.max(...Object.values(s.before.socValues));
+  const chosenPop = s.before.popValues[s.chosen];
+  const chosenSoc = s.before.socValues[s.chosen];
+  const avgPop = ids.filter(id=>id!==s.chosen).reduce((a,id)=>a+s.before.popValues[id],0)/2;
+  const avgSoc = ids.filter(id=>id!==s.chosen).reduce((a,id)=>a+s.before.socValues[id],0)/2;
+  const choseMostPop = Math.abs(chosenPop - maxPop) < 0.0001 && maxPop > 0;
+  const choseMostSoc = Math.abs(chosenSoc - maxSoc) < 0.0001;
+
+  document.getElementById('decisionIntro').innerHTML = `Throw #${s.throwNumber}: You chose <b>${label(s.chosen)}</b>. Here is what the hidden model saw at that exact moment.`;
+  grid.innerHTML = ids.map(id => {
+    const bestPop = Math.abs(s.before.popValues[id] - maxPop) < 0.0001 && maxPop > 0;
+    const bestSoc = Math.abs(s.before.socValues[id] - maxSoc) < 0.0001;
+    const chosen = id === s.chosen;
+    const badges = `${chosen?'<span class="badge chosen">Your choice</span>':''}${bestPop?'<span class="badge pop">🤝 Highest inclusion</span>':''}${bestSoc?'<span class="badge soc">🤝 Highest kindness</span>':''}`;
+    return `<div class="option-card ${chosen?'chosen':''}"><h3 style="border:0;padding:0;margin:0 0 8px">${label(id)}</h3><div class="mini-row"><span>🤝 Partner's inclusion</span><b>${(s.before.popValues[id]*100).toFixed(0)}%</b></div><div class="mini-row"><span>🤝 Partner's kindness</span><b>${s.before.socValues[id].toFixed(2)}</b></div>${badges}</div>`;
+  }).join('');
+
+  document.getElementById('decisionSummary').innerHTML = `
+    <div class="summary-box"><b>${choseMostPop ? '✅ Highest-inclusion choice' : '❌ Not the highest-inclusion partner'}</b>Contribution: ${(chosenPop-avgPop).toFixed(2)}<br><span>chosen inclusion − average alternatives</span></div>
+    <div class="summary-box"><b>${choseMostSoc ? '✅ Highest-kindness choice' : '❌ Not the highest-kindness partner'}</b>Contribution: ${(chosenSoc-avgSoc).toFixed(2)}<br><span>chosen kindness − average alternatives</span></div>`;
+  document.getElementById('choiceModal').classList.add('show');
+}
+function closeChoiceModal() { document.getElementById('choiceModal').classList.remove('show'); }
+function resetGame() { initialState(); closeChoiceModal(); updateUI(); }
+
+initialState();
+eyeMode = false;
+updateUI();
+</script>
+</body>
+</html>
