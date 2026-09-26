@@ -920,12 +920,13 @@
     <div class="expectCard" style="max-width:620px;margin:24px auto">
       <div class="sliderLine" style="grid-template-columns:1fr 110px">
         <input id="proposalSlider" type="range" min="0" max="10" step="1" value="0">
-        <span class="sliderValue" id="proposalSliderValue">Offer: 0</span>
+        <span class="sliderValue" id="proposalSliderValue">—</span>
       </div>
-      <p id="proposalSplitText" style="margin:8px auto 0"><b>You keep 10 points.</b> The other player receives 0 points.</p>
+      <p id="proposalSplitText" style="margin:8px auto 0;color:#6c7480">Please adjust the slider to make an offer.</p>
       <p style="font-size:16px;color:#6c7480">Adjust the slider, then press <b>Submit</b>. Once submitted, the offer cannot be changed.</p>
     </div>
     <button class="primary" id="proposalNext">Submit</button>
+    <div id="proposalValidation" style="min-height:22px;margin-top:10px;font-size:16px;font-weight:700;color:#8a2f2f"></div>
   </div>
 </section>
 
@@ -2150,17 +2151,23 @@
 
   function renderProposal(){
     const role=proposalOrder[proposalIndex], p=identities[role];
-    proposalSelection={other:0,self:10};
+    proposalSelection=null;
     el('proposalProgress').textContent=`Offer ${proposalIndex+1} of 3`;
     el('proposalPlayerName').textContent=p.name;
     el('proposalAvatar').style.background=p.color;
     const slider=el('proposalSlider');
     slider.value='0';
+    el('proposalSliderValue').textContent='—';
+    el('proposalSplitText').innerHTML='Please adjust the slider to make an offer.';
+    el('proposalSplitText').style.color='#6c7480';
+    el('proposalValidation').textContent='';
     const update=()=>{
       const other=Number(slider.value), mine=10-other;
       proposalSelection={self:mine,other};
       el('proposalSliderValue').textContent=`Offer: ${other}`;
+      el('proposalSplitText').style.color='';
       el('proposalSplitText').innerHTML=`<b>You keep ${mine} point${mine===1?'':'s'}.</b> ${p.name} receives ${other} point${other===1?'':'s'}.`;
+      el('proposalValidation').textContent='';
     };
     slider.oninput=update;
     slider.onkeydown=e=>{
@@ -2169,14 +2176,16 @@
         saveProposalAndContinue();
       }
     };
-    update();
     el('proposalNext').textContent=proposalIndex===2?'Submit and continue':'Submit';
     showScreen('ultimatumProposalScreen');
     setTimeout(()=>slider.focus(),0);
   }
 
   function saveProposalAndContinue(){
-    if(!proposalSelection)return;
+    if(!proposalSelection){
+      el('proposalValidation').textContent='Please adjust the slider to select an offer before submitting.';
+      return;
+    }
     const role=proposalOrder[proposalIndex];
     completeLog.ultimatum_game.proposals[role]={
       visible_player:identities[role].name,
