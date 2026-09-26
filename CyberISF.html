@@ -84,13 +84,13 @@
 
   #meetScreen .panel{
     width:min(1180px,98vw);
-    height:min(680px,calc(100vh - 24px));
-    max-height:none;
-    overflow:hidden;
+    height:auto;
+    max-height:calc(100vh - 24px);
+    overflow:auto;
     padding:32px 34px;
     display:flex;
     flex-direction:column;
-    justify-content:center;
+    justify-content:flex-start;
   }
 
   #meetScreen .eyebrow{
@@ -318,7 +318,9 @@
 
     #meetScreen .panel{
       width:calc(100vw - 20px);
-      height:min(680px,calc(100vh - 20px));
+      height:auto;
+      max-height:calc(100vh - 20px);
+      overflow:auto;
       padding:22px 14px;
     }
 
@@ -419,7 +421,10 @@
   .sliderLine{display:grid;grid-template-columns:1fr 90px;gap:12px;align-items:center;margin:12px 0}
   .sliderLine input{width:100%}
   .sliderValue{font-family:Arial,sans-serif;font-weight:800;text-align:right}
-  .heartPop{position:absolute;z-index:40;font-size:76px;line-height:1;pointer-events:none;animation:heartFloat 1.1s ease forwards;text-shadow:0 3px 10px rgba(0,0,0,.18)}
+  .heartPop{position:absolute;z-index:40;font-size:76px;line-height:1;pointer-events:none;animation:heartFloat 1.1s ease forwards;text-shadow:0 3px 10px rgba(0,0,0,.18);-webkit-text-stroke:2px #111;paint-order:stroke fill}
+  #ball.returnHeart{background:transparent;box-shadow:none}
+  #ball.returnHeart::after{display:none}
+  #ball.returnHeart::before{content:'♥';position:absolute;left:50%;top:50%;transform:translate(-50%,-52%);font-family:Arial,sans-serif;font-size:46px;line-height:1;color:var(--return-heart-color,#e66);-webkit-text-stroke:2px #111;paint-order:stroke fill;text-shadow:0 4px 10px rgba(0,0,0,.18)}
   @keyframes heartFloat{0%{opacity:0;transform:translate(-50%,-50%) scale(.45)}20%{opacity:1;transform:translate(-50%,-50%) scale(1.15)}70%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) scale(.9)}}
   .actualTable{max-width:720px;margin:24px auto;border-collapse:collapse;width:100%;font-family:Arial,sans-serif}
   .actualTable th,.actualTable td{padding:13px;border-bottom:1px solid var(--line);text-align:center}
@@ -438,50 +443,6 @@
   .singleExpectation{max-width:720px;margin:20px auto;text-align:left}
   .expectPlayerHeader{text-align:center;margin-bottom:18px}
   .offerBtn{min-height:86px;font-size:17px;line-height:1.25}
-
-
-/* Append at the END of the existing <style> block in CyberISF.html. */
-@media (min-width: 600px) and (max-width: 760px) {
-  .statementGrid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-/* Keep all player-introduction content reachable. */
-#meetScreen .panel {
-  height: auto;
-  max-height: calc(100vh - 32px);
-  overflow-y: auto;
-  justify-content: flex-start;
-}
-#meetScreen .panel > * {
-  flex-shrink: 0;
-}
-#meetScreen .meetStatement:only-child {
-  grid-column: 1 / -1;
-}
-
-/* Keep descriptions readable inside narrower embedded views. */
-@media (max-width: 1000px) {
-  #meetScreen .panel {
-    padding: 24px 18px;
-  }
-  #meetScreen .playerCards {
-    gap: 12px;
-  }
-  #meetScreen .playerCard {
-    min-width: 0;
-    padding: 18px 12px;
-  }
-  #meetScreen .meetStatements {
-    grid-template-columns: 1fr;
-  }
-}
-@media (max-width: 600px) {
-  #meetScreen .playerCards {
-    grid-template-columns: 1fr;
-  }
-}
 
 </style>
 </head>
@@ -628,14 +589,15 @@
 </section>
 
 <section id="socialAttentionScreen" class="screen">
-  <div class="panel"><div class="eyebrow">Before the game</div><h2>Pay attention to the other players</h2><p>As you play, pay attention to the social behavior of the other players, <b>particularly to how each player interacts with you.</b></p><button class="primary" id="socialAttentionNext">Continue</button></div>
+  <div class="panel"><div class="eyebrow">Before the game</div><h2>Pay attention to the other players</h2><p>As you play, pay attention to the social behavior of the other players, <b>particularly to how each player interacts with you and with others.</b></p><button class="primary" id="socialAttentionNext">Continue</button></div>
 </section>
 
 <section id="gameExpectationScreen" class="screen">
   <div class="panel" style="width:min(820px,96vw)">
     <div class="eyebrow" id="gameExpectationProgress">Before the game</div>
     <h2>What do you expect from each player?</h2>
-    <p>As you play, pay attention to the social behavior of the other players, <b>particularly to how each player interacts with you.</b></p>
+    <p>As you play, pay attention to the social behavior of the other players, <b>particularly to how each player interacts with you and with others.</b></p>
+    <p><b>Please adjust the slider to indicate your answer.</b></p>
     <div id="gameExpectationRows" class="singleExpectation"></div>
     <button class="primary" id="gameExpectationNext" disabled>Continue</button>
   </div>
@@ -643,9 +605,11 @@
 
 <section id="postGameActualScreen" class="screen">
   <div class="panel" style="width:min(820px,96vw)">
-    <div class="eyebrow" id="postGameEstimateProgress">After the game</div>
+    <div class="eyebrow" id="postGameEstimateProgress">Recall the ball-tossing game</div>
     <h2>What actually happened?</h2>
+    <p>Please recall what happened in the ball-tossing game.</p>
     <p>Please estimate what happened with this player during the game.</p>
+    <p><b>Please adjust the slider to indicate your answer.</b></p>
     <div id="postGameActualTable" class="singleExpectation"></div>
     <button class="primary" id="postGameActualNext" disabled>Continue</button>
   </div>
@@ -705,7 +669,7 @@
     <h2>Ball-Tossing Task</h2>
     <p>You will now play a ball-tossing game with the same three players.</p>
     <p>Whenever you receive the ball, choose one of the other players to throw it to by clicking on that player.</p>
-    <p>As you play, pay attention to the social behavior of the other players, <u>particularly to how each player interacts with you</u>.</p>
+    <p>As you play, pay attention to the social behavior of the other players, <u>particularly to how each player interacts with you and with others</u>.</p>
     <p>The game will continue automatically until the task is complete. <br> There are no right or wrong choices. Please respond naturally based on how you would like to play.</p>
     <button class="primary" id="ballTaskIntroNextBtn">Start task</button>
   </div>
@@ -770,7 +734,7 @@
 <section id="postSeatingImpressionsIntroScreen" class="screen">
   <div class="panel">
     <h2>Your Impressions of the Players</h2>
-    <p>Next, we will ask you a few brief questions about the other players based on your experience with them so far.</p>
+    <p>Before you see the other players' decisions in the Decision Game, we will ask you a few brief questions about them based on your experience so far.</p>
     <p>Please answer based on your own impressions. There are no right or wrong answers.</p>
     <button class="primary" id="postSeatingImpressionsIntroNextBtn">Continue</button>
   </div>
@@ -787,15 +751,85 @@
 </section>
 
 <section id="economicTaskIntroScreen" class="screen">
-  <div class="panel"><h2>Next: An Economic Decision-Making Task</h2><p>You will now act as the <b>proposer</b>. First, decide how you would divide $1.00 with each player. Then choose the two players to whom you would like to make your offers.</p><p>For each division, the first number is <b>your share</b> and the second number is the <b>other player's share</b>.</p><button class="primary" id="economicTaskIntroNextBtn">Continue</button></div>
+  <div class="panel" style="width:min(900px,96vw);text-align:left">
+    <div class="eyebrow">Part three</div>
+    <h2 style="text-align:center">The Decision Game</h2>
+    <p>In this game you will be paired with each of the players (Alex, Robin and Lee). One of you is the <b>Proposer</b> and the other is the <b>Decider</b>. You have been assigned the role of <b>Proposer</b>.</p>
+    <h3>How the game works</h3>
+    <ol style="font-size:19px;line-height:1.5;color:#39414d;max-width:760px;margin:10px auto 20px;padding-left:28px">
+      <li>In each round, you receive <b>10 points = $1.00</b>.</li>
+      <li>You decide how to split the 10 points between yourself and the other player (Decider). You can offer any amount from <b>0 to 10 points in whole units</b>. For example, you might offer 5 and keep 5, offer 2 and keep 8, or choose any other division.</li>
+      <li>The Decider sees your offer and chooses whether to <b>accept</b> or <b>reject</b> it. If the Decider accepts, the points are divided as you proposed. If the Decider rejects, <b>neither of you receives anything</b> in that round.</li>
+      <li>You make only one offer to each player and cannot change it after submitting. There is no negotiation or communication between you.</li>
+    </ol>
+    <h3>Important points</h3>
+    <ul style="font-size:19px;line-height:1.5;color:#39414d;max-width:760px;margin:10px auto 20px;padding-left:28px">
+      <li>Your decisions are <b>anonymous</b>. The Decider will not learn who you are, and you will not learn who they are; you will only receive their decision at the end.</li>
+      <li>There are no right or wrong answers. Please decide according to what you actually want to do in each case.</li>
+      <li><b>Payment:</b> At the end of the study, the best-paying outcome from your three offers will be used for your additional bonus payment.</li>
+    </ul>
+    <p style="text-align:center"><b>You will first make one offer to each of the three players. Afterward, you will choose the two players to whom you would most like to make your offers.</b></p>
+    <div style="text-align:center;margin-top:24px"><button class="primary" id="economicTaskIntroNextBtn">Comprehension check</button></div>
+  </div>
+</section>
+
+<section id="ultimatumComprehensionScreen" class="screen">
+  <div class="panel" style="width:min(860px,96vw);text-align:left">
+    <div class="eyebrow">Decision Game</div>
+    <h2 style="text-align:center">Comprehension check</h2>
+    <p style="text-align:center">Please answer these questions before starting.</p>
+    <div id="ultimatumComprehensionForm" style="max-width:720px;margin:24px auto">
+      <div class="expectCard">
+        <p><b>1.</b> You offer the Decider 4 out of 10 points, and they accept. How much do you receive, and how much does the Decider receive?</p>
+        <div class="choiceRow" style="justify-content:center">
+          <button type="button" class="offerBtn compBtn" data-q="1" data-a="6/4">You: 6 / Decider: 4</button>
+          <button type="button" class="offerBtn compBtn" data-q="1" data-a="4/6">You: 4 / Decider: 6</button>
+          <button type="button" class="offerBtn compBtn" data-q="1" data-a="0/0">You: 0 / Decider: 0</button>
+        </div>
+      </div>
+      <div class="expectCard">
+        <p><b>2.</b> You offer the Decider 4 out of 10 points, and they reject. How much do you receive, and how much does the Decider receive?</p>
+        <div class="choiceRow" style="justify-content:center">
+          <button type="button" class="offerBtn compBtn" data-q="2" data-a="6/4">You: 6 / Decider: 4</button>
+          <button type="button" class="offerBtn compBtn" data-q="2" data-a="4/6">You: 4 / Decider: 6</button>
+          <button type="button" class="offerBtn compBtn" data-q="2" data-a="0/0">You: 0 / Decider: 0</button>
+        </div>
+      </div>
+      <div class="expectCard">
+        <p><b>3.</b> Can you change your offer after the Decider sees it?</p>
+        <div class="choiceRow" style="justify-content:center">
+          <button type="button" class="offerBtn compBtn" data-q="3" data-a="yes">Yes</button>
+          <button type="button" class="offerBtn compBtn" data-q="3" data-a="no">No</button>
+        </div>
+      </div>
+      <div id="ultimatumComprehensionFeedback" style="min-height:24px;text-align:center;font-weight:bold;margin-top:12px"></div>
+    </div>
+    <div style="display:flex;justify-content:center;gap:10px;flex-wrap:wrap">
+      <button class="secondary" id="ultimatumComprehensionBackBtn">Back to instructions</button>
+      <button class="primary" id="ultimatumComprehensionStartBtn">Check answers</button>
+    </div>
+  </div>
 </section>
 
 <section id="ultimatumProposalScreen" class="screen">
-  <div class="panel"><div class="eyebrow" id="proposalProgress"></div><h2 id="proposalTitle">Choose your offer</h2><div class="ratingIdentity"><div class="avatar" id="proposalAvatar"></div><h3 id="proposalPlayerName"></h3></div><p>How would you divide $1.00 between yourself and this player?</p><div class="offerGrid" id="proposalButtons"></div><button class="primary" id="proposalNext" disabled>Continue</button></div>
+  <div class="panel">
+    <div class="eyebrow" id="proposalProgress"></div><h2 id="proposalTitle">Make your offer</h2>
+    <div class="ratingIdentity"><div class="avatar" id="proposalAvatar"></div><h3 id="proposalPlayerName"></h3></div>
+    <p>You have <b>10 points</b>. How many points would you like to offer this player?</p>
+    <div class="expectCard" style="max-width:620px;margin:24px auto">
+      <div class="sliderLine" style="grid-template-columns:1fr 110px">
+        <input id="proposalSlider" type="range" min="0" max="10" step="1" value="5">
+        <span class="sliderValue" id="proposalSliderValue">Offer: 5</span>
+      </div>
+      <p id="proposalSplitText" style="margin:8px auto 0"><b>You keep 5 points.</b> The other player receives 5 points.</p>
+      <p style="font-size:16px;color:#6c7480">Adjust the slider, then press <b>Enter</b> or click Submit offer. Once submitted, the offer cannot be changed.</p>
+    </div>
+    <button class="primary" id="proposalNext">Submit offer</button>
+  </div>
 </section>
 
 <section id="ultimatumChoiceScreen" class="screen">
-  <div class="panel"><h2>Choose two players</h2><p id="ultimatumChoicePrompt">Please select the <b>two players</b> to whom you would most like to make your offers.</p><div class="choiceRow" id="ultimatumChoiceButtons" style="justify-content:center;margin:28px auto 18px;"></div><p id="ultimatumPairText">Select 2 players.</p><button class="primary" id="ultimatumChoiceContinueBtn" style="display:none">See results</button></div>
+  <div class="panel"><h2>Choose two players</h2><p id="ultimatumChoicePrompt">You have made an offer to each player. Please select the <b>two players</b> to whom you would most like to make your offers. Your best-paying outcome across the three offers will be used for the bonus.</p><div class="choiceRow" id="ultimatumChoiceButtons" style="justify-content:center;margin:28px auto 18px;"></div><p id="ultimatumPairText">Select 2 players.</p><button class="primary" id="ultimatumChoiceContinueBtn" style="display:none">See results</button></div>
 </section>
 
 <section id="ultimatumResultScreen" class="screen">
@@ -1142,10 +1176,15 @@
 
   function assignPlayerDescriptions(){
     const unselected=selfStatementPool.filter(x=>!selectedStatements.includes(x));
-    const sharedA=shuffle(selectedStatements).slice(0,2);
-    const sharedB=shuffle(selectedStatements).slice(0,2);
-    identities.A.sentences=[...sharedA,...shuffle(unselected).slice(0,2)];
-    identities.B.sentences=[...sharedB,...shuffle(unselected).slice(2,4)];
+    // Give the two players distinct patterns of overlap with the participant.
+    // With four selected statements, one shuffled order might yield A = 1&2 and B = 2&4:
+    // the players share one characteristic with each other, but never the exact same pair.
+    const selectedForOverlap=shuffle(selectedStatements);
+    const sharedA=[selectedForOverlap[0],selectedForOverlap[1]];
+    const sharedB=[selectedForOverlap[1],selectedForOverlap[3]];
+    const nonShared=shuffle(unselected);
+    identities.A.sentences=[...sharedA,...nonShared.slice(0,2)];
+    identities.B.sentences=[...sharedB,...nonShared.slice(2,4)];
     identities.A.sentence=identities.A.sentences.join(' • ');
     identities.B.sentence=identities.B.sentences.join(' • ');
     identities.C.sentences=[];
@@ -1472,7 +1511,7 @@
       if(CFG.seatingEnabled){showScreen('seatIntroScreen');}
       else{showScreen('questionnaireIntroScreen');}
     }else if(ratingContext==='post_seating'){
-      showScreen('seatIntroScreen');
+      showUltimatumResult();
     }
   }
 
@@ -1899,7 +1938,7 @@
     console.log(lines.join('\n'));
     window.seatingData=seatResults;
     sendCompleteLog();
-    startMetaperceptionPost();
+    showPostGameActual();
   }
 
   // ===================== REQUIRED QUESTIONS =====================
@@ -1944,53 +1983,162 @@
     return true;
   }
 
-  // ===================== ULTIMATUM GAME =====================
-  // Final structure:
-  // 1) One screen shows all three players in a randomized display order.
-  //    The participant selects two of the three.
-  // 2) Each selected player makes one offer. One offer is 60/40 and the other 80/20.
-  //    Offer-to-player assignment and offer presentation order are randomized/counterbalanced.
-  // 3) Lean logging stores only display order, selected roles (in click order),
-  //    and the two presented offers (role, split, decision, RT).
-  function startUltimatumGame(){
-    ultimatumSelectedRoles=[]; ultimatumDisplayOrder=shuffle(ids); proposalOrder=shuffle(ids); proposalIndex=0; proposalSelection=null; ultimatumResultIndex=0;
-    completeLog.ultimatum_game={proposal_order:proposalOrder.slice(),proposals:{},display_order:ultimatumDisplayOrder.slice(),selected:[],results:[]};
-    checkpoint(); renderProposal();
+  // ===================== ULTIMATUM / DECISION GAME =====================
+  let ultimatumComprehensionAnswers={};
+
+  function openUltimatumComprehension(){
+    ultimatumComprehensionAnswers={};
+    el('ultimatumComprehensionFeedback').textContent='';
+    document.querySelectorAll('.compBtn').forEach(btn=>btn.classList.remove('selected'));
+    el('ultimatumComprehensionStartBtn').textContent='Check answers';
+    showScreen('ultimatumComprehensionScreen');
   }
-  function renderProposal(){
-    const role=proposalOrder[proposalIndex], p=identities[role]; proposalSelection=null;
-    el('proposalProgress').textContent=`Offer ${proposalIndex+1} of 3`;
-    el('proposalPlayerName').textContent=p.name; el('proposalAvatar').style.background=p.color;
-    const wrap=el('proposalButtons'); wrap.innerHTML='';
-    for(let mine=10;mine<=90;mine+=10){
-      const other=100-mine, b=document.createElement('button'); b.type='button'; b.className='offerBtn'; b.innerHTML=`<b>${mine}% you</b><br><span>${other}% ${p.name}</span>`;
-      b.addEventListener('click',()=>{wrap.querySelectorAll('.offerBtn').forEach(x=>x.classList.remove('selected'));b.classList.add('selected');proposalSelection={self:mine,other};el('proposalNext').disabled=false;}); wrap.appendChild(b);
+
+  function selectUltimatumComprehension(btn){
+    const q=btn.dataset.q;
+    document.querySelectorAll(`.compBtn[data-q="${q}"]`).forEach(x=>x.classList.remove('selected'));
+    btn.classList.add('selected');
+    ultimatumComprehensionAnswers[q]=btn.dataset.a;
+    el('ultimatumComprehensionFeedback').textContent='';
+  }
+
+  function checkUltimatumComprehension(){
+    const complete=['1','2','3'].every(q=>ultimatumComprehensionAnswers[q]);
+    if(!complete){
+      el('ultimatumComprehensionFeedback').textContent='Please answer all three questions.';
+      return;
     }
-    el('proposalNext').disabled=true; el('proposalNext').textContent=proposalIndex===2?'Choose players':'Continue'; showScreen('ultimatumProposalScreen');
+    const correct=ultimatumComprehensionAnswers['1']==='6/4' && ultimatumComprehensionAnswers['2']==='0/0' && ultimatumComprehensionAnswers['3']==='no';
+    completeLog.ultimatum_game.comprehension={...ultimatumComprehensionAnswers,correct};
+    checkpoint();
+    if(!correct){
+      el('ultimatumComprehensionFeedback').textContent='One or more answers are incorrect. Please review the instructions and try again.';
+      return;
+    }
+    startUltimatumGame();
   }
+
+  function startUltimatumGame(){
+    ultimatumSelectedRoles=[];
+    ultimatumDisplayOrder=shuffle(ids);
+    proposalOrder=shuffle(ids);
+    proposalIndex=0;
+    proposalSelection=null;
+    ultimatumResultIndex=0;
+    completeLog.ultimatum_game={
+      ...(completeLog.ultimatum_game||{}),
+      proposal_order:proposalOrder.slice(),
+      proposals:{},
+      display_order:ultimatumDisplayOrder.slice(),
+      selected:[],
+      results:[]
+    };
+    checkpoint();
+    renderProposal();
+  }
+
+  function renderProposal(){
+    const role=proposalOrder[proposalIndex], p=identities[role];
+    proposalSelection={other:5,self:5};
+    el('proposalProgress').textContent=`Offer ${proposalIndex+1} of 3`;
+    el('proposalPlayerName').textContent=p.name;
+    el('proposalAvatar').style.background=p.color;
+    const slider=el('proposalSlider');
+    slider.value='5';
+    const update=()=>{
+      const other=Number(slider.value), mine=10-other;
+      proposalSelection={self:mine,other};
+      el('proposalSliderValue').textContent=`Offer: ${other}`;
+      el('proposalSplitText').innerHTML=`<b>You keep ${mine} point${mine===1?'':'s'}.</b> ${p.name} receives ${other} point${other===1?'':'s'}.`;
+    };
+    slider.oninput=update;
+    slider.onkeydown=e=>{
+      if(e.key==='Enter'){
+        e.preventDefault();
+        saveProposalAndContinue();
+      }
+    };
+    update();
+    el('proposalNext').textContent=proposalIndex===2?'Submit offer and continue':'Submit offer';
+    showScreen('ultimatumProposalScreen');
+    setTimeout(()=>slider.focus(),0);
+  }
+
   function saveProposalAndContinue(){
-    if(!proposalSelection)return; const role=proposalOrder[proposalIndex];
-    completeLog.ultimatum_game.proposals[role]={visible_player:identities[role].name,self_pct:proposalSelection.self,other_pct:proposalSelection.other}; checkpoint(); proposalIndex++;
-    if(proposalIndex<proposalOrder.length){renderProposal();return;} renderUltimatumChoice(); showScreen('ultimatumChoiceScreen');
+    if(!proposalSelection)return;
+    const role=proposalOrder[proposalIndex];
+    completeLog.ultimatum_game.proposals[role]={
+      visible_player:identities[role].name,
+      self_points:proposalSelection.self,
+      other_points:proposalSelection.other,
+      self_pct:proposalSelection.self*10,
+      other_pct:proposalSelection.other*10
+    };
+    checkpoint();
+    proposalIndex++;
+    if(proposalIndex<proposalOrder.length){renderProposal();return;}
+    prepareUltimatumResults();
   }
+
   function renderUltimatumChoice(){
     const wrap=el('ultimatumChoiceButtons'); wrap.innerHTML='';
-    ultimatumDisplayOrder.forEach(role=>{const p=identities[role],selected=ultimatumSelectedRoles.includes(role),btn=document.createElement('button');btn.type='button';btn.className='primary';btn.textContent=p.name;btn.style.background=p.color;btn.style.color='#202733';btn.style.minWidth='150px';btn.style.border=selected?'4px solid #202733':'4px solid transparent';btn.dataset.role=role;btn.addEventListener('click',()=>chooseUltimatumPlayer(role));wrap.appendChild(btn);});
-    const n=ultimatumSelectedRoles.length; el('ultimatumPairText').textContent=n===2?`You selected ${visibleName(ultimatumSelectedRoles[0])} and ${visibleName(ultimatumSelectedRoles[1])}.`:`${n} of 2 players selected.`; el('ultimatumChoiceContinueBtn').style.display=n===2?'inline-block':'none';
+    ultimatumDisplayOrder.forEach(role=>{
+      const p=identities[role],selected=ultimatumSelectedRoles.includes(role),btn=document.createElement('button');
+      btn.type='button';btn.className='primary';btn.textContent=p.name;btn.style.background=p.color;btn.style.color='#202733';btn.style.minWidth='150px';btn.style.border=selected?'4px solid #202733':'4px solid transparent';btn.dataset.role=role;
+      btn.addEventListener('click',()=>chooseUltimatumPlayer(role));wrap.appendChild(btn);
+    });
+    const n=ultimatumSelectedRoles.length;
+    el('ultimatumPairText').textContent=n===2?`You selected ${visibleName(ultimatumSelectedRoles[0])} and ${visibleName(ultimatumSelectedRoles[1])}.`:`${n} of 2 players selected.`;
+    el('ultimatumChoiceContinueBtn').style.display=n===2?'inline-block':'none';
+    el('ultimatumChoiceContinueBtn').textContent='Continue';
   }
-  function chooseUltimatumPlayer(role){const i=ultimatumSelectedRoles.indexOf(role);if(i>=0)ultimatumSelectedRoles.splice(i,1);else if(ultimatumSelectedRoles.length<2)ultimatumSelectedRoles.push(role);completeLog.ultimatum_game.selected=ultimatumSelectedRoles.slice();checkpoint();renderUltimatumChoice();}
-  function beginUltimatumOffers(){
-    if(ultimatumSelectedRoles.length!==2)return; ultimatumResultIndex=0; completeLog.ultimatum_game.results=ultimatumSelectedRoles.map(role=>{const o=completeLog.ultimatum_game.proposals[role];const accepted=o.self_pct<70;return {role,visible_player:identities[role].name,self_pct:o.self_pct,other_pct:o.other_pct,accepted};}); checkpoint(); showUltimatumResult();
+
+  function chooseUltimatumPlayer(role){
+    const i=ultimatumSelectedRoles.indexOf(role);
+    if(i>=0)ultimatumSelectedRoles.splice(i,1);
+    else if(ultimatumSelectedRoles.length<2)ultimatumSelectedRoles.push(role);
+    completeLog.ultimatum_game.selected=ultimatumSelectedRoles.slice();
+    checkpoint();
+    renderUltimatumChoice();
   }
+
+  function prepareUltimatumResults(){
+    ultimatumResultIndex=0;
+    // Every offer is submitted: there is no 2-of-3 player-selection stage.
+    const resultRoles=proposalOrder.slice();
+    completeLog.ultimatum_game.selected=resultRoles.slice();
+    completeLog.ultimatum_game.results=resultRoles.map(role=>{
+      const o=completeLog.ultimatum_game.proposals[role];
+      // Accept when participant keeps 7 or fewer points (70/30 or fairer to Decider).
+      // Reject when participant keeps 8 or more points (80/20, 90/10, 100/0).
+      const accepted=o.self_points<=7;
+      return {role,visible_player:identities[role].name,self_points:o.self_points,other_points:o.other_points,self_pct:o.self_pct,other_pct:o.other_pct,accepted};
+    });
+    checkpoint();
+    // Post-niceness ratings occur after all three offers, before any accept/reject outcome is shown.
+    showScreen('postSeatingImpressionsIntroScreen');
+  }
+
   function showUltimatumResult(){
     const row=completeLog.ultimatum_game.results[ultimatumResultIndex], p=identities[row.role];
-    el('ultimatumResultProgress').textContent=`Result ${ultimatumResultIndex+1} of 2`; el('ultimatumResultName').textContent=p.name; el('ultimatumResultAvatar').style.background=p.color;
-    el('ultimatumResultOffer').innerHTML=`Your offer: <b>${row.self_pct}% for you / ${row.other_pct}% for ${p.name}</b>`;
+    if(!row){
+      experimentComplete=true;experimentCompletedAtMs=experimentMs();checkpoint();showScreen('endScreen');return;
+    }
+    el('ultimatumResultProgress').textContent=`Result ${ultimatumResultIndex+1} of ${completeLog.ultimatum_game.results.length}`;
+    el('ultimatumResultName').textContent=p.name;
+    el('ultimatumResultAvatar').style.background=p.color;
+    el('ultimatumResultOffer').innerHTML=`Your offer: <b>you keep ${row.self_points} point${row.self_points===1?'':'s'} / ${p.name} receives ${row.other_points} point${row.other_points===1?'':'s'}</b>`;
     el('ultimatumResultDecision').textContent=row.accepted?'ACCEPTED':'REJECTED';
     el('ultimatumResultExplanation').textContent=row.accepted?`${p.name} accepted your offer.`:`${p.name} rejected your offer.`;
-    el('ultimatumResultNext').textContent=ultimatumResultIndex===1?'Finish':'Continue'; showScreen('ultimatumResultScreen');
+    el('ultimatumResultNext').textContent=ultimatumResultIndex===completeLog.ultimatum_game.results.length-1?'Finish':'Continue';
+    showScreen('ultimatumResultScreen');
   }
-  function nextUltimatumResult(){ultimatumResultIndex++;if(ultimatumResultIndex<2){showUltimatumResult();return;}experimentComplete=true;experimentCompletedAtMs=experimentMs();checkpoint();showScreen('endScreen');}
+
+  function nextUltimatumResult(){
+    ultimatumResultIndex++;
+    if(ultimatumResultIndex<completeLog.ultimatum_game.results.length){showUltimatumResult();return;}
+    experimentComplete=true;experimentCompletedAtMs=experimentMs();checkpoint();showScreen('endScreen');
+  }
 
   function finishFeedbackPlayer(){
     feedbackIndex++; feedbackPage=1;
@@ -2041,12 +2189,18 @@
     const rows=el('gameExpectationRows');
     rows.innerHTML=`<div class="expectCard"><div class="expectPlayerHeader"><div class="avatar" style="background:${p.color}"></div><h3>${p.name}</h3></div>
       <label>What percentage of the time do you expect ${p.name} to <b>include you</b>? <span id="incv_${role}" class="sliderValue">—</span></label>
-      <div class="sliderLine"><input id="inc_${role}" type="range" min="0" max="100" value="50"><span>%</span></div>
+      <div class="sliderLine"><input id="inc_${role}" type="range" min="0" max="100" value="0"><span>%</span></div>
       <label>What percentage of the time do you expect ${p.name} to <b><u>return</u></b> the ball directly to you after you throw it to them? <span id="retv_${role}" class="sliderValue">—</span></label>
-      <div class="sliderLine"><input id="ret_${role}" type="range" min="0" max="100" value="50"><span>%</span></div></div>`;
+      <div class="sliderLine"><input id="ret_${role}" type="range" min="0" max="100" value="0"><span>%</span></div></div>`;
     ['inc','ret'].forEach(kind=>{
       const input=el(`${kind}_${role}`), out=el(`${kind}v_${role}`);
-      input.addEventListener('input',()=>{gameExpectations[role][kind==='inc'?'inclusion':'return']=Number(input.value);out.textContent=input.value+'%';updateExpectationReady();});
+      const commit=()=>{
+        gameExpectations[role][kind==='inc'?'inclusion':'return']=Number(input.value);
+        out.textContent=input.value+'%';
+        updateExpectationReady();
+      };
+      input.addEventListener('input',commit);
+      input.addEventListener('pointerup',commit);
     });
     el('gameExpectationNext').disabled=true;
     el('gameExpectationNext').textContent=gameExpectationIndex===2?'Start game':'Continue';
@@ -2087,15 +2241,21 @@
   function renderPostGameEstimatePlayer(){
     const role=postGameEstimateOrder[postGameEstimateIndex], p=identities[role];
     postGameEstimates[role]={inclusion:null,return:null};
-    el('postGameEstimateProgress').textContent=`After the game — ${postGameEstimateIndex+1} of 3`;
+    el('postGameEstimateProgress').textContent=`Recall the ball-tossing game — ${postGameEstimateIndex+1} of 3`;
     el('postGameActualTable').innerHTML=`<div class="expectCard"><div class="expectPlayerHeader"><div class="avatar" style="background:${p.color}"></div><h3>${p.name}</h3></div>
       <label>What percentage of ${p.name}'s throws do you think <b>included you</b>? <span id="postincv_${role}" class="sliderValue">—</span></label>
-      <div class="sliderLine"><input id="postinc_${role}" type="range" min="0" max="100" value="50"><span>%</span></div>
+      <div class="sliderLine"><input id="postinc_${role}" type="range" min="0" max="100" value="0"><span>%</span></div>
       <label>When you threw the ball to ${p.name}, what percentage of the time do you think ${p.name} <b><u>returned</u></b> it directly to you on the next throw? <span id="postretv_${role}" class="sliderValue">—</span></label>
-      <div class="sliderLine"><input id="postret_${role}" type="range" min="0" max="100" value="50"><span>%</span></div></div>`;
+      <div class="sliderLine"><input id="postret_${role}" type="range" min="0" max="100" value="0"><span>%</span></div></div>`;
     ['inc','ret'].forEach(kind=>{
       const input=el(`post${kind}_${role}`), out=el(`post${kind}v_${role}`);
-      input.addEventListener('input',()=>{postGameEstimates[role][kind==='inc'?'inclusion':'return']=Number(input.value);out.textContent=input.value+'%';updatePostGameEstimateReady();});
+      const commit=()=>{
+        postGameEstimates[role][kind==='inc'?'inclusion':'return']=Number(input.value);
+        out.textContent=input.value+'%';
+        updatePostGameEstimateReady();
+      };
+      input.addEventListener('input',commit);
+      input.addEventListener('pointerup',commit);
     });
     el('postGameActualNext').disabled=true;
     el('postGameActualNext').textContent=postGameEstimateIndex===2?'Continue':'Continue';
@@ -2111,7 +2271,7 @@
     if(postGameEstimateIndex<postGameEstimateOrder.length){renderPostGameEstimatePlayer();return;}
     completeLog.postgame_actual={objective:postGameActual,participant_estimates:{}};
     ids.forEach(r=>completeLog.postgame_actual.participant_estimates[r]={visible_player:identities[r].name,...postGameEstimates[r]});
-    checkpoint(); showScreen('postSeatingImpressionsIntroScreen');
+    checkpoint(); startMetaperceptionPost();
   }
 
   function showReturnHeart(role){
@@ -2224,13 +2384,26 @@
       throwLog.rt_ms=Math.round(performance.now()-gameChoiceStart);
     }
     const previousThrow=completeLog.game_throws.length ? completeLog.game_throws[completeLog.game_throws.length-1] : null;
+    const isDirectReturn=to==='ME' && ids.includes(from) && previousThrow?.from_role==='ME' && previousThrow?.to_role===from;
     completeLog.game_throws.push(throwLog);
-    if(to==='ME' && ids.includes(from) && previousThrow?.from_role==='ME' && previousThrow?.to_role===from){ showReturnHeart(from); }
     checkpoint();
     setHolder(from);await sleep(110);
     el(from).classList.add('senderPulse');
     setTimeout(()=>el(from).classList.remove('senderPulse'),550);
-    placeBall(to);await sleep(CFG.moveMs);setHolder(to);await sleep(CFG.pauseMs);
+    const ballNode=el('ball');
+    if(isDirectReturn){
+      ballNode.classList.add('returnHeart');
+      ballNode.style.setProperty('--return-heart-color',identities[from].color);
+    }
+    placeBall(to);await sleep(CFG.moveMs);setHolder(to);
+    if(isDirectReturn){
+      showReturnHeart(from);
+      await sleep(CFG.pauseMs);
+      ballNode.classList.remove('returnHeart');
+      ballNode.style.removeProperty('--return-heart-color');
+    }else{
+      await sleep(CFG.pauseMs);
+    }
   }
 
   function weightedRemaining(exclude=null){
@@ -2572,7 +2745,8 @@
       el('phase1FinalScore').textContent=state.scores.ME;
       showScreen('phase2Screen');
     }else{
-      showPostGameActual();
+      if(CFG.seatingEnabled){showScreen('seatIntroScreen');}
+      else{showPostGameActual();}
     }
   }
 
@@ -2596,10 +2770,12 @@
     else showScreen('rule1Screen');
   });
   el('postSeatingImpressionsIntroNextBtn').addEventListener('click',()=>startRatings('post_seating'));
-  el('economicTaskIntroNextBtn').addEventListener('click',startUltimatumGame);
+  el('economicTaskIntroNextBtn').addEventListener('click',openUltimatumComprehension);
+  el('ultimatumComprehensionBackBtn').addEventListener('click',()=>showScreen('economicTaskIntroScreen'));
+  el('ultimatumComprehensionStartBtn').addEventListener('click',checkUltimatumComprehension);
+  document.querySelectorAll('.compBtn').forEach(btn=>btn.addEventListener('click',()=>selectUltimatumComprehension(btn)));
   el('proposalNext').addEventListener('click',saveProposalAndContinue);
   el('ultimatumResultNext').addEventListener('click',nextUltimatumResult);
-  el('ultimatumChoiceContinueBtn').addEventListener('click',beginUltimatumOffers);
   el('seatNextBtn').addEventListener('click',nextSeatTrial);
   el('meetNext').addEventListener('click',()=>{
     if(!metaperceptionPreDone) startMetaperceptionPre();
