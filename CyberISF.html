@@ -1504,8 +1504,15 @@
     setFeedbackVisibility({identity:true,scale:false,quiz:false,caption:false});
     responseWrap.style.display='block';
     el('feedbackPlayerCommentLabel').textContent=`Why do you think ${p.name} liked you ${rating>5?'more':'less'} than other people?`;
-    el('feedbackPlayerComment').maxLength=50; el('feedbackPlayerComment').placeholder='Up to 50 characters';
+    el('feedbackPlayerComment').minLength=50;
+    el('feedbackPlayerComment').maxLength=500;
+    el('feedbackPlayerComment').placeholder='Please write at least 50 characters';
     el('feedbackPlayerComment').value=feedbackComments[feedbackOrder[feedbackIndex]] || '';
+    const updateFeedbackCommentState=()=>{
+      next.disabled=el('feedbackPlayerComment').value.trim().length<50;
+    };
+    el('feedbackPlayerComment').oninput=updateFeedbackCommentState;
+    updateFeedbackCommentState();
     next.textContent='Continue';
   }
 
@@ -1957,7 +1964,12 @@
     if(feedbackPage===3){endFeedbackPageLog('continue');feedbackPage=4;renderFeedback();return;}
     if(feedbackPage===4){
       const role=feedbackOrder[feedbackIndex];
-      feedbackComments[role]=el('feedbackPlayerComment').value.trim().slice(0,50);
+      const comment=el('feedbackPlayerComment').value.trim();
+      if(comment.length<50){
+        el('feedbackPlayerComment').focus();
+        return;
+      }
+      feedbackComments[role]=comment;
       completeLog.feedback_comments.push({role,visible_player:identities[role].name,comment:feedbackComments[role]});
       checkpoint(); endFeedbackPageLog('continue_to_next_player'); finishFeedbackPlayer(); return;
     }
