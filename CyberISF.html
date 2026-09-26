@@ -439,6 +439,50 @@
   .expectPlayerHeader{text-align:center;margin-bottom:18px}
   .offerBtn{min-height:86px;font-size:17px;line-height:1.25}
 
+
+/* Append at the END of the existing <style> block in CyberISF.html. */
+@media (min-width: 600px) and (max-width: 760px) {
+  .statementGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Keep all player-introduction content reachable. */
+#meetScreen .panel {
+  height: auto;
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+  justify-content: flex-start;
+}
+#meetScreen .panel > * {
+  flex-shrink: 0;
+}
+#meetScreen .meetStatement:only-child {
+  grid-column: 1 / -1;
+}
+
+/* Keep descriptions readable inside narrower embedded views. */
+@media (max-width: 1000px) {
+  #meetScreen .panel {
+    padding: 24px 18px;
+  }
+  #meetScreen .playerCards {
+    gap: 12px;
+  }
+  #meetScreen .playerCard {
+    min-width: 0;
+    padding: 18px 12px;
+  }
+  #meetScreen .meetStatements {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 600px) {
+  #meetScreen .playerCards {
+    grid-template-columns: 1fr;
+  }
+}
+
 </style>
 </head>
 <body>
