@@ -1,0 +1,229 @@
+<div id="sst-root" dir="rtl" style="font-family:Arial,'Noto Sans Hebrew',sans-serif;max-width:900px;margin:0 auto;">
+  <style>
+    #sst-root *{box-sizing:border-box}
+    #sst-root .card{background:#fff;border:1px solid #d1d5db;border-radius:16px;padding:24px;box-shadow:0 6px 24px rgba(0,0,0,.05)}
+    #sst-root .top{display:flex;justify-content:space-between;align-items:center;gap:12px;color:#6b7280;font-size:.95rem;margin-bottom:10px}
+    #sst-root .progress{height:8px;background:#e5e7eb;border-radius:999px;overflow:hidden;margin-bottom:22px}
+    #sst-root .progress>div{height:100%;background:#111827;width:0;transition:width .2s ease}
+    #sst-root .instructions{background:#f3f4f6;border-radius:10px;padding:12px 14px;line-height:1.6;margin-bottom:20px}
+    #sst-root .word-bank{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:22px 0}
+    #sst-root .word{background:#fff;border:2px solid #d1d5db;border-radius:10px;padding:11px 16px;font-size:1.06rem;cursor:pointer;min-width:90px}
+    #sst-root .word:hover{border-color:#9ca3af}
+    #sst-root .word.used{opacity:.35;cursor:default}
+    #sst-root .sentence-title{font-weight:700;margin-bottom:8px}
+    #sst-root .sentence-box{border:2px dashed #d1d5db;background:#fafafa;min-height:82px;border-radius:12px;padding:14px;display:flex;gap:9px;flex-wrap:wrap;align-items:center;justify-content:center}
+    #sst-root .chosen{background:#e5e7eb;border:1px solid #cbd5e1;border-radius:8px;padding:8px 12px;cursor:pointer}
+    #sst-root .hint{color:#6b7280;font-size:.9rem;text-align:center;margin:10px 0 18px}
+    #sst-root .actions{display:flex;justify-content:space-between;gap:12px;margin-top:18px}
+    #sst-root button{font-family:inherit}
+    #sst-root .primary,#sst-root .secondary{border-radius:10px;padding:11px 18px;font-size:1rem;cursor:pointer}
+    #sst-root .primary{background:#111827;color:#fff;border:1px solid #111827}
+    #sst-root .primary:disabled{opacity:.4;cursor:not-allowed}
+    #sst-root .secondary{background:#fff;color:#111827;border:1px solid #d1d5db}
+    #sst-root .done{text-align:center;line-height:1.7;padding:16px 0}
+    #sst-root .hidden{display:none!important}
+    @media(max-width:650px){#sst-root .card{padding:18px 14px}#sst-root .actions{flex-direction:column-reverse}#sst-root .actions button{width:100%}}
+  </style>
+
+  <div class="card" id="sstTask">
+    <div class="top">
+      <span id="sstProgressText"></span>
+      <span>משימת משפטים</span>
+    </div>
+    <div class="progress"><div id="sstProgressBar"></div></div>
+
+    <div class="instructions">
+      בחרו <strong>5 מילים</strong>, לפי הסדר, כדי ליצור משפט טבעי. מילה אחת תישאר בחוץ.
+    </div>
+
+    <div class="word-bank" id="sstWordBank"></div>
+
+    <div class="sentence-title">המשפט שלך</div>
+    <div class="sentence-box" id="sstSentenceBox"></div>
+    <div class="hint">לחיצה על מילה שנבחרה תחזיר אותה למאגר.</div>
+
+    <div class="actions">
+      <button type="button" class="secondary" id="sstResetBtn">נקה בחירה</button>
+      <button type="button" class="primary" id="sstNextItemBtn" disabled>המשך</button>
+    </div>
+  </div>
+
+  <div class="card hidden" id="sstDone">
+    <div class="done">
+      <h3 style="margin-top:0">המשימה הושלמה</h3>
+      <p>תודה. ניתן כעת להמשיך לשאלה הבאה.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const ITEMS = [
+    {id:1, dimension:'הצלחה', words:['כושלת','הפגישה','מאוד','היום','מוצלחת','הייתה'], posWord:'מוצלחת', negWord:'כושלת'},
+    {id:2, dimension:'קושי', words:['קשה','היום','הזאת','המשימה','קלה','נראית'], posWord:'קלה', negWord:'קשה'},
+    {id:3, dimension:'ביטחון', words:['מסוכנת','מאוד','הסביבה','בטוחה','כאן','נראית'], posWord:'בטוחה', negWord:'מסוכנת'},
+    {id:4, dimension:'יחס חברתי', words:['עוינים','היום','האנשים','ידידותיים','כאן','נראים'], posWord:'ידידותיים', negWord:'עוינים'},
+    {id:5, dimension:'הערכה', words:['שלילית','היום','התגובה','חיובית','שלו','נשמעת'], posWord:'חיובית', negWord:'שלילית'},
+    {id:6, dimension:'מתח', words:['מתוחה','היום','השיחה','רגועה','בינינו','הייתה'], posWord:'רגועה', negWord:'מתוחה'},
+    {id:7, dimension:'ארגון', words:['מבולגנת','מאוד','התוכנית','מסודרת','הזאת','נראית'], posWord:'מסודרת', negWord:'מבולגנת'},
+    {id:8, dimension:'ציפייה', words:['פסימית','כרגע','לעתיד','התחזית','אופטימית','נראית'], posWord:'אופטימית', negWord:'פסימית'},
+    {id:9, dimension:'רוגע', words:['סוער','יחסית','המצב','רגוע','כרגע','נראה'], posWord:'רגוע', negWord:'סוער'},
+    {id:10, dimension:'הערכה כללית', words:['רעה','מאוד','התוצאה','טובה','הסופית','נראית'], posWord:'טובה', negWord:'רעה'},
+    {id:11, dimension:'חוויה', words:['מהנה','החוויה','הזאת','הייתה','מאוד','מתסכלת'], posWord:'מהנה', negWord:'מתסכלת'},
+    {id:12, dimension:'רושם', words:['שלילי','הרושם','הראשוני','היה','חיובי','מאוד'], posWord:'חיובי', negWord:'שלילי'},
+    {id:13, dimension:'חדשות', words:['מעודדות','החדשות','היום','נשמעו','מדאיגות','מאוד'], posWord:'מעודדות', negWord:'מדאיגות'},
+    {id:14, dimension:'מורכבות', words:['פשוטה','הבעיה','הזאת','נראית','מסובכת','מאוד'], posWord:'פשוטה', negWord:'מסובכת'},
+    {id:15, dimension:'עתיד', words:['מבטיח','העתיד','כרגע','נראה','עגום','די'], posWord:'מבטיח', negWord:'עגום'}
+  ];
+
+  function shuffle(arr){
+    const a=[...arr];
+    for(let i=a.length-1;i>0;i--){
+      const j=Math.floor(Math.random()*(i+1));
+      [a[i],a[j]]=[a[j],a[i]];
+    }
+    return a;
+  }
+
+  let randomizedItems=shuffle(ITEMS);
+  let currentIndex=0;
+  let selectedWords=[];
+  let displayWords=[];
+  let itemStartTime=null;
+  let responses=[];
+
+  const wordBank=document.getElementById('sstWordBank');
+  const sentenceBox=document.getElementById('sstSentenceBox');
+  const nextBtn=document.getElementById('sstNextItemBtn');
+  const resetBtn=document.getElementById('sstResetBtn');
+  const progressText=document.getElementById('sstProgressText');
+  const progressBar=document.getElementById('sstProgressBar');
+
+  function renderItem(){
+    selectedWords=[];
+    const item=randomizedItems[currentIndex];
+    displayWords=shuffle(item.words);
+    itemStartTime=performance.now();
+    progressText.textContent=`פריט ${currentIndex+1} מתוך ${randomizedItems.length}`;
+    progressBar.style.width=`${(currentIndex/randomizedItems.length)*100}%`;
+    renderWords();
+    renderSentence();
+  }
+
+  function renderWords(){
+    wordBank.innerHTML='';
+    displayWords.forEach((word,idx)=>{
+      const btn=document.createElement('button');
+      btn.type='button';
+      btn.className='word';
+      btn.textContent=word;
+      const used=selectedWords.some(x=>x.index===idx);
+      if(used){btn.classList.add('used');btn.disabled=true;}
+      btn.addEventListener('click',()=>{
+        if(selectedWords.length>=5)return;
+        selectedWords.push({word,index:idx});
+        renderWords();
+        renderSentence();
+      });
+      wordBank.appendChild(btn);
+    });
+  }
+
+  function renderSentence(){
+    sentenceBox.innerHTML='';
+    if(selectedWords.length===0){
+      const span=document.createElement('span');
+      span.style.color='#9ca3af';
+      span.textContent='המילים שבחרת יופיעו כאן';
+      sentenceBox.appendChild(span);
+    } else {
+      selectedWords.forEach((entry,i)=>{
+        const chip=document.createElement('button');
+        chip.type='button';
+        chip.className='chosen';
+        chip.textContent=entry.word;
+        chip.addEventListener('click',()=>{
+          selectedWords.splice(i,1);
+          renderWords();
+          renderSentence();
+        });
+        sentenceBox.appendChild(chip);
+      });
+    }
+    nextBtn.disabled=selectedWords.length!==5;
+  }
+
+  function classifyCritical(item,chosen){
+    const hasPos=chosen.includes(item.posWord);
+    const hasNeg=chosen.includes(item.negWord);
+    if(hasPos && !hasNeg) return {critical_word:item.posWord, critical_valence:'positive', positive_score:1};
+    if(hasNeg && !hasPos) return {critical_word:item.negWord, critical_valence:'negative', positive_score:0};
+    return {critical_word:'', critical_valence:'invalid', positive_score:null};
+  }
+
+  function submitCurrent(){
+    if(selectedWords.length!==5)return;
+    const item=randomizedItems[currentIndex];
+    const chosen=selectedWords.map(x=>x.word);
+    const chosenIndices=new Set(selectedWords.map(x=>x.index));
+    const omitted=displayWords.find((_,idx)=>!chosenIndices.has(idx)) || '';
+    const critical=classifyCritical(item,chosen);
+
+    responses.push({
+      trial_number:currentIndex+1,
+      item_id:item.id,
+      dimension:item.dimension,
+      display_order:displayWords.join(' | '),
+      selected_words:chosen.join(' | '),
+      response_sentence:chosen.join(' '),
+      omitted_word:omitted,
+      critical_word:critical.critical_word,
+      critical_valence:critical.critical_valence,
+      positive_score:critical.positive_score,
+      rt_ms:Math.round(performance.now()-itemStartTime)
+    });
+
+    currentIndex++;
+    if(currentIndex>=randomizedItems.length){
+      finishTask();
+    } else {
+      renderItem();
+    }
+  }
+
+  function finishTask(){
+    progressBar.style.width='100%';
+    document.getElementById('sstTask').classList.add('hidden');
+    document.getElementById('sstDone').classList.remove('hidden');
+
+    const valid=responses.filter(r=>r.positive_score===0 || r.positive_score===1);
+    const positiveN=valid.reduce((s,r)=>s+r.positive_score,0);
+    const negativeN=valid.length-positiveN;
+    const positivePercent15=(positiveN/15)*100;
+    const positivePercentValid=valid.length ? (positiveN/valid.length)*100 : null;
+    const meanRT=responses.length ? responses.reduce((s,r)=>s+r.rt_ms,0)/responses.length : null;
+
+    window.SST_RESULTS={
+      complete:1,
+      responses:responses,
+      positive_n:positiveN,
+      negative_n:negativeN,
+      invalid_n:15-valid.length,
+      positive_percent:positivePercent15,
+      positive_percent_valid:positivePercentValid,
+      mean_rt_ms:meanRT
+    };
+
+    document.dispatchEvent(new CustomEvent('SST_COMPLETE',{detail:window.SST_RESULTS}));
+  }
+
+  resetBtn.addEventListener('click',()=>{
+    selectedWords=[];
+    renderWords();
+    renderSentence();
+  });
+  nextBtn.addEventListener('click',submitCurrent);
+
+  renderItem();
+})();
+</script>
