@@ -1,0 +1,1383 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>משימת משפטים</title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #ffffff;
+            font-family: Arial, sans-serif;
+            color: #222;
+            direction: rtl;
+        }
+
+        .wrap {
+            width: min(850px, 96vw);
+            margin: 0 auto;
+        }
+
+        .card {
+            background: #ffffff;
+            border: 1px solid #d1d5db;
+            border-radius: 14px;
+            padding: 24px;
+        }
+
+        .progress-text {
+            color: #666;
+            font-size: 15px;
+            margin-bottom: 8px;
+        }
+
+        .progress {
+            width: 100%;
+            height: 8px;
+            background: #e5e7eb;
+            border-radius: 999px;
+            overflow: hidden;
+            margin-bottom: 24px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: #222;
+            transition: width .2s ease;
+        }
+
+        .instructions {
+            line-height: 1.7;
+            margin-bottom: 22px;
+        }
+
+        .word-bank {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 11px;
+            margin: 26px 0;
+        }
+
+        .word {
+            background: white;
+            border: 2px solid #d1d5db;
+            border-radius: 10px;
+            padding: 11px 17px;
+            font-size: 17px;
+            font-family: inherit;
+            cursor: pointer;
+        }
+
+        .word:hover {
+            border-color: #888;
+        }
+
+        .word.used {
+            opacity: .3;
+            cursor: default;
+        }
+
+        .sentence-title {
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .sentence-box {
+            min-height: 72px;
+            border: 2px dashed #ccc;
+            border-radius: 10px;
+            padding: 14px;
+
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .chosen {
+            border: 1px solid #bbb;
+            background: #eee;
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-family: inherit;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .hint {
+            color: #777;
+            text-align: center;
+            font-size: 14px;
+            margin-top: 8px;
+        }
+
+        .actions {
+            margin-top: 22px;
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .btn {
+            border-radius: 9px;
+            padding: 11px 20px;
+            font-size: 16px;
+            font-family: inherit;
+            cursor: pointer;
+        }
+
+        .primary {
+            background: #222;
+            color: white;
+            border: 1px solid #222;
+        }
+
+        .primary:disabled {
+            opacity: .35;
+            cursor: default;
+        }
+
+        .secondary {
+            background: white;
+            color: #222;
+            border: 1px solid #bbb;
+        }
+
+        .error {
+            min-height: 22px;
+            color: #b91c1c;
+            font-weight: bold;
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        .done {
+            text-align: center;
+            padding: 25px;
+            line-height: 1.7;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        @media (max-width: 600px) {
+
+            body {
+                padding: 8px;
+            }
+
+            .card {
+                padding: 16px;
+            }
+
+            .word {
+                padding: 10px 13px;
+                font-size: 16px;
+            }
+
+        }
+
+    </style>
+</head>
+
+
+<body>
+
+<div class="wrap">
+
+    <!-- =====================================================
+         TASK
+         ===================================================== -->
+
+    <div class="card" id="taskScreen">
+
+        <div
+            class="progress-text"
+            id="progressText">
+        </div>
+
+        <div class="progress">
+            <div
+                class="progress-bar"
+                id="progressBar">
+            </div>
+        </div>
+
+
+        <div class="instructions">
+
+            בחרו <strong>5 מילים</strong>, לפי הסדר,
+            כך שייווצר משפט תקין וטבעי ככל האפשר.
+
+            <br>
+
+            מילה אחת תישאר בחוץ.
+            בחרו את המשפט הראשון שעולה לכם לראש.
+
+        </div>
+
+
+        <div
+            class="word-bank"
+            id="wordBank">
+        </div>
+
+
+        <div class="sentence-title">
+            המשפט שלך:
+        </div>
+
+
+        <div
+            class="sentence-box"
+            id="sentenceBox">
+        </div>
+
+
+        <div class="hint">
+            ניתן ללחוץ על מילה שכבר נבחרה כדי להסיר אותה.
+        </div>
+
+
+        <div
+            class="error"
+            id="errorMsg">
+        </div>
+
+
+        <div class="actions">
+
+            <button
+                type="button"
+                class="btn secondary"
+                id="resetBtn">
+                נקה בחירה
+            </button>
+
+            <button
+                type="button"
+                class="btn primary"
+                id="nextBtn"
+                disabled>
+                המשך
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         DONE
+         ===================================================== -->
+
+    <div
+        class="card hidden"
+        id="doneScreen">
+
+        <div class="done">
+
+            <h2>
+                המשימה הושלמה
+            </h2>
+
+            <p>
+                תודה.
+                <br>
+                ניתן כעת ללחוץ על כפתור
+                <strong>הבא</strong>
+                כדי להמשיך.
+            </p>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<script>
+
+(function () {
+
+    // =====================================================
+    // 15 GENERAL ITEMS
+    // =====================================================
+
+    const ITEMS = [
+
+        {
+            id: 1,
+            dimension: "הצלחה",
+
+            words: [
+                "הפגישה",
+                "היום",
+                "הייתה",
+                "מאוד",
+                "מוצלחת",
+                "כושלת"
+            ],
+
+            posWord: "מוצלחת",
+            negWord: "כושלת"
+        },
+
+
+        {
+            id: 2,
+            dimension: "קושי",
+
+            words: [
+                "המשימה",
+                "הזאת",
+                "נראית",
+                "היום",
+                "קלה",
+                "קשה"
+            ],
+
+            posWord: "קלה",
+            negWord: "קשה"
+        },
+
+
+        {
+            id: 3,
+            dimension: "ביטחון",
+
+            words: [
+                "הסביבה",
+                "כאן",
+                "נראית",
+                "מאוד",
+                "בטוחה",
+                "מסוכנת"
+            ],
+
+            posWord: "בטוחה",
+            negWord: "מסוכנת"
+        },
+
+
+        {
+            id: 4,
+            dimension: "יחס חברתי",
+
+            words: [
+                "האנשים",
+                "כאן",
+                "נראים",
+                "היום",
+                "ידידותיים",
+                "עוינים"
+            ],
+
+            posWord: "ידידותיים",
+            negWord: "עוינים"
+        },
+
+
+        {
+            id: 5,
+            dimension: "הערכה",
+
+            words: [
+                "התגובה",
+                "שלו",
+                "נשמעת",
+                "היום",
+                "חיובית",
+                "שלילית"
+            ],
+
+            posWord: "חיובית",
+            negWord: "שלילית"
+        },
+
+
+        {
+            id: 6,
+            dimension: "מתח",
+
+            words: [
+                "השיחה",
+                "בינינו",
+                "הייתה",
+                "היום",
+                "רגועה",
+                "מתוחה"
+            ],
+
+            posWord: "רגועה",
+            negWord: "מתוחה"
+        },
+
+
+        {
+            id: 7,
+            dimension: "ארגון",
+
+            words: [
+                "התוכנית",
+                "הזאת",
+                "נראית",
+                "מאוד",
+                "מסודרת",
+                "מבולגנת"
+            ],
+
+            posWord: "מסודרת",
+            negWord: "מבולגנת"
+        },
+
+
+        {
+            id: 8,
+            dimension: "ציפייה",
+
+            words: [
+                "התחזית",
+                "לעתיד",
+                "נראית",
+                "כרגע",
+                "אופטימית",
+                "פסימית"
+            ],
+
+            posWord: "אופטימית",
+            negWord: "פסימית"
+        },
+
+
+        {
+            id: 9,
+            dimension: "רוגע",
+
+            words: [
+                "המצב",
+                "כרגע",
+                "נראה",
+                "יחסית",
+                "רגוע",
+                "סוער"
+            ],
+
+            posWord: "רגוע",
+            negWord: "סוער"
+        },
+
+
+        {
+            id: 10,
+            dimension: "תוצאה",
+
+            words: [
+                "התוצאה",
+                "הסופית",
+                "נראית",
+                "מאוד",
+                "טובה",
+                "רעה"
+            ],
+
+            posWord: "טובה",
+            negWord: "רעה"
+        },
+
+
+        {
+            id: 11,
+            dimension: "חוויה",
+
+            words: [
+                "החוויה",
+                "הזאת",
+                "הייתה",
+                "מאוד",
+                "מהנה",
+                "מתסכלת"
+            ],
+
+            posWord: "מהנה",
+            negWord: "מתסכלת"
+        },
+
+
+        {
+            id: 12,
+            dimension: "רושם",
+
+            words: [
+                "המקום",
+                "הזה",
+                "מרגיש",
+                "מאוד",
+                "מזמין",
+                "דוחה"
+            ],
+
+            posWord: "מזמין",
+            negWord: "דוחה"
+        },
+
+
+        {
+            id: 13,
+            dimension: "חדשות",
+
+            words: [
+                "החדשות",
+                "היום",
+                "נשמעות",
+                "מאוד",
+                "מעודדות",
+                "מדאיגות"
+            ],
+
+            posWord: "מעודדות",
+            negWord: "מדאיגות"
+        },
+
+
+        {
+            id: 14,
+            dimension: "מורכבות",
+
+            words: [
+                "הפתרון",
+                "הזה",
+                "נראה",
+                "יחסית",
+                "פשוט",
+                "מורכב"
+            ],
+
+            posWord: "פשוט",
+            negWord: "מורכב"
+        },
+
+
+        {
+            id: 15,
+            dimension: "עתיד",
+
+            words: [
+                "העתיד",
+                "כרגע",
+                "נראה",
+                "מאוד",
+                "מבטיח",
+                "קודר"
+            ],
+
+            posWord: "מבטיח",
+            negWord: "קודר"
+        }
+
+    ];
+
+
+    // =====================================================
+    // VARIABLES
+    // =====================================================
+
+    let randomizedItems = [];
+
+    let currentIndex = 0;
+
+    let displayWords = [];
+
+    let selectedWords = [];
+
+    let responses = [];
+
+    let itemStartTime = null;
+
+
+    // =====================================================
+    // SHUFFLE
+    // =====================================================
+
+    function shuffle(array) {
+
+        const a =
+            array.slice();
+
+        for (
+            let i = a.length - 1;
+            i > 0;
+            i--
+        ) {
+
+            const j =
+                Math.floor(
+                    Math.random() *
+                    (i + 1)
+                );
+
+            [a[i], a[j]] =
+                [a[j], a[i]];
+        }
+
+        return a;
+    }
+
+
+    // =====================================================
+    // START TASK
+    // =====================================================
+
+    function startTask() {
+
+        // Randomize the 15 stimuli
+        randomizedItems =
+            shuffle(ITEMS);
+
+        currentIndex = 0;
+
+        responses = [];
+
+        renderItem();
+    }
+
+
+    // =====================================================
+    // RENDER ITEM
+    // =====================================================
+
+    function renderItem() {
+
+        selectedWords = [];
+
+        const item =
+            randomizedItems[
+                currentIndex
+            ];
+
+        // Randomize the six words
+        displayWords =
+            shuffle(
+                item.words
+            );
+
+        itemStartTime =
+            performance.now();
+
+
+        document.getElementById(
+            "progressText"
+        ).textContent =
+            "פריט " +
+            (currentIndex + 1) +
+            " מתוך 15";
+
+
+        document.getElementById(
+            "progressBar"
+        ).style.width =
+            (
+                (
+                    currentIndex /
+                    15
+                ) *
+                100
+            ) +
+            "%";
+
+
+        document.getElementById(
+            "errorMsg"
+        ).textContent = "";
+
+
+        renderWords();
+
+        renderSentence();
+    }
+
+
+    // =====================================================
+    // WORD BANK
+    // =====================================================
+
+    function renderWords() {
+
+        const bank =
+            document.getElementById(
+                "wordBank"
+            );
+
+        bank.innerHTML = "";
+
+
+        displayWords.forEach(
+            function (
+                word,
+                index
+            ) {
+
+                const button =
+                    document.createElement(
+                        "button"
+                    );
+
+                button.type =
+                    "button";
+
+                button.className =
+                    "word";
+
+                button.textContent =
+                    word;
+
+
+                const used =
+                    selectedWords.some(
+                        function (
+                            entry
+                        ) {
+
+                            return (
+                                entry.index ===
+                                index
+                            );
+                        }
+                    );
+
+
+                if (used) {
+
+                    button.classList.add(
+                        "used"
+                    );
+
+                    button.disabled =
+                        true;
+                }
+
+
+                button.addEventListener(
+                    "click",
+                    function () {
+
+                        if (
+                            selectedWords.length >=
+                            5
+                        ) {
+
+                            return;
+                        }
+
+
+                        selectedWords.push({
+
+                            word:
+                                word,
+
+                            index:
+                                index
+
+                        });
+
+
+                        renderWords();
+
+                        renderSentence();
+                    }
+                );
+
+
+                bank.appendChild(
+                    button
+                );
+            }
+        );
+    }
+
+
+    // =====================================================
+    // SENTENCE BOX
+    // =====================================================
+
+    function renderSentence() {
+
+        const box =
+            document.getElementById(
+                "sentenceBox"
+            );
+
+        box.innerHTML = "";
+
+
+        if (
+            selectedWords.length ===
+            0
+        ) {
+
+            const placeholder =
+                document.createElement(
+                    "span"
+                );
+
+            placeholder.textContent =
+                "המילים שבחרת יופיעו כאן";
+
+            placeholder.style.color =
+                "#999";
+
+            box.appendChild(
+                placeholder
+            );
+
+        } else {
+
+            selectedWords.forEach(
+                function (
+                    entry,
+                    index
+                ) {
+
+                    const button =
+                        document.createElement(
+                            "button"
+                        );
+
+                    button.type =
+                        "button";
+
+                    button.className =
+                        "chosen";
+
+                    button.textContent =
+                        entry.word;
+
+
+                    button.addEventListener(
+                        "click",
+                        function () {
+
+                            selectedWords.splice(
+                                index,
+                                1
+                            );
+
+                            renderWords();
+
+                            renderSentence();
+                        }
+                    );
+
+
+                    box.appendChild(
+                        button
+                    );
+                }
+            );
+        }
+
+
+        document.getElementById(
+            "nextBtn"
+        ).disabled =
+            selectedWords.length !==
+            5;
+    }
+
+
+    // =====================================================
+    // RESET
+    // =====================================================
+
+    function resetSelection() {
+
+        selectedWords = [];
+
+        document.getElementById(
+            "errorMsg"
+        ).textContent = "";
+
+        renderWords();
+
+        renderSentence();
+    }
+
+
+    // =====================================================
+    // SUBMIT CURRENT TRIAL
+    // =====================================================
+
+    function submitCurrent() {
+
+        if (
+            selectedWords.length !==
+            5
+        ) {
+
+            document.getElementById(
+                "errorMsg"
+            ).textContent =
+                "יש לבחור בדיוק חמש מילים.";
+
+            return;
+        }
+
+
+        const item =
+            randomizedItems[
+                currentIndex
+            ];
+
+
+        const chosen =
+            selectedWords.map(
+                function (x) {
+                    return x.word;
+                }
+            );
+
+
+        const chosenIndices =
+            selectedWords.map(
+                function (x) {
+                    return x.index;
+                }
+            );
+
+
+        let omittedWord = "";
+
+
+        displayWords.forEach(
+            function (
+                word,
+                index
+            ) {
+
+                if (
+                    chosenIndices.indexOf(
+                        index
+                    ) === -1
+                ) {
+
+                    omittedWord =
+                        word;
+                }
+            }
+        );
+
+
+        // =================================================
+        // CRITICAL WORD
+        // =================================================
+
+        const hasPositive =
+            chosen.indexOf(
+                item.posWord
+            ) !== -1;
+
+
+        const hasNegative =
+            chosen.indexOf(
+                item.negWord
+            ) !== -1;
+
+
+        let criticalWord =
+            "";
+
+        let criticalValence =
+            "invalid";
+
+        let positiveScore =
+            "";
+
+
+        if (
+            hasPositive &&
+            !hasNegative
+        ) {
+
+            criticalWord =
+                item.posWord;
+
+            criticalValence =
+                "positive";
+
+            positiveScore =
+                1;
+
+        } else if (
+            hasNegative &&
+            !hasPositive
+        ) {
+
+            criticalWord =
+                item.negWord;
+
+            criticalValence =
+                "negative";
+
+            positiveScore =
+                0;
+        }
+
+
+        const rtMs =
+            Math.round(
+                performance.now() -
+                itemStartTime
+            );
+
+
+        responses.push({
+
+            trial_number:
+                currentIndex + 1,
+
+            item_id:
+                item.id,
+
+            dimension:
+                item.dimension,
+
+            critical_word:
+                criticalWord,
+
+            critical_valence:
+                criticalValence,
+
+            positive_score:
+                positiveScore,
+
+            response_sentence:
+                chosen.join(" "),
+
+            omitted_word:
+                omittedWord,
+
+            display_order:
+                displayWords.join(
+                    " | "
+                ),
+
+            rt_ms:
+                rtMs
+
+        });
+
+
+        currentIndex++;
+
+
+        if (
+            currentIndex >=
+            randomizedItems.length
+        ) {
+
+            finishTask();
+
+        } else {
+
+            renderItem();
+        }
+    }
+
+
+    // =====================================================
+    // SEND DATA TO QUALTRICS
+    // =====================================================
+
+    function sendDataToQualtrics(
+        fields
+    ) {
+
+        window.parent.postMessage(
+
+            {
+
+                type:
+                    "SSTColumns",
+
+                fields:
+                    fields
+
+            },
+
+            "*"
+
+        );
+    }
+
+
+    // =====================================================
+    // FINISH TASK
+    // =====================================================
+
+    function finishTask() {
+
+        const positiveN =
+            responses.filter(
+                function (r) {
+
+                    return (
+                        r.critical_valence ===
+                        "positive"
+                    );
+                }
+            ).length;
+
+
+        const negativeN =
+            responses.filter(
+                function (r) {
+
+                    return (
+                        r.critical_valence ===
+                        "negative"
+                    );
+                }
+            ).length;
+
+
+        const invalidN =
+            responses.filter(
+                function (r) {
+
+                    return (
+                        r.critical_valence ===
+                        "invalid"
+                    );
+                }
+            ).length;
+
+
+        // =================================================
+        // REQUESTED SCORE:
+        // POSITIVE / ALL 15 ITEMS
+        // =================================================
+
+        const positivePercent =
+            (
+                positiveN /
+                15
+            ) *
+            100;
+
+
+        // =================================================
+        // CREATE QUALTRICS COLUMNS
+        // =================================================
+
+        const fields = {};
+
+
+        // Overall
+        fields.SST_Complete =
+            "1";
+
+        fields.SST_Positive_N =
+            String(
+                positiveN
+            );
+
+        fields.SST_Negative_N =
+            String(
+                negativeN
+            );
+
+        fields.SST_Invalid_N =
+            String(
+                invalidN
+            );
+
+        fields.SST_Positive_Percent =
+            positivePercent.toFixed(
+                2
+            );
+
+
+        // Full backup
+        fields.SST_Responses_JSON =
+            JSON.stringify(
+                responses
+            );
+
+
+        // =================================================
+        // SAVE EACH STIMULUS BY ORIGINAL ITEM NUMBER
+        // =================================================
+
+        responses.forEach(
+            function (r) {
+
+                const item =
+                    String(
+                        r.item_id
+                    ).padStart(
+                        2,
+                        "0"
+                    );
+
+                const prefix =
+                    "SST_I" +
+                    item +
+                    "_";
+
+
+                fields[
+                    prefix +
+                    "Trial"
+                ] =
+                    String(
+                        r.trial_number
+                    );
+
+
+                fields[
+                    prefix +
+                    "CriticalWord"
+                ] =
+                    r.critical_word;
+
+
+                fields[
+                    prefix +
+                    "Valence"
+                ] =
+                    r.critical_valence;
+
+
+                fields[
+                    prefix +
+                    "Positive"
+                ] =
+                    String(
+                        r.positive_score
+                    );
+
+
+                fields[
+                    prefix +
+                    "Sentence"
+                ] =
+                    r.response_sentence;
+
+
+                fields[
+                    prefix +
+                    "Omitted"
+                ] =
+                    r.omitted_word;
+
+
+                fields[
+                    prefix +
+                    "DisplayOrder"
+                ] =
+                    r.display_order;
+
+
+                fields[
+                    prefix +
+                    "RT"
+                ] =
+                    String(
+                        r.rt_ms
+                    );
+
+            }
+        );
+
+
+        // =================================================
+        // SEND TO QUALTRICS
+        // =================================================
+
+        sendDataToQualtrics(
+            fields
+        );
+
+
+        // =================================================
+        // SHOW COMPLETION SCREEN
+        // =================================================
+
+        document.getElementById(
+            "taskScreen"
+        ).classList.add(
+            "hidden"
+        );
+
+
+        document.getElementById(
+            "doneScreen"
+        ).classList.remove(
+            "hidden"
+        );
+
+
+        // =================================================
+        // SEND AGAIN AFTER A SHORT DELAY
+        // EXTRA ROBUSTNESS
+        // =================================================
+
+        setTimeout(
+            function () {
+
+                sendDataToQualtrics(
+                    fields
+                );
+
+            },
+            500
+        );
+
+    }
+
+
+    // =====================================================
+    // BUTTONS
+    // =====================================================
+
+    document.getElementById(
+        "resetBtn"
+    ).addEventListener(
+        "click",
+        resetSelection
+    );
+
+
+    document.getElementById(
+        "nextBtn"
+    ).addEventListener(
+        "click",
+        submitCurrent
+    );
+
+
+    // =====================================================
+    // START
+    // =====================================================
+
+    startTask();
+
+})();
+
+</script>
+
+</body>
+</html>
