@@ -1,0 +1,598 @@
+<div id="so1-task" dir="rtl">
+
+<style>
+#so1-task {
+    max-width: 760px;
+    margin: 0 auto;
+    font-family: Arial, sans-serif;
+    direction: rtl;
+    text-align: right;
+    color: #222;
+    line-height: 1.6;
+}
+
+#so1-task .instructions {
+    font-size: 18px;
+    margin-bottom: 25px;
+}
+
+#so1-task .card {
+    border: 1px solid #d6d6d6;
+    border-radius: 10px;
+    padding: 24px;
+    margin-top: 20px;
+    background: #fff;
+}
+
+#so1-task .progress {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 12px;
+}
+
+#so1-task .person-description {
+    font-size: 20px;
+    font-weight: bold;
+    margin-bottom: 28px;
+}
+
+#so1-task .question-text {
+    font-size: 18px;
+    margin-bottom: 18px;
+}
+
+#so1-task .slider-wrap {
+    direction: ltr;
+    margin: 25px 0 10px 0;
+}
+
+#so1-task input[type="range"] {
+    width: 100%;
+}
+
+#so1-task .slider-labels {
+    display: flex;
+    justify-content: space-between;
+    direction: ltr;
+    font-size: 14px;
+    color: #555;
+    margin-top: 4px;
+}
+
+#so1-task .point-boxes {
+    display: flex;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+#so1-task .point-box {
+    flex: 1;
+    text-align: center;
+    padding: 15px;
+    border-radius: 8px;
+    background: #f5f5f5;
+}
+
+#so1-task .point-number {
+    display: block;
+    font-size: 26px;
+    font-weight: bold;
+    margin-top: 5px;
+}
+
+#so1-task .touch-note {
+    text-align: center;
+    color: #777;
+    font-size: 14px;
+    margin-top: 8px;
+}
+
+#so1-task button {
+    display: block;
+    margin: 28px auto 0 auto;
+    padding: 11px 30px;
+    font-size: 17px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+#so1-task button:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+#so1-task .finished {
+    text-align: center;
+    font-size: 19px;
+    padding: 30px 10px;
+}
+</style>
+
+
+<div class="instructions">
+
+    <p>
+        במשימה הבאה תתבקש/י לקבל מספר החלטות לגבי חלוקת נקודות בינך לבין משתתף אחר במחקר.
+    </p>
+
+    <p>
+        בכל החלטה עומדות לרשותך <strong>100 נקודות</strong>.
+        באפשרותך להעביר למשתתף האחר כל מספר נקודות בין 0 ל־100.
+        הנקודות שלא תעביר/י יישארו אצלך.
+    </p>
+
+    <p>
+        למשתתף האחר אין אפשרות להשפיע על החלטתך.
+    </p>
+
+    <p>
+        בכל פעם יוצג לך תיאור קצר של משתתף אחר.
+    </p>
+
+</div>
+
+
+<div id="so1-card" class="card">
+
+    <div id="so1-progress" class="progress"></div>
+
+    <div id="so1-person" class="person-description"></div>
+
+    <div class="question-text">
+        כמה מתוך 100 הנקודות ברצונך להעביר למשתתף/ת זה/ו?
+    </div>
+
+    <div class="slider-wrap">
+
+        <input
+            id="so1-slider"
+            type="range"
+            min="0"
+            max="100"
+            step="1"
+            value="0"
+        >
+
+        <div class="slider-labels">
+            <span>0</span>
+            <span>50</span>
+            <span>100</span>
+        </div>
+
+    </div>
+
+    <div id="so1-touch-note" class="touch-note">
+        יש לבחור ערך על הסקאלה
+    </div>
+
+
+    <div class="point-boxes">
+
+        <div class="point-box">
+            נקודות שיישארו אצלך
+            <span id="so1-self" class="point-number">100</span>
+        </div>
+
+        <div class="point-box">
+            נקודות שיועברו למשתתף/ת
+            <span id="so1-other" class="point-number">0</span>
+        </div>
+
+    </div>
+
+    <button id="so1-submit" type="button" disabled>
+        אישור
+    </button>
+
+</div>
+
+
+<div id="so1-finished" class="finished" style="display:none;">
+    סיימת את המשימה. ניתן להמשיך לשלב הבא.
+</div>
+
+</div>
+
+
+<script>
+(function () {
+
+    // =====================================================
+    // PROFILES
+    // c = center
+    // n = north
+    // s = south
+    // =====================================================
+
+    var profiles = [
+
+        {
+            sex: "M",
+            gender: "male",
+            age: 22,
+            locationCode: "c",
+            locationText: "באזור המרכז"
+        },
+
+        {
+            sex: "F",
+            gender: "female",
+            age: 24,
+            locationCode: "n",
+            locationText: "באזור הצפון"
+        },
+
+        {
+            sex: "M",
+            gender: "male",
+            age: 44,
+            locationCode: "s",
+            locationText: "באזור הדרום"
+        },
+
+        {
+            sex: "F",
+            gender: "female",
+            age: 47,
+            locationCode: "c",
+            locationText: "באזור המרכז"
+        }
+
+    ];
+
+
+    // =====================================================
+    // POLITICAL CONDITIONS
+    // =====================================================
+
+    var politicalConditions = [
+
+        {
+            code: "coal",
+            male: "תומך בממשלה הנוכחית",
+            female: "תומכת בממשלה הנוכחית"
+        },
+
+        {
+            code: "opp",
+            male: "מתנגד לממשלה הנוכחית",
+            female: "מתנגדת לממשלה הנוכחית"
+        },
+
+        {
+            code: "other",
+            male: "תומך בקבוצה פוליטית אחרת",
+            female: "תומכת בקבוצה פוליטית אחרת"
+        },
+
+        {
+            code: "ns",
+            male: "",
+            female: ""
+        }
+
+    ];
+
+
+    // =====================================================
+    // SHUFFLE
+    // =====================================================
+
+    function shuffle(array) {
+
+        var copy = array.slice();
+
+        for (var i = copy.length - 1; i > 0; i--) {
+
+            var j = Math.floor(
+                Math.random() * (i + 1)
+            );
+
+            var temp = copy[i];
+            copy[i] = copy[j];
+            copy[j] = temp;
+        }
+
+        return copy;
+    }
+
+
+    // =====================================================
+    // BUILD FULL 4 x 4 = 16 TRIALS
+    // =====================================================
+
+    var trials = [];
+
+    for (var p = 0; p < profiles.length; p++) {
+
+        for (var c = 0; c < politicalConditions.length; c++) {
+
+            trials.push({
+                profile: profiles[p],
+                condition: politicalConditions[c]
+            });
+
+        }
+
+    }
+
+    trials = shuffle(trials);
+
+
+    // =====================================================
+    // STATE
+    // =====================================================
+
+    var currentTrial = 0;
+
+    var sliderTouched = false;
+
+
+    // =====================================================
+    // DOM
+    // =====================================================
+
+    var card =
+        document.getElementById("so1-card");
+
+    var progress =
+        document.getElementById("so1-progress");
+
+    var personText =
+        document.getElementById("so1-person");
+
+    var slider =
+        document.getElementById("so1-slider");
+
+    var selfPoints =
+        document.getElementById("so1-self");
+
+    var otherPoints =
+        document.getElementById("so1-other");
+
+    var submitButton =
+        document.getElementById("so1-submit");
+
+    var touchNote =
+        document.getElementById("so1-touch-note");
+
+    var finished =
+        document.getElementById("so1-finished");
+
+
+    // =====================================================
+    // DESCRIPTION
+    // =====================================================
+
+    function makeDescription(trial) {
+
+        var p = trial.profile;
+        var c = trial.condition;
+
+        var base;
+
+        if (p.gender === "male") {
+
+            base =
+                "משתתף בן " +
+                p.age +
+                ", גר " +
+                p.locationText;
+
+        } else {
+
+            base =
+                "משתתפת בת " +
+                p.age +
+                ", גרה " +
+                p.locationText;
+
+        }
+
+
+        // ns = do not mention politics at all
+
+        if (c.code === "ns") {
+
+            return base + ".";
+
+        }
+
+
+        var politicalText =
+            p.gender === "male"
+                ? c.male
+                : c.female;
+
+
+        return base + ", " + politicalText + ".";
+
+    }
+
+
+    // =====================================================
+    // SHOW TRIAL
+    // =====================================================
+
+    function showTrial() {
+
+        var trial =
+            trials[currentTrial];
+
+
+        progress.textContent =
+            "החלטה " +
+            (currentTrial + 1) +
+            " מתוך 16";
+
+
+        personText.textContent =
+            makeDescription(trial);
+
+
+        // Start visually on zero,
+        // but participant must actively touch/click slider
+
+        slider.value = 0;
+
+        otherPoints.textContent = "0";
+
+        selfPoints.textContent = "100";
+
+        sliderTouched = false;
+
+        submitButton.disabled = true;
+
+        touchNote.style.display = "block";
+
+    }
+
+
+    // =====================================================
+    // SLIDER
+    // =====================================================
+
+    function activateSlider() {
+
+        sliderTouched = true;
+
+        submitButton.disabled = false;
+
+        touchNote.style.display = "none";
+
+
+        var other =
+            parseInt(slider.value, 10);
+
+        var self =
+            100 - other;
+
+
+        otherPoints.textContent =
+            other;
+
+        selfPoints.textContent =
+            self;
+
+    }
+
+
+    slider.addEventListener(
+        "input",
+        activateSlider
+    );
+
+    slider.addEventListener(
+        "change",
+        activateSlider
+    );
+
+    slider.addEventListener(
+        "click",
+        activateSlider
+    );
+
+
+    // =====================================================
+    // SUBMIT TRIAL
+    // =====================================================
+
+    submitButton.addEventListener(
+        "click",
+        function () {
+
+            if (!sliderTouched) {
+                return;
+            }
+
+
+            var trial =
+                trials[currentTrial];
+
+            var p =
+                trial.profile;
+
+            var c =
+                trial.condition;
+
+            var other =
+                parseInt(slider.value, 10);
+
+
+            // Save through Qualtrics JS
+
+            if (
+                typeof window.SO1_SaveTrial === "function"
+            ) {
+
+                window.SO1_SaveTrial(
+                    p.sex,
+                    p.age,
+                    p.locationCode,
+                    c.code,
+                    other
+                );
+
+            } else {
+
+                console.error(
+                    "SO1_SaveTrial is not defined"
+                );
+
+            }
+
+
+            currentTrial++;
+
+
+            if (currentTrial < trials.length) {
+
+                showTrial();
+
+            } else {
+
+                finishTask();
+
+            }
+
+        }
+    );
+
+
+    // =====================================================
+    // FINISH TASK
+    // =====================================================
+
+    function finishTask() {
+
+        card.style.display = "none";
+
+        finished.style.display = "block";
+
+
+        if (
+            typeof window.SO1_Finish === "function"
+        ) {
+
+            window.SO1_Finish();
+
+        } else {
+
+            console.error(
+                "SO1_Finish is not defined"
+            );
+
+        }
+
+    }
+
+
+    // =====================================================
+    // START
+    // =====================================================
+
+    showTrial();
+
+})();
+</script>
