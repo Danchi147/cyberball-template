@@ -1,0 +1,1052 @@
+<div id="sstApp" dir="rtl">
+
+<style>
+    #sstApp {
+        font-family: Arial, sans-serif;
+        max-width: 850px;
+        margin: 0 auto;
+        color: #222;
+        direction: rtl;
+    }
+
+    #sstApp .sst-card {
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 14px;
+        padding: 24px;
+    }
+
+    #sstApp .sst-progress-text {
+        font-size: 15px;
+        color: #666;
+        margin-bottom: 8px;
+    }
+
+    #sstApp .sst-progress {
+        width: 100%;
+        height: 8px;
+        background: #eee;
+        border-radius: 20px;
+        overflow: hidden;
+        margin-bottom: 22px;
+    }
+
+    #sstApp .sst-progress-bar {
+        height: 100%;
+        width: 0%;
+        background: #333;
+        transition: width .2s ease;
+    }
+
+    #sstApp .sst-instructions {
+        line-height: 1.6;
+        margin-bottom: 24px;
+    }
+
+    #sstApp .word-bank {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 10px;
+        margin: 25px 0;
+    }
+
+    #sstApp .sst-word {
+        padding: 11px 17px;
+        border: 2px solid #d1d5db;
+        border-radius: 10px;
+        background: #fff;
+        cursor: pointer;
+        font-size: 17px;
+        font-family: inherit;
+    }
+
+    #sstApp .sst-word:hover {
+        border-color: #888;
+    }
+
+    #sstApp .sst-word.used {
+        opacity: .3;
+        cursor: default;
+    }
+
+    #sstApp .sentence-label {
+        font-weight: bold;
+        margin-top: 15px;
+    }
+
+    #sstApp .sentence-box {
+        min-height: 70px;
+        border: 2px dashed #ccc;
+        border-radius: 10px;
+        margin: 10px 0;
+        padding: 14px;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-items: center;
+        gap: 8px;
+    }
+
+    #sstApp .chosen-word {
+        border: 1px solid #bbb;
+        background: #eee;
+        border-radius: 8px;
+        padding: 8px 12px;
+        cursor: pointer;
+        font-family: inherit;
+        font-size: 16px;
+    }
+
+    #sstApp .sst-hint {
+        text-align: center;
+        color: #777;
+        font-size: 14px;
+        margin-bottom: 15px;
+    }
+
+    #sstApp .sst-actions {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        margin-top: 20px;
+    }
+
+    #sstApp .sst-button {
+        padding: 11px 20px;
+        border-radius: 9px;
+        font-size: 16px;
+        font-family: inherit;
+        cursor: pointer;
+    }
+
+    #sstApp .sst-primary {
+        border: 1px solid #222;
+        background: #222;
+        color: #fff;
+    }
+
+    #sstApp .sst-primary:disabled {
+        opacity: .35;
+        cursor: default;
+    }
+
+    #sstApp .sst-secondary {
+        background: #fff;
+        border: 1px solid #bbb;
+    }
+
+    #sstApp .sst-error {
+        min-height: 20px;
+        color: #b91c1c;
+        font-weight: bold;
+        margin-top: 10px;
+        text-align: center;
+    }
+
+    #sstApp .sst-done {
+        text-align: center;
+        padding: 20px;
+    }
+
+    #sstApp .hidden {
+        display: none !important;
+    }
+
+    #sstQualtricsContinue {
+        margin-top: 20px;
+        padding: 12px 28px;
+        border: 1px solid #222;
+        background: #222;
+        color: white;
+        border-radius: 9px;
+        font-family: inherit;
+        font-size: 17px;
+        cursor: pointer;
+    }
+</style>
+
+
+<div id="sstTask" class="sst-card">
+
+    <div id="sstProgressText" class="sst-progress-text"></div>
+
+    <div class="sst-progress">
+        <div id="sstProgressBar" class="sst-progress-bar"></div>
+    </div>
+
+    <div class="sst-instructions">
+        בחרו <strong>5 מילים</strong>, לפי הסדר, כך שייווצר משפט
+        תקין וטבעי ככל האפשר. מילה אחת תישאר בחוץ.
+        בחרו את המשפט הראשון שעולה לכם לראש.
+    </div>
+
+    <div id="sstWordBank" class="word-bank"></div>
+
+    <div class="sentence-label">
+        המשפט שלך:
+    </div>
+
+    <div id="sstSentence" class="sentence-box"></div>
+
+    <div class="sst-hint">
+        ניתן ללחוץ על מילה שנבחרה כדי להסיר אותה.
+    </div>
+
+    <div id="sstError" class="sst-error"></div>
+
+    <div class="sst-actions">
+
+        <button
+            type="button"
+            id="sstReset"
+            class="sst-button sst-secondary">
+            נקה בחירה
+        </button>
+
+        <button
+            type="button"
+            id="sstNext"
+            class="sst-button sst-primary"
+            disabled>
+            המשך
+        </button>
+
+    </div>
+
+</div>
+
+
+<div id="sstDone" class="sst-card hidden">
+
+    <div class="sst-done">
+
+        <h3>המשימה הושלמה</h3>
+
+        <p>
+            תודה. ניתן כעת להמשיך לשאלה הבאה.
+        </p>
+
+        <button
+            type="button"
+            id="sstQualtricsContinue">
+            המשך
+        </button>
+
+    </div>
+
+</div>
+
+
+<script>
+
+(function () {
+
+    // =========================================================
+    // 15 GENERAL SST ITEMS
+    // =========================================================
+
+    var ITEMS = [
+
+        {
+            id: 1,
+            dimension: "הצלחה",
+            words: [
+                "הפגישה",
+                "היום",
+                "הייתה",
+                "מאוד",
+                "מוצלחת",
+                "כושלת"
+            ],
+            posWord: "מוצלחת",
+            negWord: "כושלת"
+        },
+
+        {
+            id: 2,
+            dimension: "קושי",
+            words: [
+                "המשימה",
+                "הזאת",
+                "נראית",
+                "היום",
+                "קלה",
+                "קשה"
+            ],
+            posWord: "קלה",
+            negWord: "קשה"
+        },
+
+        {
+            id: 3,
+            dimension: "ביטחון",
+            words: [
+                "הסביבה",
+                "כאן",
+                "נראית",
+                "מאוד",
+                "בטוחה",
+                "מסוכנת"
+            ],
+            posWord: "בטוחה",
+            negWord: "מסוכנת"
+        },
+
+        {
+            id: 4,
+            dimension: "יחס חברתי",
+            words: [
+                "האנשים",
+                "כאן",
+                "נראים",
+                "היום",
+                "ידידותיים",
+                "עוינים"
+            ],
+            posWord: "ידידותיים",
+            negWord: "עוינים"
+        },
+
+        {
+            id: 5,
+            dimension: "הערכה",
+            words: [
+                "התגובה",
+                "שלו",
+                "נשמעת",
+                "היום",
+                "חיובית",
+                "שלילית"
+            ],
+            posWord: "חיובית",
+            negWord: "שלילית"
+        },
+
+        {
+            id: 6,
+            dimension: "מתח",
+            words: [
+                "השיחה",
+                "בינינו",
+                "הייתה",
+                "היום",
+                "רגועה",
+                "מתוחה"
+            ],
+            posWord: "רגועה",
+            negWord: "מתוחה"
+        },
+
+        {
+            id: 7,
+            dimension: "ארגון",
+            words: [
+                "התוכנית",
+                "הזאת",
+                "נראית",
+                "מאוד",
+                "מסודרת",
+                "מבולגנת"
+            ],
+            posWord: "מסודרת",
+            negWord: "מבולגנת"
+        },
+
+        {
+            id: 8,
+            dimension: "ציפייה",
+            words: [
+                "התחזית",
+                "לעתיד",
+                "נראית",
+                "כרגע",
+                "אופטימית",
+                "פסימית"
+            ],
+            posWord: "אופטימית",
+            negWord: "פסימית"
+        },
+
+        {
+            id: 9,
+            dimension: "רוגע",
+            words: [
+                "המצב",
+                "כרגע",
+                "נראה",
+                "יחסית",
+                "רגוע",
+                "סוער"
+            ],
+            posWord: "רגוע",
+            negWord: "סוער"
+        },
+
+        {
+            id: 10,
+            dimension: "תוצאה",
+            words: [
+                "התוצאה",
+                "הסופית",
+                "נראית",
+                "מאוד",
+                "טובה",
+                "רעה"
+            ],
+            posWord: "טובה",
+            negWord: "רעה"
+        },
+
+        {
+            id: 11,
+            dimension: "חוויה",
+            words: [
+                "החוויה",
+                "הזאת",
+                "הייתה",
+                "מאוד",
+                "מהנה",
+                "מתסכלת"
+            ],
+            posWord: "מהנה",
+            negWord: "מתסכלת"
+        },
+
+        {
+            id: 12,
+            dimension: "רושם",
+            words: [
+                "המקום",
+                "הזה",
+                "מרגיש",
+                "מאוד",
+                "מזמין",
+                "דוחה"
+            ],
+            posWord: "מזמין",
+            negWord: "דוחה"
+        },
+
+        {
+            id: 13,
+            dimension: "חדשות",
+            words: [
+                "החדשות",
+                "היום",
+                "נשמעות",
+                "מאוד",
+                "מעודדות",
+                "מדאיגות"
+            ],
+            posWord: "מעודדות",
+            negWord: "מדאיגות"
+        },
+
+        {
+            id: 14,
+            dimension: "מורכבות",
+            words: [
+                "הפתרון",
+                "הזה",
+                "נראה",
+                "יחסית",
+                "פשוט",
+                "מורכב"
+            ],
+            posWord: "פשוט",
+            negWord: "מורכב"
+        },
+
+        {
+            id: 15,
+            dimension: "עתיד",
+            words: [
+                "העתיד",
+                "כרגע",
+                "נראה",
+                "מאוד",
+                "מבטיח",
+                "קודר"
+            ],
+            posWord: "מבטיח",
+            negWord: "קודר"
+        }
+
+    ];
+
+
+    // =========================================================
+    // VARIABLES
+    // =========================================================
+
+    var randomizedItems = [];
+    var currentIndex = 0;
+
+    var displayWords = [];
+    var selectedWords = [];
+
+    var responses = [];
+
+    var itemStartTime = null;
+
+
+    // =========================================================
+    // SHUFFLE
+    // =========================================================
+
+    function shuffle(array) {
+
+        var a = array.slice();
+
+        for (
+            var i = a.length - 1;
+            i > 0;
+            i--
+        ) {
+
+            var j =
+                Math.floor(
+                    Math.random() * (i + 1)
+                );
+
+            var temp = a[i];
+
+            a[i] = a[j];
+            a[j] = temp;
+        }
+
+        return a;
+    }
+
+
+    // =========================================================
+    // START
+    // =========================================================
+
+    function startTask() {
+
+        // RANDOMIZE ITEM ORDER
+        randomizedItems =
+            shuffle(ITEMS);
+
+        currentIndex = 0;
+        responses = [];
+
+        renderItem();
+    }
+
+
+    // =========================================================
+    // RENDER CURRENT ITEM
+    // =========================================================
+
+    function renderItem() {
+
+        selectedWords = [];
+
+        var item =
+            randomizedItems[currentIndex];
+
+        // RANDOMIZE WORD ORDER
+        displayWords =
+            shuffle(item.words);
+
+        itemStartTime =
+            performance.now();
+
+        document.getElementById(
+            "sstProgressText"
+        ).textContent =
+            "פריט " +
+            (currentIndex + 1) +
+            " מתוך 15";
+
+        document.getElementById(
+            "sstProgressBar"
+        ).style.width =
+            (
+                (currentIndex / 15) *
+                100
+            ) + "%";
+
+        document.getElementById(
+            "sstError"
+        ).textContent = "";
+
+        renderWords();
+        renderSentence();
+    }
+
+
+    // =========================================================
+    // WORD BANK
+    // =========================================================
+
+    function renderWords() {
+
+        var bank =
+            document.getElementById(
+                "sstWordBank"
+            );
+
+        bank.innerHTML = "";
+
+        displayWords.forEach(
+            function (word, index) {
+
+                var button =
+                    document.createElement(
+                        "button"
+                    );
+
+                button.type =
+                    "button";
+
+                button.className =
+                    "sst-word";
+
+                button.textContent =
+                    word;
+
+                var alreadyUsed =
+                    selectedWords.some(
+                        function (entry) {
+                            return (
+                                entry.index ===
+                                index
+                            );
+                        }
+                    );
+
+                if (alreadyUsed) {
+
+                    button.classList.add(
+                        "used"
+                    );
+
+                    button.disabled =
+                        true;
+                }
+
+                button.addEventListener(
+                    "click",
+                    function () {
+
+                        if (
+                            selectedWords.length >=
+                            5
+                        ) {
+                            return;
+                        }
+
+                        selectedWords.push({
+                            word: word,
+                            index: index
+                        });
+
+                        renderWords();
+                        renderSentence();
+                    }
+                );
+
+                bank.appendChild(
+                    button
+                );
+            }
+        );
+    }
+
+
+    // =========================================================
+    // SENTENCE
+    // =========================================================
+
+    function renderSentence() {
+
+        var box =
+            document.getElementById(
+                "sstSentence"
+            );
+
+        box.innerHTML = "";
+
+        if (
+            selectedWords.length === 0
+        ) {
+
+            var empty =
+                document.createElement(
+                    "span"
+                );
+
+            empty.textContent =
+                "המילים שבחרת יופיעו כאן";
+
+            empty.style.color =
+                "#999";
+
+            box.appendChild(empty);
+
+        } else {
+
+            selectedWords.forEach(
+                function (entry, index) {
+
+                    var button =
+                        document.createElement(
+                            "button"
+                        );
+
+                    button.type =
+                        "button";
+
+                    button.className =
+                        "chosen-word";
+
+                    button.textContent =
+                        entry.word;
+
+                    button.addEventListener(
+                        "click",
+                        function () {
+
+                            selectedWords.splice(
+                                index,
+                                1
+                            );
+
+                            renderWords();
+                            renderSentence();
+                        }
+                    );
+
+                    box.appendChild(
+                        button
+                    );
+                }
+            );
+        }
+
+
+        document.getElementById(
+            "sstNext"
+        ).disabled =
+            selectedWords.length !== 5;
+    }
+
+
+    // =========================================================
+    // RESET
+    // =========================================================
+
+    function resetSelection() {
+
+        selectedWords = [];
+
+        document.getElementById(
+            "sstError"
+        ).textContent = "";
+
+        renderWords();
+        renderSentence();
+    }
+
+
+    // =========================================================
+    // SUBMIT ITEM
+    // =========================================================
+
+    function submitCurrent() {
+
+        if (
+            selectedWords.length !== 5
+        ) {
+
+            document.getElementById(
+                "sstError"
+            ).textContent =
+                "יש לבחור בדיוק חמש מילים.";
+
+            return;
+        }
+
+
+        var item =
+            randomizedItems[currentIndex];
+
+        var chosen =
+            selectedWords.map(
+                function (x) {
+                    return x.word;
+                }
+            );
+
+        var selectedIndices =
+            selectedWords.map(
+                function (x) {
+                    return x.index;
+                }
+            );
+
+
+        var omittedWord = "";
+
+        displayWords.forEach(
+            function (word, index) {
+
+                if (
+                    selectedIndices.indexOf(
+                        index
+                    ) === -1
+                ) {
+                    omittedWord =
+                        word;
+                }
+            }
+        );
+
+
+        // =====================================================
+        // DETERMINE CRITICAL WORD
+        // =====================================================
+
+        var hasPositive =
+            chosen.indexOf(
+                item.posWord
+            ) !== -1;
+
+        var hasNegative =
+            chosen.indexOf(
+                item.negWord
+            ) !== -1;
+
+
+        var criticalWord = "";
+        var criticalValence = "invalid";
+        var positiveScore = "";
+
+
+        if (
+            hasPositive &&
+            !hasNegative
+        ) {
+
+            criticalWord =
+                item.posWord;
+
+            criticalValence =
+                "positive";
+
+            positiveScore = 1;
+
+        } else if (
+            hasNegative &&
+            !hasPositive
+        ) {
+
+            criticalWord =
+                item.negWord;
+
+            criticalValence =
+                "negative";
+
+            positiveScore = 0;
+
+        }
+
+
+        var rt =
+            Math.round(
+                performance.now() -
+                itemStartTime
+            );
+
+
+        // =====================================================
+        // STORE RESPONSE
+        // =====================================================
+
+        responses.push({
+
+            trial_number:
+                currentIndex + 1,
+
+            item_id:
+                item.id,
+
+            dimension:
+                item.dimension,
+
+            critical_word:
+                criticalWord,
+
+            critical_valence:
+                criticalValence,
+
+            positive_score:
+                positiveScore,
+
+            response_sentence:
+                chosen.join(" "),
+
+            omitted_word:
+                omittedWord,
+
+            display_order:
+                displayWords.join(" | "),
+
+            rt_ms:
+                rt
+        });
+
+
+        // =====================================================
+        // NEXT
+        // =====================================================
+
+        currentIndex++;
+
+
+        if (
+            currentIndex >=
+            randomizedItems.length
+        ) {
+
+            finishTask();
+
+        } else {
+
+            renderItem();
+        }
+    }
+
+
+    // =========================================================
+    // FINISH
+    // =========================================================
+
+    function finishTask() {
+
+        var positiveN =
+            responses.filter(
+                function (r) {
+                    return (
+                        r.critical_valence ===
+                        "positive"
+                    );
+                }
+            ).length;
+
+        var negativeN =
+            responses.filter(
+                function (r) {
+                    return (
+                        r.critical_valence ===
+                        "negative"
+                    );
+                }
+            ).length;
+
+        var invalidN =
+            responses.filter(
+                function (r) {
+                    return (
+                        r.critical_valence ===
+                        "invalid"
+                    );
+                }
+            ).length;
+
+
+        // Requested score:
+        // positive choices / ALL 15 items
+        var positivePercent =
+            (
+                positiveN /
+                15
+            ) * 100;
+
+
+        var validN =
+            positiveN +
+            negativeN;
+
+        var positivePercentValid =
+            validN > 0
+                ? (
+                    positiveN /
+                    validN
+                  ) * 100
+                : null;
+
+
+        // Expose results to Qualtrics JS
+        window.SST_RESULTS = {
+
+            complete: 1,
+
+            responses:
+                responses,
+
+            positive_n:
+                positiveN,
+
+            negative_n:
+                negativeN,
+
+            invalid_n:
+                invalidN,
+
+            positive_percent:
+                positivePercent,
+
+            positive_percent_valid:
+                positivePercentValid
+
+        };
+
+
+        document.getElementById(
+            "sstTask"
+        ).classList.add(
+            "hidden"
+        );
+
+        document.getElementById(
+            "sstDone"
+        ).classList.remove(
+            "hidden"
+        );
+    }
+
+
+    // =========================================================
+    // BUTTONS
+    // =========================================================
+
+    document.getElementById(
+        "sstReset"
+    ).addEventListener(
+        "click",
+        resetSelection
+    );
+
+    document.getElementById(
+        "sstNext"
+    ).addEventListener(
+        "click",
+        submitCurrent
+    );
+
+
+    // =========================================================
+    // GO
+    // =========================================================
+
+    startTask();
+
+})();
+</script>
+
+</div>
