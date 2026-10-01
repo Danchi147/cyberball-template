@@ -1,0 +1,286 @@
+Qualtrics.SurveyEngine.addOnload(function () {
+
+    var q = this;
+
+
+    // =====================================================
+    // HIDE QUALTRICS NEXT UNTIL SST IS FULLY COMPLETED
+    // =====================================================
+
+    q.hideNextButton();
+
+
+    Qualtrics.SurveyEngine.setJSEmbeddedData(
+        "SST_Complete",
+        "0"
+    );
+
+
+    // =====================================================
+    // SAFE SAVE FUNCTION
+    // =====================================================
+
+    function saveEmbeddedData(
+        name,
+        value
+    ) {
+
+        if (
+            value === undefined ||
+            value === null
+        ) {
+
+            value = "";
+        }
+
+
+        Qualtrics.SurveyEngine
+            .setJSEmbeddedData(
+
+                name,
+
+                String(value)
+
+            );
+    }
+
+
+    // =====================================================
+    // MARK SST COMPLETE
+    // =====================================================
+
+    function markSSTComplete() {
+
+        saveEmbeddedData(
+            "SST_Complete",
+            "1"
+        );
+
+
+        q.showNextButton();
+
+
+        console.log(
+            "SST fully completed — Qualtrics Next button shown."
+        );
+    }
+
+
+    // =====================================================
+    // RECEIVE MESSAGE FROM EXTERNAL HTML
+    // =====================================================
+
+    window.sstMessageHandler =
+        function (event) {
+
+            var msg =
+                event.data;
+
+
+            if (!msg) {
+
+                return;
+            }
+
+
+            // Ignore unrelated postMessage events
+            if (
+                msg.type !==
+                "SSTColumns"
+            ) {
+
+                return;
+            }
+
+
+            if (!msg.fields) {
+
+                return;
+            }
+
+
+            var fields =
+                msg.fields;
+
+
+            // =================================================
+            // OVERALL SST VARIABLES
+            // =================================================
+
+            var overallFields = [
+
+                "SST_Responses_JSON",
+
+                "SST_Positive_N",
+
+                "SST_Negative_N",
+
+                "SST_Invalid_N",
+
+                "SST_Positive_Percent"
+
+            ];
+
+
+            overallFields.forEach(
+                function (name) {
+
+                    if (
+
+                        Object.prototype
+                            .hasOwnProperty
+                            .call(
+                                fields,
+                                name
+                            )
+
+                    ) {
+
+                        saveEmbeddedData(
+
+                            name,
+
+                            fields[name]
+
+                        );
+                    }
+                }
+            );
+
+
+            // =================================================
+            // SAVE EACH OF THE 15 STIMULI
+            // =================================================
+
+            for (
+                var i = 1;
+                i <= 15;
+                i++
+            ) {
+
+                var item =
+                    String(i).padStart(
+                        2,
+                        "0"
+                    );
+
+
+                var prefix =
+                    "SST_I" +
+                    item +
+                    "_";
+
+
+                var itemFields = [
+
+                    prefix +
+                    "Trial",
+
+                    prefix +
+                    "CriticalWord",
+
+                    prefix +
+                    "Valence",
+
+                    prefix +
+                    "Positive",
+
+                    prefix +
+                    "Sentence",
+
+                    prefix +
+                    "Omitted",
+
+                    prefix +
+                    "DisplayOrder",
+
+                    prefix +
+                    "RT"
+
+                ];
+
+
+                itemFields.forEach(
+                    function (name) {
+
+                        if (
+
+                            Object.prototype
+                                .hasOwnProperty
+                                .call(
+                                    fields,
+                                    name
+                                )
+
+                        ) {
+
+                            saveEmbeddedData(
+
+                                name,
+
+                                fields[name]
+
+                            );
+                        }
+                    }
+                );
+            }
+
+
+            // =================================================
+            // ONLY NOW ENABLE QUALTRICS NEXT
+            // =================================================
+
+            if (
+
+                String(
+                    fields.SST_Complete
+                ) ===
+                "1"
+
+            ) {
+
+                markSSTComplete();
+
+            }
+
+
+            console.log(
+                "SST data received and saved:",
+                fields
+            );
+
+        };
+
+
+    // =====================================================
+    // START LISTENING
+    // =====================================================
+
+    window.addEventListener(
+
+        "message",
+
+        window.sstMessageHandler
+
+    );
+
+});
+
+
+Qualtrics.SurveyEngine.addOnUnload(function () {
+
+    if (
+        window.sstMessageHandler
+    ) {
+
+        window.removeEventListener(
+
+            "message",
+
+            window.sstMessageHandler
+
+        );
+    }
+
+});
