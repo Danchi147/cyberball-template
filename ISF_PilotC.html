@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cyberball — Eva Variant</title>
+</head>
+<body>
+  <div style="font-family:Arial,sans-serif;padding:30px">Loading experiment…</div>
+
+<script>
+(async function () {
+  const SOURCE = "https://danchi147.github.io/cyberball-template/CyberISF_last.html";
+
+  let src = await fetch(SOURCE, { cache: "no-store" }).then(r => {
+    if (!r.ok) throw new Error("Could not load base experiment: " + r.status);
+    return r.text();
+  });
+
+  function replaceExact(oldText, newText, label) {
+    if (!src.includes(oldText)) {
+      throw new Error("Could not apply patch: " + label);
+    }
+    src = src.replace(oldText, newText);
+  }
+
+  // ============================================================
+  // 1) RETURN CONTINGENCIES
+  // A = 75%, B = 25%, C = 50%
+  // Use 20-opportunity fixed decks so percentages are exact:
+  // A = 15/20, B = 5/20, C = 10/20
+  // ============================================================
+  replaceExact(
+`    // Fixed-frequency return decks (not independent Bernoulli draws).
+    returnSuccessesPer10: { A:9, B:1, C:5 },`,
+`    // Fixed-frequency return decks (not independent Bernoulli draws).
+    // EVA VERSION: A = 75%, B = 25%, C = 50%.
+    returnDeckSize: 20,
+    returnSuccessesPerDeck: { A:15, B:5, C:10 },`,
+    "return configuration"
+  );
+
+  replaceExact(
+`  function newReturnDeck(role){
+    const yes=CFG.returnSuccessesPer10[role];
+    return shuffle([...Array(yes).fill(true),...Array(10-yes).fill(false)]);
+  }`,
+`  function newReturnDeck(role){
+    const yes=CFG.returnSuccessesPerDeck[role];
+    const total=CFG.returnDeckSize;
+    return shuffle([
+      ...Array(yes).fill(true),
+      ...Array(total-yes).fill(false)
+    ]);
+  }`,
+    "return deck function"
+  );
+
+  // ============================================================
+  // 2) SOCIAL FEEDBACK
+  // A = 2, B = 8, C = 5 (average)
+  // ============================================================
+  replaceExact(
+`  function currentFeedbackRating(){
+    const role=feedbackOrder[feedbackIndex];
+    return role==='A' ? 2 : (role==='B' ? 8 : null);
+  }`,
+`  function currentFeedbackRating(){
+    const role=feedbackOrder[feedbackIndex];
+    return role==='A' ? 2 : (role==='B' ? 8 : 5);
+  }`,
+    "Player C feedback = 5"
+  );
+
+  // Handle C=5 correctly on the comprehension/interpretation pages.
+  replaceExact(
+`      const diff=Math.abs(rating-5), dir=rating>5?'above':'below'; buildFeedbackQuiz(diff,dir); feedbackAttemptStart=performance.now(); el('fbQuiz').classList.add('show'); return;`,
+`      const diff=Math.abs(rating-5);
+      const dir=rating>5?'above':(rating<5?'below':'same');
+      buildFeedbackQuiz(diff,dir);
+      feedbackAttemptStart=performance.now();
+      el('fbQuiz').classList.add('show');
+      return;`,
+    "feedback difference direction"
+  );
+
+  replaceExact(
+`      cap.innerHTML = rating>5
+        ? \`<span style="display:inline-block;background:\${p.color};padding:5px 12px;border-radius:12px;margin-right:6px;color:#202733;font-weight:800;">\${p.name}</span> thought you are <u><b>nicer</b></u> than average.\`
+        : \`<span style="display:inline-block;background:\${p.color};padding:5px 12px;border-radius:12px;margin-right:6px;color:#202733;font-weight:800;">\${p.name}</span> thought you are <u><b>less nice</b></u> than average.\`;`,
+`      cap.innerHTML = rating>5
+        ? \`<span style="display:inline-block;background:\${p.color};padding:5px 12px;border-radius:12px;margin-right:6px;color:#202733;font-weight:800;">\${p.name}</span> thought you are <u><b>nicer</b></u> than average.\`
+        : (rating<5
+          ? \`<span style="display:inline-block;background:\${p.color};padding:5px 12px;border-radius:12px;margin-right:6px;color:#202733;font-weight:800;">\${p.name}</span> thought you are <u><b>less nice</b></u> than average.\`
+          : \`<span style="display:inline-block;background:\${p.color};padding:5px 12px;border-radius:12px;margin-right:6px;color:#202733;font-weight:800;">\${p.name}</span> rated you <u><b>the same as their average rating of other people</b></u>.\`);`,
+    "feedback interpretation for rating 5"
+  );
+
+  replaceExact(
+`      el('feedbackPlayerCommentLabel').innerHTML = rating>5
+        ? \`Why do you think \${p.name} liked you more than other people?\`
+        : \`Why do you think \${p.name} <span class="notLikedEmphasis">DID NOT like you</span> as much as other people?\`;`,
+`      el('feedbackPlayerCommentLabel').innerHTML = rating>5
+        ? \`Why do you think \${p.name} liked you more than other people?\`
+        : (rating<5
+          ? \`Why do you think \${p.name} <span class="notLikedEmphasis">DID NOT like you</span> as much as other people?\`
+          : \`Why do you think \${p.name} rated you about the same as other people?\`);`,
+    "feedback explanation wording for rating 5"
+  );
+
+  replaceExact(
+`    el('feedbackAttributionLabel').innerHTML = rating>5
+      ? \`Why do you think \${p.name} liked you? What do you think most influenced that judgment?\`
+      : \`Why do you think \${p.name} <span class="notLikedEmphasis">DID NOT like you</span>? What do you think most influenced that judgment?\`;`,
+`    el('feedbackAttributionLabel').innerHTML = rating>5
+      ? \`Why do you think \${p.name} liked you? What do you think most influenced that judgment?\`
+      : (rating<5
+        ? \`Why do you think \${p.name} <span class="notLikedEmphasis">DID NOT like you</span>? What do you think most influenced that judgment?\`
+        : \`Why do you think \${p.name} rated you about the same as other people? What do you think most influenced that judgment?\`);`,
+    "feedback attribution wording for rating 5"
+  );
+
+  replaceExact(
+`  function buildFeedbackQuiz(diff,dir){
+    const p=identities[feedbackOrder[feedbackIndex]];
+    el('fbQuizPrompt').textContent=\`How many points \${dir} \${p.name}'s average rating of other people did \${p.name} rate you?\`;`,
+`  function buildFeedbackQuiz(diff,dir){
+    const p=identities[feedbackOrder[feedbackIndex]];
+    el('fbQuizPrompt').textContent = dir==='same'
+      ? \`How many points different from \${p.name}'s average rating of other people did \${p.name} rate you?\`
+      : \`How many points \${dir} \${p.name}'s average rating of other people did \${p.name} rate you?\`;`,
+    "feedback quiz wording for rating 5"
+  );
+
+  // ============================================================
+  // 3) ADD 5 FNS BELONGINGNESS ITEMS TO POST-LIKED PAGE
+  // Same 1–10 scale already used on this page.
+  // ============================================================
+  replaceExact(
+`<section id="metaperceptionPostScreen" class="screen">
+  <div class="panel">
+    <div class="eyebrow">Before the economic game</div>
+    <h2>How much do you feel liked by the group?</h2>
+    <div class="ratingScale" id="metaperceptionPostScale"></div>
+    <div class="scaleEnds"><span>1 — Not at all</span><span>10 — Very much</span></div>
+    <div class="validationMessage" id="metaperceptionPostValidation"></div>
+    <button class="primary" id="metaperceptionPostNext">Continue</button>
+  </div>
+</section>`,
+`<section id="metaperceptionPostScreen" class="screen">
+  <div class="panel" style="width:min(900px,96vw)">
+    <div class="eyebrow">Before the economic game</div>
+    <h2>How much do you feel liked by the group?</h2>
+    <div class="ratingScale" id="metaperceptionPostScale"></div>
+    <div class="scaleEnds"><span>1 — Not at all</span><span>10 — Very much</span></div>
+
+    <div style="height:1px;background:var(--line);margin:34px auto 30px;max-width:720px"></div>
+
+    <h3 style="font-size:24px;margin-bottom:8px">
+      Thinking about the ball-tossing game, please indicate how much each statement describes how you felt.
+    </h3>
+    <p style="font-size:17px;color:#6c7480;margin-bottom:22px">
+      Use the same 1–10 scale for each statement.
+    </p>
+
+    <div id="belongingnessItems"></div>
+
+    <div class="validationMessage" id="metaperceptionPostValidation"></div>
+    <button class="primary" id="metaperceptionPostNext">Continue</button>
+  </div>
+</section>`,
+    "post-liked FNS HTML"
+  );
+
+  // Add state + five items.
+  replaceExact(
+`  let metaperceptionPreSelection=null;
+  let metaperceptionPostSelection=null;
+  let metaperceptionPreStart=0;
+  let metaperceptionPostStart=0;
+  let metaperceptionPreDone=false;`,
+`  let metaperceptionPreSelection=null;
+  let metaperceptionPostSelection=null;
+  let metaperceptionPreStart=0;
+  let metaperceptionPostStart=0;
+  let metaperceptionPreDone=false;
+
+  const BELONGINGNESS_ITEMS=[
+    {key:'disconnected', text:'I felt “disconnected.”'},
+    {key:'rejected', text:'I felt rejected.'},
+    {key:'outsider', text:'I felt like an outsider.'},
+    {key:'belonged', text:'I felt I belonged to the group.'},
+    {key:'interacted', text:'I felt the other players interacted with me a lot.'}
+  ];
+  let belongingnessSelections={};`,
+    "FNS state"
+  );
+
+  replaceExact(
+`    metaperception:{expect:null,feel:null},`,
+`    metaperception:{expect:null,feel:null,belongingness:{}},`,
+    "FNS log object"
+  );
+
+  // Separate Qualtrics Embedded Data column too.
+  replaceExact(
+`      Metaperception: JSON.stringify(completeLog.metaperception || {}),`,
+`      Metaperception: JSON.stringify(completeLog.metaperception || {}),
+      Belongingness_FNS: JSON.stringify(completeLog.metaperception?.belongingness || {}),`,
+    "Belongingness_FNS Qualtrics field"
+  );
+
+  replaceExact(
+`  function startMetaperceptionPost(){
+    metaperceptionPostSelection=null;
+    metaperceptionPostStart=performance.now();
+    renderMetaperceptionScale(
+      'metaperceptionPostScale',
+      'metaperceptionPostNext',
+      metaperceptionPostSelection,
+      n=>{metaperceptionPostSelection=n;}
+    );
+    el('metaperceptionPostNext').disabled=false; el('metaperceptionPostValidation').textContent='';
+    showScreen('metaperceptionPostScreen');
+  }
+
+  function saveMetaperceptionPost(){
+    if(metaperceptionPostSelection==null){el('metaperceptionPostValidation').textContent='Please select a rating before continuing.';return;}
+    completeLog.metaperception.feel={
+      rating:metaperceptionPostSelection,
+      rt_ms:Math.round(performance.now()-metaperceptionPostStart)
+    };
+    checkpoint();
+    showScreen('economicTaskIntroScreen');
+  }`,
+`  function renderBelongingnessItems(){
+    belongingnessSelections={};
+    const wrap=el('belongingnessItems');
+    wrap.innerHTML='';
+
+    BELONGINGNESS_ITEMS.forEach((item,index)=>{
+      const block=document.createElement('div');
+      block.style.cssText=
+        'max-width:760px;margin:0 auto 26px;padding:18px 20px;' +
+        'border:1px solid var(--line);border-radius:18px;' +
+        'background:#fbfbfa;text-align:left';
+
+      block.innerHTML=\`
+        <div style="font-size:19px;font-weight:700;margin-bottom:10px">
+          \${index+1}. \${item.text}
+        </div>
+        <div class="ratingScale"
+             id="belongingScale_\${item.key}"
+             style="margin:12px auto 8px"></div>
+        <div class="scaleEnds" style="margin-bottom:0">
+          <span>1 — Not at all</span>
+          <span>10 — Very much</span>
+        </div>\`;
+
+      wrap.appendChild(block);
+
+      const scale=el(\`belongingScale_\${item.key}\`);
+
+      for(let n=1;n<=10;n++){
+        const b=document.createElement('button');
+        b.type='button';
+        b.className='rateBtn';
+        b.textContent=n;
+
+        b.addEventListener('click',()=>{
+          scale.querySelectorAll('.rateBtn')
+            .forEach(x=>x.classList.remove('selected'));
+
+          b.classList.add('selected');
+          belongingnessSelections[item.key]=n;
+          el('metaperceptionPostValidation').textContent='';
+        });
+
+        scale.appendChild(b);
+      }
+    });
+  }
+
+  function startMetaperceptionPost(){
+    metaperceptionPostSelection=null;
+    metaperceptionPostStart=performance.now();
+
+    renderMetaperceptionScale(
+      'metaperceptionPostScale',
+      'metaperceptionPostNext',
+      metaperceptionPostSelection,
+      n=>{metaperceptionPostSelection=n;}
+    );
+
+    renderBelongingnessItems();
+
+    el('metaperceptionPostNext').disabled=false;
+    el('metaperceptionPostValidation').textContent='';
+    showScreen('metaperceptionPostScreen');
+  }
+
+  function saveMetaperceptionPost(){
+    if(metaperceptionPostSelection==null){
+      el('metaperceptionPostValidation').textContent=
+        'Please answer how much you feel liked by the group.';
+      return;
+    }
+
+    const unanswered=BELONGINGNESS_ITEMS.filter(
+      item=>belongingnessSelections[item.key]==null
+    );
+
+    if(unanswered.length){
+      el('metaperceptionPostValidation').textContent=
+        'Please answer all five statements before continuing.';
+      return;
+    }
+
+    completeLog.metaperception.feel={
+      rating:metaperceptionPostSelection,
+      rt_ms:Math.round(performance.now()-metaperceptionPostStart)
+    };
+
+    completeLog.metaperception.belongingness={};
+
+    BELONGINGNESS_ITEMS.forEach((item,index)=>{
+      completeLog.metaperception.belongingness[item.key]={
+        item:index+1,
+        text:item.text,
+        rating:belongingnessSelections[item.key]
+      };
+    });
+
+    checkpoint();
+    showScreen('economicTaskIntroScreen');
+  }`,
+    "FNS rendering + saving"
+  );
+
+  replaceExact(
+`completeLog.metaperception={expect:null,feel:null};`,
+`completeLog.metaperception={expect:null,feel:null,belongingness:{}};`,
+    "restart reset"
+  );
+
+  // Write the fully patched original page into this document.
+  document.open();
+  document.write(src);
+  document.close();
+
+})().catch(err => {
+  document.body.innerHTML =
+    '<pre style="white-space:pre-wrap;font-family:monospace;padding:24px;color:#8a2f2f">' +
+    'ERROR LOADING EVA VERSION\\n\\n' +
+    String(err && err.stack ? err.stack : err) +
+    '</pre>';
+});
+</script>
+</body>
+</html>
