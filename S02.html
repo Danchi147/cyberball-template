@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>משימת חלוקת נקודות</title>
+<style>
+*{box-sizing:border-box}body{margin:0;padding:20px;font-family:Arial,sans-serif;direction:rtl;text-align:right;background:white;color:#222;line-height:1.6}
+#so1-container{max-width:760px;margin:0 auto}.instructions{font-size:18px;margin-bottom:25px}.card{border:1px solid #d6d6d6;border-radius:10px;padding:24px;margin-top:20px}.progress{font-size:14px;color:#666;margin-bottom:15px}.person{font-size:21px;font-weight:bold;margin-bottom:28px}.question{font-size:18px;margin-bottom:20px}.slider-area{direction:ltr;margin:25px 0 10px}input[type="range"]{width:100%;cursor:pointer}.slider-labels{display:flex;justify-content:space-between;direction:ltr;font-size:14px;color:#555;margin-top:5px}.touch-note{text-align:center;color:#777;font-size:14px;margin-top:10px}.point-boxes{display:flex;gap:15px;margin-top:20px}.point-box{flex:1;text-align:center;padding:15px;border-radius:8px;background:#f5f5f5}.point-number{display:block;font-size:28px;font-weight:bold;margin-top:5px}button{display:block;margin:28px auto 0;padding:12px 35px;font-size:18px;cursor:pointer;border-radius:7px;border:1px solid #999}button:disabled{opacity:.4;cursor:default}#finished{display:none;text-align:center;padding:35px 10px}input[type="number"]{display:block;width:100%;max-width:240px;margin-top:8px;padding:10px;font:inherit;direction:ltr;text-align:center}#comprehension-card,#task-card{display:none}
+</style>
+</head>
+<body>
+<div id="so1-container">
+<div id="instructions" class="instructions">
+<p>במשחק הקרוב תתבקש/י לקבל חמש החלטות לגבי חלוקת נקודות בינך לבין חמישה משתתפים אחרים במחקר, אחד בכל פעם.</p>
+<p>בכל החלטה עומדות לרשותך <strong>100 נקודות</strong>. באפשרותך להציע למשתתף האחר כל מספר נקודות בין 0 ל־100. הנקודות שלא תציע/י יישארו אצלך אם הצעתך תתקבל.</p>
+<p>אם המשתתף האחר יסרב להצעה, שניכם תקבלו <strong>0 נקודות</strong>. במשימה זו תתבקש/י להציע חלוקה; לא תוצג לך החלטת המשתתף האחר.</p>
+<p>בכל החלטה תציע/י חלוקת נקודות למשתתף/ת אחר/ת. כל המשתתפים שאליהם יופנו ההצעות הם בני מגדר זהה לשלך, בגיל דומה לשלך ומתגוררים באזור מגוריך. פרטים אישיים אלה לא יוצגו במהלך המשחק.</p>
+<button id="instructions-next" type="button">המשך לשאלות ההבנה</button>
+</div>
+<div id="comprehension-card" class="card">
+<h3>שאלות הבנה</h3>
+<p>כדי להמשיך למשחק, יש לענות נכון על שתי השאלות:</p>
+<div class="question"><label for="check-allocation">אם החלטת להקצות לעצמך 70 נקודות, כמה נקודות יקבל המשתתף האחר אם יקבל את ההצעה?</label><input id="check-allocation" type="number" min="0" max="100" step="1" inputmode="numeric" placeholder="הקלד/י מספר"></div>
+<div class="question"><label for="check-rejection">אם המשתתף האחר יסרב להצעה, כמה נקודות תקבל/י?</label><input id="check-rejection" type="number" min="0" max="100" step="1" inputmode="numeric" placeholder="הקלד/י מספר"></div>
+<p id="comprehension-error" role="alert" style="color:#a12b2b;display:none">אחת התשובות אינה נכונה. אנא קרא/י שוב את ההוראות ונסה/י שוב.</p>
+<button id="back-to-instructions" type="button">חזרה להוראות</button>
+<button id="start-button" type="button">התחלת המשחק</button>
+</div>
+<div id="task-card" class="card">
+<div id="progress" class="progress"></div>
+<div id="person" class="person"></div>
+<div class="question">כמה מתוך 100 הנקודות ברצונך להעביר למשתתף/ת זה/ו?</div>
+<div class="slider-area"><input id="slider" type="range" min="0" max="100" step="1" value="0"><div class="slider-labels"><span>0</span><span>50</span><span>100</span></div></div>
+<div id="touch-note" class="touch-note">יש לבחור ערך על הסקאלה</div>
+<div class="point-boxes"><div class="point-box">נקודות שיישארו אצלך<span id="self-points" class="point-number">100</span></div><div class="point-box">נקודות שיועברו למשתתף/ת<span id="other-points" class="point-number">0</span></div></div>
+<button id="submit-button" type="button" disabled>אישור</button>
+</div>
+<div id="finished"><h2>המשימה הושלמה</h2><p>תודה.</p><p>ניתן כעת ללחוץ על הכפתור הכחול למטה כדי להמשיך.</p></div>
+</div>
+<script>
+(function(){
+// Retain the original four possible profile values and their encoded metadata.
+var profiles=[
+{sex:"M",gender:"male",age:22,locCode:"c",locText:"באזור המרכז"},
+{sex:"F",gender:"female",age:24,locCode:"n",locText:"באזור הצפון"},
+{sex:"M",gender:"male",age:44,locCode:"s",locText:"באזור הדרום"},
+{sex:"F",gender:"female",age:47,locCode:"c",locText:"באזור המרכז"}
+];
+// Five conditions, one trial each. Preserve original codes ns, coal, opp.
+var politicalConditions=[
+{code:"ns",male:"",female:""},
+{code:"coal",male:"תומך בממשלה הנוכחית",female:"תומכת בממשלה הנוכחית"},
+{code:"opp",male:"תומך בהחלפת הממשלה הנוכחית",female:"תומכת בהחלפת הממשלה הנוכחית"},
+{code:"nonvote",male:"אינו מצביע בבחירות",female:"אינה מצביעה בבחירות"},
+{code:"undecided",male:"טרם החליט למי להצביע",female:"טרם החליטה למי להצביע"}
+];
+function shuffle(array){var arr=array.slice();for(var i=arr.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var temp=arr[i];arr[i]=arr[j];arr[j]=temp;}return arr;}
+// One randomly drawn original profile is retained ONLY for legacy result coding; no demographics are displayed.
+// NOTE: This page has NO demographic input from Qualtrics; actual matching is not possible without extending the interface.
+var selectedProfile=profiles[Math.floor(Math.random()*profiles.length)];
+var trials=shuffle(politicalConditions.map(function(condition){return {profile:selectedProfile,condition:condition};}));
+var currentTrial=0,sliderTouched=false,results=[];
+var instructions=document.getElementById("instructions");
+var taskCard=document.getElementById("task-card");
+var progress=document.getElementById("progress");
+var person=document.getElementById("person");
+var slider=document.getElementById("slider");
+var selfPoints=document.getElementById("self-points");
+var otherPoints=document.getElementById("other-points");
+var touchNote=document.getElementById("touch-note");
+var submitButton=document.getElementById("submit-button");
+var finished=document.getElementById("finished");
+function getDescription(trial){
+var descriptions={
+ns:"משתתף/ת [אין נתונים נוספים]",
+coal:"משתתף/ת התומך/ת בממשלה הנוכחית",
+opp:"משתתף/ת התומך/ת בהחלפת הממשלה הנוכחית",
+nonvote:"משתתף/ת שאינו/ה מצביע/ה בבחירות",
+undecided:"משתתף/ת שטרם החליט/ה למי להצביע"
+};
+return (descriptions[trial.condition.code]||"משתתף/ת")+".";}
+function showTrial(){var trial=trials[currentTrial];progress.textContent="החלטה "+(currentTrial+1)+" מתוך "+trials.length;person.textContent=getDescription(trial);slider.value=0;selfPoints.textContent="100";otherPoints.textContent="0";sliderTouched=false;submitButton.disabled=true;touchNote.style.display="block";}
+function activateSlider(){sliderTouched=true;submitButton.disabled=false;touchNote.style.display="none";var other=parseInt(slider.value,10);var self=100-other;otherPoints.textContent=String(other);selfPoints.textContent=String(self);}
+slider.addEventListener("input",activateSlider);slider.addEventListener("change",activateSlider);slider.addEventListener("click",activateSlider);
+submitButton.addEventListener("click",function(){if(!sliderTouched)return;var trial=trials[currentTrial],p=trial.profile,condition=trial.condition,other=parseInt(slider.value,10);
+// Preserve exactly the existing SO1 result string structure.
+var resultString=p.sex+"_"+p.age+"_"+p.locCode+"_pol("+condition.code+")_otherpoints("+other+")";
+results.push(resultString);currentTrial++;
+if(currentTrial<trials.length)showTrial();else finishTask();});
+// ORIGINAL DATA TRANSPORT SEMANTICS, FIELD NAMES, TYPE AND RETRY TIMING.
+function sendResultsToQualtrics(){var finalString=results.join("|");var fields={SO1_Results:finalString,SO1_Complete:"1"};window.parent.postMessage({type:"SO1Columns",fields:fields},"*");console.log("SO1 data sent:",fields);}
+function finishTask(){taskCard.style.display="none";instructions.style.display="none";finished.style.display="block";sendResultsToQualtrics();setTimeout(sendResultsToQualtrics,250);setTimeout(sendResultsToQualtrics,750);}
+document.getElementById("instructions-next").addEventListener("click",function(){instructions.style.display="none";document.getElementById("comprehension-card").style.display="block";});
+document.getElementById("back-to-instructions").addEventListener("click",function(){document.getElementById("comprehension-card").style.display="none";document.getElementById("comprehension-error").style.display="none";instructions.style.display="block";});
+document.getElementById("start-button").addEventListener("click",function(){var ok=document.getElementById("check-allocation").value==="30"&&document.getElementById("check-rejection").value==="0";if(!ok){document.getElementById("comprehension-error").style.display="block";return;}document.getElementById("comprehension-error").style.display="none";document.getElementById("comprehension-card").style.display="none";taskCard.style.display="block";showTrial();});
+})();
+</script>
+</body>
+</html>
